@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.2
+// @version         1.9.5.3
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.2"
+    var myVersion = "1.9.5.3"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -403,13 +403,6 @@
     }
 
     // Function activate button
-//    const activateBtn = document.createElement('button');
-//    activateBtn.innerHTML = `
-//      <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 1280 1280" style="color: ${themeTextColor}; fill: currentcolor;">
-//        <path d="M517 1c-16 3-28 10-41 22l-10 10 161 160 161 161 2-2c6-4 17-19 21-25 10-19 12-44 4-64-6-14-5-13-120-129L576 17c-8-7-18-12-27-15-8-1-25-2-32-1zM249 250 77 422l161 161 161 161 74-74 74-75 18 19 18 18-2 4c-4 6-4 14-1 20a28808 28808 0 0 0 589 621c4 2 6 3 13 3 6 0 8-1 13-3 6-4 79-77 82-83 4-9 4-21-2-29l-97-93-235-223-211-200c-51-47-73-68-76-69-6-3-13-3-19 0l-5 3-18-18-18-18 74-74 74-74-161-161L422 77 249 250zM23 476a75 75 0 0 0-10 95c4 6 219 222 231 232 8 7 16 11 26 14 6 2 10 2 22 2s14 0 22-2l14-6c5-4 20-16 24-21l2-2-161-161L32 466l-9 10z"/>
-//      </svg>
-//    `;
-
     const activateBtn = document.createElement('button');
     activateBtn.innerHTML = `
       <img
@@ -448,16 +441,6 @@
                 console.log(LOGPREFIX, 'Mod tools available. Adding button...');
                 twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
                 document.body.appendChild(d);
-
-                // Princess-Theme standardmäßig aktivieren
-                // toggleTheme();
-
-                // Buttons nach dem Einfügen ausblenden
-                // document.querySelector(".MooBot").style.display = "none";
-                // document.querySelector(".NightBot").style.display = "none";
-                // document.querySelector(".sLabs").style.display = "none";
-                // document.querySelector(".sElements").style.display = "none";
-
                 $('.raidhammer').draggable();
             }
 
@@ -1010,94 +993,124 @@ function modMenu() {
         }
     }
 
-    function createDropdownMenu(links) {
-        const existingMenu = document.getElementById('modMenu');
+function createDropdownMenu(links) {
+    'use strict';
 
-        if (existingMenu) {
-            return;
-        }
+    const modMenuAV = document.getElementById('modMenu');
 
-        // Achtung! Dieser Selektor kann sich bei Änderungen der Twitch-Oberfläche jederzeit ändern.
-        const referenceButton = document.querySelector(
-            'div.Layout-sc-1xcs6mc-0.jDgJoG'
-        );
+    if (modMenuAV) {
+        return;
+    }
 
-        if (!referenceButton || !referenceButton.parentElement) {
-            return;
-        }
+    const referenceButton = document.querySelector(
+        '[data-a-target="home-link"]'
+    );
 
-        // Auf der Moderator-Seite wird der Button nicht eingefügt
-        if (location.href.includes('twitch.tv/moderator')) {
-            return;
-        }
+    if (!referenceButton || !referenceButton.parentElement) {
+        console.log('Twitch-Startseiten-Link nicht gefunden');
+        return;
+    }
 
-        const dropdownMenu = referenceButton.parentElement;
+    const dropdownMenu = referenceButton.parentElement;
 
-        const dropdownButton = document.createElement('button');
-        dropdownButton.id = 'modMenu';
-        dropdownButton.innerHTML = `
-            <img
-                src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
-                width="35"
-                height="35"
-                alt="Mod-Channels"
-            >
-        `;
-        dropdownButton.title = 'Mod-Channels';
-        dropdownButton.style.width = '25px';
-        dropdownButton.style.display = 'block';
-        dropdownButton.style.color = '#9146FF';
-        dropdownButton.style.backgroundColor = 'transparent';
-        dropdownButton.style.position = 'relative';
+    dropdownMenu.style.position = 'relative';
+    dropdownMenu.style.display = 'flex';
+    dropdownMenu.style.alignItems = 'center';
 
-        const dropdownList = document.createElement('ul');
-        dropdownList.style.display = 'none';
-        dropdownList.style.listStyle = 'none';
-        dropdownList.style.padding = '0';
-        dropdownList.style.margin = '0';
-        dropdownList.style.position = 'absolute';
-        dropdownList.style.top = '40px';
-        dropdownList.style.zIndex = '99999999';
-        dropdownList.style.backgroundColor = '#000';
+    const dropdownButton = document.createElement('button');
+    dropdownButton.id = 'modMenu';
+    dropdownButton.type = 'button';
 
-        if (links.length === 0) {
+    dropdownButton.innerHTML = `
+        <img
+            src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
+            width="35"
+            height="35"
+            alt="Mod-Channels"
+        >
+    `;
+
+    dropdownButton.title = 'Mod-Channels';
+
+    dropdownButton.style.cssText = `
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        margin-left: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        color: #9146FF;
+        background-color: transparent;
+        cursor: pointer;
+    `;
+
+    const dropdownList = document.createElement('ul');
+
+    dropdownList.style.cssText = `
+        display: none;
+        position: absolute;
+        top: 40px;
+        left: 40px;
+        z-index: 99999999;
+        margin: 0;
+        padding: 8px;
+        list-style: none;
+        background-color: #000;
+    `;
+
+    if (links.length === 0) {
+        const listItem = document.createElement('li');
+        const linkItem = document.createElement('a');
+
+        linkItem.innerText = 'Bitte lies die Anleitung hier';
+        linkItem.href =
+            'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+        linkItem.target = '_blank';
+        linkItem.rel = 'noopener noreferrer';
+        linkItem.title = 'Anleitung lesen';
+
+        listItem.appendChild(linkItem);
+        dropdownList.appendChild(listItem);
+    } else {
+        links.forEach((link) => {
             const listItem = document.createElement('li');
             const linkItem = document.createElement('a');
 
-            linkItem.innerText = 'Bitte lies die Anleitung hier';
-            linkItem.href =
-                'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+            linkItem.innerText = link;
+            linkItem.href = 'https://twitch.tv/moderator/' + link;
             linkItem.target = '_blank';
             linkItem.rel = 'noopener noreferrer';
-            linkItem.title = 'Anleitung lesen';
+            linkItem.title = 'Visit Mod-View for channel ' + link;
 
             listItem.appendChild(linkItem);
             dropdownList.appendChild(listItem);
-        } else {
-            links.forEach((link) => {
-                const listItem = document.createElement('li');
-                const linkItem = document.createElement('a');
-
-                linkItem.innerText = link;
-                linkItem.href = 'https://twitch.tv/moderator/' + link;
-                linkItem.target = '_blank';
-                linkItem.rel = 'noopener noreferrer';
-                linkItem.title = 'Visit Mod-View for channel ' + link;
-
-                listItem.appendChild(linkItem);
-                dropdownList.appendChild(listItem);
-            });
-        }
-
-        dropdownMenu.appendChild(dropdownList);
-        dropdownMenu.insertBefore(dropdownButton, referenceButton);
-
-        dropdownButton.addEventListener('click', () => {
-            dropdownList.style.display =
-                dropdownList.style.display === 'none' ? 'block' : 'none';
         });
     }
 
+    // Button direkt neben dem Twitch-Logo einfügen
+    dropdownMenu.insertBefore(
+        dropdownButton,
+        referenceButton.nextSibling
+    );
+
+    dropdownMenu.appendChild(dropdownList);
+
+    dropdownButton.addEventListener('click', () => {
+        dropdownList.style.display =
+            dropdownList.style.display === 'none'
+                ? 'block'
+                : 'none';
+    });
+}
+
+
+    
+    
+    
+    
+    
     const links = processStoredModChannels();
     createDropdownMenu(links);
 
