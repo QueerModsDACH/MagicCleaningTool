@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.4
+// @version         1.9.5.5
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.4"
+    var myVersion = "1.9.5.5"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -1033,11 +1033,11 @@ function createDropdownMenu(links) {
     dropdownButton.title = 'Mod-Channels';
 
     dropdownButton.style.cssText = `
-        width: 35px;
-        height: 35px;
+        width: 30px;
+        height: 30px;
         padding: 0;
         margin-left: 8px;
-        margin-top: 4px;
+        margin-top: 8px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1091,13 +1091,73 @@ function createDropdownMenu(links) {
     }
 
     // Button direkt neben dem Twitch-Logo einfügen
-    dropdownMenu.insertBefore(
-        dropdownButton,
-        referenceButton.nextSibling
+//    dropdownMenu.insertBefore(
+//        dropdownButton,
+//        referenceButton.nextSibling
+//    );
+//
+//    dropdownMenu.appendChild(dropdownList);
+
+function appendModMenuButton() {
+    const modBtn = document.querySelector(
+        '[data-test-selector="mod-view-link"]'
     );
 
-    dropdownMenu.appendChild(dropdownList);
+    const chatBtn = document.querySelector(
+        '[data-a-target="chat-send-button"]'
+    );
 
+    const isModeratorPage =
+        document.location.toString().includes('/moderator/');
+
+    const modToolsAvailable =
+        Boolean(modBtn) || (isModeratorPage && Boolean(chatBtn));
+
+    // Wenn keine moderierte Seite geöffnet ist:
+    if (!modToolsAvailable) {
+        dropdownButton.remove();
+        dropdownList.remove();
+        return;
+    }
+
+    // Twitch-Logo bzw. Startseiten-Link suchen
+    const twitchLogo = document.querySelector(
+        '[data-a-target="home-link"]'
+    );
+
+    if (!twitchLogo || !twitchLogo.parentElement) {
+        return;
+    }
+
+    const logoContainer = twitchLogo.parentElement;
+
+    logoContainer.style.display = 'flex';
+    logoContainer.style.alignItems = 'center';
+    logoContainer.style.position = 'relative';
+
+    // Button nur einmal einfügen
+    if (!logoContainer.contains(dropdownButton)) {
+        logoContainer.insertBefore(
+            dropdownButton,
+            twitchLogo.nextSibling
+        );
+    }
+
+    // Dropdown-Liste ebenfalls nur einmal einfügen
+    if (!logoContainer.contains(dropdownList)) {
+        logoContainer.appendChild(dropdownList);
+    }
+}
+
+setInterval(appendModMenuButton, 5000);
+
+    
+    
+    
+    
+    
+    
+    
     dropdownButton.addEventListener('click', () => {
         dropdownList.style.display =
             dropdownList.style.display === 'none'
@@ -1107,11 +1167,7 @@ function createDropdownMenu(links) {
 }
 
 
-    
-    
-    
-    
-    
+
     const links = processStoredModChannels();
     createDropdownMenu(links);
 
