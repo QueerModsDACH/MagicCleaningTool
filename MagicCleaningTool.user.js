@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.1
+// @version         1.9.5.2
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.1"
+    var myVersion = "1.9.5.2"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -999,111 +999,149 @@ function modMenu() {
     'use strict';
 
     function processStoredModChannels() {
-        'use strict';
-        const QMD_storedModChannels = JSON.parse(localStorage.getItem("myModChannels"));
-        const links = QMD_storedModChannels ? QMD_storedModChannels : [];
-        return links;
+        const stored = localStorage.getItem('myModChannels');
+
+        try {
+            const channels = stored ? JSON.parse(stored) : [];
+            return Array.isArray(channels) ? channels : [];
+        } catch (error) {
+            console.error('Ungültige Daten in myModChannels:', error);
+            return [];
+        }
     }
 
     function createDropdownMenu(links) {
-        'use strict';
-        var modMenuAV = document.getElementById('modMenu')
-        var referenceButton1 = document.querySelector('div.Layout-sc-1xcs6mc-0.jDgJoG');
+        const existingMenu = document.getElementById('modMenu');
 
-        if (modMenuAV) { return; }
-
-        var referenceButton = referenceButton1
-
-        if (referenceButton) {
-          var dropdownMenu = referenceButton.parentElement;
+        if (existingMenu) {
+            return;
         }
 
-        const container = document.createElement('div');
-        container.style.position = 'relative';
-        container.style.width = "100%"
+        // Achtung! Dieser Selektor kann sich bei Änderungen der Twitch-Oberfläche jederzeit ändern.
+        const referenceButton = document.querySelector(
+            'div.Layout-sc-1xcs6mc-0.jDgJoG'
+        );
+
+        if (!referenceButton || !referenceButton.parentElement) {
+            return;
+        }
+
+        // Auf der Moderator-Seite wird der Button nicht eingefügt
+        if (location.href.includes('twitch.tv/moderator')) {
+            return;
+        }
+
+        const dropdownMenu = referenceButton.parentElement;
 
         const dropdownButton = document.createElement('button');
-        dropdownButton.id = "modMenu";
-        dropdownButton.innerHTML = "<img src='https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg' width='35px' height='35px'>";
-        dropdownButton.title = "Mod-Channels";
-        dropdownButton.style.width = "25px";
-        dropdownButton.style.display = "block";
-        dropdownButton.style.color = "#9146FF";
-        dropdownButton.style.backgroundColor = "transparent";
+        dropdownButton.id = 'modMenu';
+        dropdownButton.innerHTML = `
+            <img
+                src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
+                width="35"
+                height="35"
+                alt="Mod-Channels"
+            >
+        `;
+        dropdownButton.title = 'Mod-Channels';
+        dropdownButton.style.width = '25px';
+        dropdownButton.style.display = 'block';
+        dropdownButton.style.color = '#9146FF';
+        dropdownButton.style.backgroundColor = 'transparent';
         dropdownButton.style.position = 'relative';
 
         const dropdownList = document.createElement('ul');
-        dropdownList.style.display = "none";
-        dropdownList.style.listStyle = "none";
-        dropdownList.style.padding = 0;
-        dropdownList.style.margin = 0;
-        dropdownList.style.position = "absolute";
-        dropdownList.style.top = "40px";
-        dropdownList.style.left = "auto";
-        dropdownList.style.zIndex = "99999999";
+        dropdownList.style.display = 'none';
+        dropdownList.style.listStyle = 'none';
+        dropdownList.style.padding = '0';
+        dropdownList.style.margin = '0';
+        dropdownList.style.position = 'absolute';
+        dropdownList.style.top = '40px';
+        dropdownList.style.zIndex = '99999999';
+        dropdownList.style.backgroundColor = '#000';
 
-        dropdownList.style.backgroundColor = "#000";
-
-        if (!location.href.includes("twitch.tv/moderator")) { dropdownMenu.appendChild(dropdownList); dropdownMenu.insertBefore(dropdownButton, referenceButton);}
-
-
-        if (links.length == 0) {
+        if (links.length === 0) {
             const listItem = document.createElement('li');
             const linkItem = document.createElement('a');
-            linkItem.innerText = "Bitte lies die Anleitung hier";
-            linkItem.href = "https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions";
-            linkItem.target = "_blank";
-            linkItem.title = "Anleitung lesen";
+
+            linkItem.innerText = 'Bitte lies die Anleitung hier';
+            linkItem.href =
+                'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+            linkItem.target = '_blank';
+            linkItem.rel = 'noopener noreferrer';
+            linkItem.title = 'Anleitung lesen';
+
             listItem.appendChild(linkItem);
             dropdownList.appendChild(listItem);
         } else {
-            links.forEach(link => {
+            links.forEach((link) => {
                 const listItem = document.createElement('li');
                 const linkItem = document.createElement('a');
+
                 linkItem.innerText = link;
-                linkItem.href = "https://twitch.tv/moderator/" + link;
-                linkItem.target = "_blank";
-                linkItem.title = "Visit Mod-View for channel " + link;
+                linkItem.href = 'https://twitch.tv/moderator/' + link;
+                linkItem.target = '_blank';
+                linkItem.rel = 'noopener noreferrer';
+                linkItem.title = 'Visit Mod-View for channel ' + link;
+
                 listItem.appendChild(linkItem);
                 dropdownList.appendChild(listItem);
             });
         }
+
+        dropdownMenu.appendChild(dropdownList);
+        dropdownMenu.insertBefore(dropdownButton, referenceButton);
+
         dropdownButton.addEventListener('click', () => {
-            dropdownList.style.display = dropdownList.style.display === "none" ? "block" : "none";
+            dropdownList.style.display =
+                dropdownList.style.display === 'none' ? 'block' : 'none';
         });
     }
 
     const links = processStoredModChannels();
     createDropdownMenu(links);
-    const css = `
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-    `;
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
 
-    const selector = "#modMenu";
-    const element = document.querySelector(selector);
-    if (element) {
-        element.style.animation = "pulse 2s infinite";
+    if (!document.getElementById('mod-menu-style')) {
+        const style = document.createElement('style');
+        style.id = 'mod-menu-style';
+        style.textContent = `
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+
+                50% {
+                    transform: scale(1.1);
+                }
+
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            #modMenu {
+                animation: pulse 2s infinite;
+            }
+        `;
+
+        document.head.appendChild(style);
     }
 }
 
 // Startup
-(function() {
-  const intervalDuration = 5000;
-  const totalTime = 5000;
-  let elapsedTime = 0;
-  const modMenuInterval = setInterval(() => {
-    if (elapsedTime >= totalTime) {
-      clearInterval(modMenuInterval);
-    } else {
-      modMenu();
-      elapsedTime += intervalDuration;
-    }
-  }, intervalDuration);
+(function () {
+    const intervalDuration = 5000;
+    const totalTime = 5000;
+    let elapsedTime = 0;
+
+    const modMenuInterval = setInterval(() => {
+        if (elapsedTime >= totalTime) {
+            clearInterval(modMenuInterval);
+            return;
+        }
+
+        modMenu();
+        elapsedTime += intervalDuration;
+    }, intervalDuration);
 })();
+
