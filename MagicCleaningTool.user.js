@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.5
+// @version         1.9.5.7
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.5"
+    var myVersion = "1.9.5.7"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -82,7 +82,7 @@
       activeChannel = urlParts[urlParts.length - 1]
     }
     var QMD_LocalStorageBanList = activeChannel + "_banlist"
-    var QMD_LocalStorageUnBanList = activeChannel + "_unbanlist1"
+    var QMD_LocalStorageUnBanList = activeChannel + "_unbanlist"
     var QMD_bannedUsersStore = JSON.parse(localStorage.getItem(QMD_LocalStorageBanList)) || [];
     var QMD_unbannedUsersStore = JSON.parse(localStorage.getItem(QMD_LocalStorageUnBanList)) || [];
     var modChannelList = new Set();
@@ -672,6 +672,7 @@
     // Import functions using the generic importer
 
     function import_Suspect() {
+      currentBanReason = 'suspect (QMD-List)';
       importMDGGeneric(
         "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt",
         "Button_Suspect",
@@ -870,7 +871,11 @@
 
     // Function to ban a user
     function banItem(user) {
-      banReason = document.getElementById("banReason").value;
+//    banReason = document.getElementById("banReason").value;
+//    const banReason = currentBanReason;
+      const inputReason =
+        document.getElementById("banReason").value.trim();
+      const banReason = inputReason || currentBanReason;
       queueList.delete(user);
       bannedList.add(user);
       QMD_bannedUsersStore.push(user)
@@ -1151,13 +1156,13 @@ function appendModMenuButton() {
 
 setInterval(appendModMenuButton, 5000);
 
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     dropdownButton.addEventListener('click', () => {
         dropdownList.style.display =
             dropdownList.style.display === 'none'
@@ -1214,4 +1219,3 @@ setInterval(appendModMenuButton, 5000);
         elapsedTime += intervalDuration;
     }, intervalDuration);
 })();
-
