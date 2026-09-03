@@ -20,10 +20,11 @@ Das bedeutet:
 - man benutzt mehrere Browser? 
   - Der Speicher ist pro Browser. __Browser übergreifend funktioniert das also nicht!__
 - Im LocalStorage gespeichert Listen löschen
-  - Entwicklungs-Konsole des Browser öffnen
-  - den Tab Application/Anwendung suchen
+  - Entwicklungs-Konsole des Browser öffnen (F12)
+  - den Tab Web-Speicher (Application/Anwendung) suchen
   - Dort LocalStorage auswählen
-  - dann nach "\_bannlist" filtern
+  - darin "https://www.twitch.tv" auswählen
+  - dann nach "\_bannlist" filtern [KANALNAME_banlist]
   - die gefunden Einträge mit Rechts-Klick löschen
 
 ***Werden Coockies und das LocalStorage gelöscht, müssen alle Listen noch einmal gebannt werden!***
