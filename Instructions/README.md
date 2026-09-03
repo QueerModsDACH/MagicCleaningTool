@@ -28,7 +28,7 @@ Das bedeutet:
   - oder nach `_unbannlist` filtern [`KANALNAME_unbanlist`]
   - die gefunden Einträge mit Rechts-Klick löschen
 
-***Werden Coockies und das LocalStorage gelöscht, müssen alle Listen noch einmal gebannt werden!***
+***Werden Cookies und das LocalStorage gelöscht, müssen alle Listen noch einmal gebannt werden!***
 
 ### Das Tool läuft eine Weile, dann kommt ein Fehler auf der Website von Twitch
 Dann ist vermutlich für euer Setup die Geschwindigkeit zu hoch für die MassenBann/MassenUnbann funktionen.
