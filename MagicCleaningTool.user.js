@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.7
+// @version         1.9.5.8
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.7"
+    var myVersion = "1.9.5.8"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -288,7 +288,7 @@
     <div id="import" class="import" style="display:none;">
         <textarea id="textfield" placeholder="Ein Benutzername pro Zeile"></textarea>
         <div style="text-align:right;">
-            <input type="text" id="banReason" style="width:66%" placeholder="Gib einen Bann-Grund an" />
+            <input type="text" id="banReason" style="width:66%" placeholder="Gib einen Ban-Grund an" />
             <button class="importBtn" title="Benutzer zur Liste hinzufügen" style="width:32%">➕ Hinzufügen</button>
         </div>
         <div style="align:center">
@@ -371,35 +371,69 @@
     const textarea = d.querySelector("textarea");
 
     // Generic function to import MDG lists
-    function importMDGGeneric(url, buttonId, defaultBtnText, footerText, footerHref, useUnban = false) {
-      queueList.clear();
-      var usersToBan = [];
-      if (!useUnban && document.getElementById("banReason").value == "") {
-        document.getElementById("banReason").value = defaultBanReason;
-      }
-      fetch(url)
-        .then((response) => response.text())
-        .then((data) => {
-            usersToBan.push(...data.split("\n").filter(Boolean));
-            if (useUnban) {
-              usersToBan.forEach(name => userAlreadyUnBanned(name.replace(/\r/g, ""), buttonId));
-            } else {
-              usersToBan.forEach(name => userAlreadyBanned(name.replace(/\r/g, ""), buttonId));
-            }
-            // Special case: for Advertising button, call renderList early
-            if (buttonId === "mdgBtnAdvertising") {
-              renderList();
-            }
-            textarea.value = '';
-            insertText(Array.from(queueList));
-            if (queueList.size != 0) { toggleImport(); renderList(); }
-        });
-      document.getElementById("replaceFooter").innerHTML = footerText;
-      document.getElementById("replaceFooter").href = footerHref;
-      function dumdidum() {
-        document.getElementById(buttonId).innerHTML = defaultBtnText;
-      }
-      setTimeout(dumdidum, 5000);
+    function importMDGGeneric(
+        url,
+        buttonId,
+        defaultBtnText,
+        footerText,
+        footerHref,
+        useUnban = false,
+        listBanReason = defaultBanReason
+    ) {
+        queueList.clear();
+
+        const usersToBan = [];
+        const banReasonInput = document.getElementById("banReason");
+
+        if (!useUnban) {
+            // Der Grund dieser Liste wird für die aktuelle Liste gesetzt
+            banReasonInput.value = listBanReason;
+        }
+
+        fetch(url)
+            .then((response) => response.text())
+            .then((data) => {
+                usersToBan.push(
+                    ...data.split("\n").filter(Boolean)
+                );
+
+                if (useUnban) {
+                    usersToBan.forEach((name) => {
+                        userAlreadyUnBanned(
+                            name.replace(/\r/g, ""),
+                            buttonId
+                        );
+                    });
+                } else {
+                    usersToBan.forEach((name) => {
+                        userAlreadyBanned(
+                            name.replace(/\r/g, ""),
+                            buttonId
+                        );
+                    });
+                }
+
+                if (buttonId === "mdgBtnAdvertising") {
+                    renderList();
+                }
+
+                textarea.value = "";
+                insertText(Array.from(queueList));
+
+                if (queueList.size !== 0) {
+                    toggleImport();
+                    renderList();
+                }
+            });
+
+        document.getElementById("replaceFooter").innerHTML = footerText;
+        document.getElementById("replaceFooter").href = footerHref;
+
+        function dumdidum() {
+            document.getElementById(buttonId).innerHTML = defaultBtnText;
+        }
+
+        setTimeout(dumdidum, 5000);
     }
 
     // Function activate button
@@ -672,13 +706,15 @@
     // Import functions using the generic importer
 
     function import_Suspect() {
-      currentBanReason = 'suspect (QMD-List)';
+//      currentBanReason = 'suspect (QMD-List)';
       importMDGGeneric(
         "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt",
         "Button_Suspect",
         Button_Suspect_Text,
         "Geladene Liste 'suspect.txt' anzeigen",
-        "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt"
+        "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt",
+        false,
+        "Verdächtiges Verhalten"
       );
     }
 
@@ -871,11 +907,8 @@
 
     // Function to ban a user
     function banItem(user) {
-//    banReason = document.getElementById("banReason").value;
-//    const banReason = currentBanReason;
-      const inputReason =
-        document.getElementById("banReason").value.trim();
-      const banReason = inputReason || currentBanReason;
+      const banReason =
+        document.getElementById("banReason").value;
       queueList.delete(user);
       bannedList.add(user);
       QMD_bannedUsersStore.push(user)
