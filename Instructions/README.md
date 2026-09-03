@@ -70,4 +70,8 @@ Mit dem nächsten Neuladen der Webseite, wird der Kanal dann hinzugefügt:
 ## Einen kanal als Mod Kanal entfernen
 Das funktioniert analog zuum Hinzufügen.
 
+-----
 
+
+# Support
+Du kannst gerne [hier](https://github.com/QueerModsDACH/MagicCleaningTool/issues) ein Ticket aufmachen.
