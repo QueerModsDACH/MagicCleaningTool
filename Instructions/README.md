@@ -34,3 +34,40 @@ Das bedeutet:
 Dann ist vermutlich für euer Setup die Geschwindigkeit zu hoch für die MassenBann/MassenUnbann funktionen.
 Das könnt ihr an diesen beiden Stellen anpassen:
 **HINWEIS:** Es ist dringend davon abzuraten den Wert runter zu setzen -> Twitch Shadow-Ban Gefahr!!!
+
+```
+// Zentrale Delay-Werte in Millisekunden
+      const DELAY_BAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
+      const DELAY_UNBAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
+      const DELAY_PAUSE_CHECK = 1000;
+```
+
+-----
+
+# Mod-Menü
+Das Mod Menü ist ein Schwert Icon oben links, wenn man einen Twitch Kanal besucht erscheint in der linken oberen Ecke, rechts vom Twitch Logo. In der der Mod-View wird das bestehende Schwert nach dem Laden etwas kleiner und ist nun anklickbar.
+Hierbei handelt es um ein kleines Menü, in dem man die Kanäle hinterlegen kann in welchen man Mod ist.
+Klickt man auf einen Namen, so wird die Mod-View des Kanals in einem neuen Tab geöffnet.
+
+![](pix/Mod-Menu1.png)
+
+
+## Einen Kanal als Mod Kanal hinzufügen
+Schreibe alle Kanäle in das Feld in das man Namen schreiben kann.
+Hinweis: Die Kanäle werden in der Reihenfolge angelegt wie man sie in die Liste schreibt.
+
+![](pix/Mod-Menu2.png)
+
+
+Dann auf "+ Hinzufügen" klicken und die User werden dann in eine Liste geladen, wie man das von den Bannlisten kennt.
+Dort hat man nun die Möglichkeit unten ALLE auf einmal zu Mod Kanälen als Mod-Kanäle festzulegen, oder eben jeden einzeln.
+![](pix/Mod-Menu3.png)
+
+Mit dem nächsten Neuladen der Webseite, wird der Kanal dann hinzugefügt:
+
+![](pix/Mod-Menu4.png)
+
+## Einen kanal als Mod Kanal entfernen
+Das funktioniert analog zuum Hinzufügen.
+
+
