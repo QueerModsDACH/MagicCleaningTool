@@ -23,7 +23,7 @@ Das bedeutet:
   - Entwicklungs-Konsole des Browser öffnen (F12)
   - den Tab Web-Speicher (Application/Anwendung) suchen
   - Dort LocalStorage auswählen
-  - darin "\https://www.twitch.tv" auswählen
+  - darin "https://www.twitch.tv" auswählen
   - dann nach "\_bannlist" filtern [KANALNAME_banlist]
   - die gefunden Einträge mit Rechts-Klick löschen
 
