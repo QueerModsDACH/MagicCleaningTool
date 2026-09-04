@@ -118,6 +118,7 @@
       }
     }
 
+    
     // Frontend
     var html = /*html*/`
     <div id="raidhammer" class="raidhammer">
