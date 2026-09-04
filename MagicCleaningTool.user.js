@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.43
+// @version         1.9.5.50
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -18,7 +18,10 @@
 
 (function() {
     'use strict';
-
+        // Verhindert, dass das Userscript mehrfach aktiv wird
+        if (document.querySelector('[data-qmd-mct-instance="true"]')) {
+            return;
+        }
     function processStoredModChannels() {
         const QMD_storedModChannels = JSON.parse(localStorage.getItem("myModChannels"));
     }
@@ -38,7 +41,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.43"
+    var myVersion = "1.9.5.50"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -456,6 +459,7 @@
 
     // Function activate button
     const activateBtn = document.createElement('button');
+    activateBtn.dataset.qmdMctInstance = "true";
     activateBtn.innerHTML = `
       <img
         src="${activateImage}"
@@ -486,36 +490,79 @@
     let watchdogTimer;
 
     function appendActivatorBtn() {
-        const modBtn = document.querySelector('[data-test-selector="mod-view-link"]');
+        const existingButton = document.querySelector(
+            '[data-qmd-mct-instance="true"]'
+        );
+
+        // Falls bereits ein anderer Button existiert, keinen weiteren erzeugen
+        if (existingButton && existingButton !== activateBtn) {
+            return;
+        }
+
+        const modBtn = document.querySelector(
+            '[data-test-selector="mod-view-link"]'
+        );
+
         if (modBtn) {
-            const twitchBar = modBtn.parentElement.parentElement.parentElement;
+            const twitchBar =
+                modBtn.parentElement.parentElement.parentElement;
+
             if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
-                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
+                console.log(
+                    LOGPREFIX,
+                    'Mod tools available. Adding button...'
+                );
+
+                twitchBar.insertBefore(
+                    activateBtn,
+                    twitchBar.firstChild
+                );
+
                 document.body.appendChild(d);
                 $('.raidhammer').draggable();
+            }
+        } else if (
+            document.location.toString().includes('/moderator/')
+        ) {
+            const chatBtn = document.querySelector(
+                '[data-a-target="chat-send-button"]'
+            );
+
+            if (!chatBtn) {
+                return;
             }
 
-        } else if (document.location.toString().includes('/moderator/')){
-            const chatBtn = document.querySelector('[data-a-target="chat-send-button"]');
-            const twitchBar = chatBtn.parentElement.parentElement.parentElement;
+            const twitchBar =
+                chatBtn.parentElement.parentElement.parentElement;
+
             if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
-                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
+                console.log(
+                    LOGPREFIX,
+                    'Mod tools available. Adding button...'
+                );
+
+                twitchBar.insertBefore(
+                    activateBtn,
+                    twitchBar.firstChild
+                );
+
                 document.body.appendChild(d);
                 $('.raidhammer').draggable();
             }
-        }
-        else {
+        } else {
             if (enabled) {
-                console.log(LOGPREFIX, 'Mod tools not found. Stopped chatWatchdog!');
+                console.log(
+                    LOGPREFIX,
+                    'Mod tools not found. Stopped chatWatchdog!'
+                );
+
                 watchdogTimer = enabled = false;
                 hide();
             }
         }
     }
     setInterval(appendActivatorBtn, 5000);
-
+// ####################################################################################################
     // Eventhandler
     d.querySelector(".ignoreAll").onclick = ignoreAll;
     d.querySelector(".banAll").onclick = banAll;
