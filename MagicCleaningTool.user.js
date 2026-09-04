@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.16
+// @version         1.9.5.22
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.16"
+    var myVersion = "1.9.5.22"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -118,7 +118,6 @@
       }
     }
 
-    
     // Frontend
     var html = /*html*/`
     <div id="raidhammer" class="raidhammer">
@@ -1095,7 +1094,6 @@ function getCurrentlyModeratedChannel() {
     return null;
 }
 
-// ####################################################################################################
 function addCurrentModChannel() {
     const channel = getCurrentlyModeratedChannel();
 
@@ -1130,550 +1128,218 @@ function addCurrentModChannel() {
     }
 }
 // ####################################################################################################
-// ####################################################################################################
+
 
 function modMenu() {
     'use strict';
 
-    /*
-     * Verhindert, dass beim wiederholten Aufruf von modMenu()
-     * mehrere Buttons oder mehrere Intervalle erstellt werden.
-     */
-    if (modMenu._initialized) {
-        return;
-    }
-
-    /*
-     * Liest die gespeicherten Mod-Kanäle aus dem localStorage.
-     */
     function processStoredModChannels() {
+        const stored = localStorage.getItem('myModChannels');
+
         try {
-            const stored = localStorage.getItem(
-                QMD_LocalStorageModChannels
-            );
-
             const channels = stored ? JSON.parse(stored) : [];
-
             return Array.isArray(channels) ? channels : [];
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                'Ungültige Mod-Channel-Daten:',
-                error
-            );
-
+            console.error('Ungültige Daten in myModChannels:', error);
             return [];
         }
     }
 
-    /*
-     * Sucht den Twitch-Mod-View-Link.
-     *
-     * Twitch verwendet je nach Ansicht oder Version
-     * unterschiedliche Attribute. Deshalb werden mehrere
-     * Möglichkeiten geprüft.
-     *
-     * Links innerhalb unseres eigenen Menüs werden ignoriert,
-     * damit sie nicht fälschlicherweise als Berechtigung erkannt
-     * werden.
-     */
-    function getTwitchModViewLink() {
-        const possibleModLinks = document.querySelectorAll(
-            [
-                '[data-test-selector="mod-view-link"]',
-                '[data-a-target="mod-view-link"]',
-                'a[href*="/moderator/"]'
-            ].join(', ')
-        );
+function createDropdownMenu(links) {
+    'use strict';
 
-        for (const element of possibleModLinks) {
-            if (element.closest('#modMenu')) {
-                continue;
-            }
+    const modMenuAV = document.getElementById('modMenu');
 
-            const href = element.href || '';
-
-            if (href.includes('/moderator/')) {
-                return element;
-            }
-        }
-
-        return null;
+    if (modMenuAV) {
+        return;
     }
 
-    /*
-     * Liest den Kanalnamen aus einer Moderator-URL aus.
-     *
-     * Beispiel:
-     * https://www.twitch.tv/moderator/meinkanal
-     *
-     * Ergebnis:
-     * meinkanal
-     */
-    function getChannelFromModeratorUrl() {
-        const match = window.location.pathname.match(
-            /^\/moderator\/([^/]+)/
-        );
+    const referenceButton = document.querySelector(
+        '[data-a-target="home-link"]'
+    );
 
-        if (!match) {
-            return null;
-        }
-
-        return decodeURIComponent(match[1]).toLowerCase();
+    if (!referenceButton || !referenceButton.parentElement) {
+        console.log('Twitch-Startseiten-Link nicht gefunden');
+        return;
     }
 
-    /*
-     * Liest den Kanalnamen aus dem Twitch-Mod-View-Link aus.
-     */
-    function getChannelFromModViewLink() {
-        const modViewLink = getTwitchModViewLink();
+    const dropdownMenu = referenceButton.parentElement;
 
-        if (!modViewLink || !modViewLink.href) {
-            return null;
-        }
+    dropdownMenu.style.position = 'relative';
+    dropdownMenu.style.display = 'flex';
+    dropdownMenu.style.alignItems = 'center';
 
-        try {
-            const url = new URL(
-                modViewLink.href,
-                window.location.origin
-            );
+    const dropdownButton = document.createElement('button');
+    dropdownButton.id = 'modMenu';
+    dropdownButton.type = 'button';
 
-            const match = url.pathname.match(
-                /^\/moderator\/([^/]+)/
-            );
+    dropdownButton.innerHTML = `
+        <img
+            src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
+            width="35"
+            height="35"
+            alt="Mod-Channels"
+        >
+    `;
 
-            if (!match) {
-                return null;
-            }
+    dropdownButton.title = 'Mod-Channels';
 
-            return decodeURIComponent(match[1]).toLowerCase();
-        } catch (error) {
-            console.error(
-                LOGPREFIX,
-                'Mod-View-Link konnte nicht ausgewertet werden:',
-                error
-            );
+    dropdownButton.style.cssText = `
+        width: 25px;
+        height: 25px;
+        padding: 0;
+        margin-left: 8px;
+        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        color: #9146FF;
+        background-color: transparent;
+        cursor: pointer;
+    `;
 
-            return null;
-        }
+    const dropdownList = document.createElement('ul');
+
+    dropdownList.style.cssText = `
+        display: none;
+        position: absolute;
+        top: 40px;
+        left: 40px;
+        z-index: 99999999;
+        margin: 0;
+        padding: 8px;
+        list-style: none;
+        background-color: #000;
+    `;
+
+
+
+
+
+
+
+// ####################################################################################################
+// meine gespeicherten MOD-KANÄLE auslesen...
+function renderDropdownList() {
+    dropdownList.replaceChildren();
+
+    const currentLinks = getStoredModChannels();
+
+    if (currentLinks.length === 0) {
+        const listItem = document.createElement('li');
+        const linkItem = document.createElement('a');
+
+        linkItem.innerText = 'Bitte lies die Anleitung hier';
+        linkItem.href =
+            'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+        linkItem.target = '_blank';
+        linkItem.rel = 'noopener noreferrer';
+        linkItem.title = 'Anleitung lesen';
+
+        listItem.appendChild(linkItem);
+        dropdownList.appendChild(listItem);
+
+        return;
     }
 
-    /*
-     * Ermittelt den aktuell moderierten Kanal.
-     *
-     * Normale Kanalansicht:
-     *   Es muss ein Twitch-Mod-View-Link vorhanden sein.
-     *
-     * Moderatoransicht:
-     *   Die URL muss /moderator/<kanal> enthalten und
-     *   der Chat muss vorhanden sein.
-     */
-    function getCurrentlyModeratedChannel() {
-        const modViewChannel = getChannelFromModViewLink();
+    currentLinks.forEach((channel) => {
+        const listItem = document.createElement('li');
+        const linkItem = document.createElement('a');
 
-        if (modViewChannel) {
-            return modViewChannel;
-        }
+        linkItem.innerText = channel;
+        linkItem.href =
+            'https://twitch.tv/moderator/' + encodeURIComponent(channel);
+        linkItem.target = '_blank';
+        linkItem.rel = 'noopener noreferrer';
+        linkItem.title =
+            'Mod-View für den Kanal ' + channel + ' öffnen';
 
-        const moderatorUrlChannel =
-            getChannelFromModeratorUrl();
+        listItem.appendChild(linkItem);
+        dropdownList.appendChild(listItem);
+    });
+}
 
-        const chatButton = document.querySelector(
-            '[data-a-target="chat-send-button"]'
-        );
+renderDropdownList();
 
-        if (
-            moderatorUrlChannel &&
-            chatButton
-        ) {
-            return moderatorUrlChannel;
-        }
+// Wird von addCurrentModChannel() aufgerufen
+window.refreshQMDModMenu = renderDropdownList;
 
-        return null;
+// ####################################################################################################
+// Button direkt neben dem Twitch-Logo einfügen
+function appendModMenuButton() {
+    const modBtn = document.querySelector(
+        '[data-test-selector="mod-view-link"]'
+    );
+
+    const chatBtn = document.querySelector(
+        '[data-a-target="chat-send-button"]'
+    );
+
+    const isModeratorPage =
+        window.location.pathname.startsWith('/moderator/');
+
+    const modToolsAvailable =
+        Boolean(modBtn) ||
+        (isModeratorPage && Boolean(chatBtn));
+
+    if (!modToolsAvailable) {
+        dropdownButton.remove();
+        dropdownList.remove();
+
+        return;
     }
 
-    /*
-     * Fügt den aktuell moderierten Kanal automatisch zur Liste hinzu.
-     *
-     * Es wird ausschließlich gespeichert, wenn Twitch eine
-     * Moderationsberechtigung erkennen lässt.
-     */
-    function addCurrentModChannel() {
-        const channel = getCurrentlyModeratedChannel();
+    // Der aktuell geöffnete Kanal wird nur bei bestätigten Mod-Rechten gespeichert
+    addCurrentModChannel();
 
-        if (!channel) {
-            return;
-        }
+    const twitchLogo = document.querySelector(
+        '[data-a-target="home-link"]'
+    );
 
-        const channels = processStoredModChannels();
-
-        if (channels.includes(channel)) {
-            return;
-        }
-
-        channels.push(channel);
-
-        localStorage.setItem(
-            QMD_LocalStorageModChannels,
-            JSON.stringify(channels)
-        );
-
-        /*
-         * Falls QMD_modChannelStore bereits als Array existiert,
-         * wird es ebenfalls aktuell gehalten.
-         */
-        if (Array.isArray(QMD_modChannelStore)) {
-            QMD_modChannelStore.length = 0;
-            QMD_modChannelStore.push(...channels);
-        }
-
-        console.log(
-            LOGPREFIX,
-            `${channel} automatisch zu den ModChannels hinzugefügt`
-        );
-
-        /*
-         * Das Dropdown sofort aktualisieren, ohne die Seite
-         * neu laden zu müssen.
-         */
-        if (
-            typeof window.refreshQMDModMenu === 'function'
-        ) {
-            window.refreshQMDModMenu();
-        }
+    if (!twitchLogo || !twitchLogo.parentElement) {
+        return;
     }
 
-    /*
-     * Erstellt das Dropdown-Menü und den Button.
-     */
-    function createDropdownMenu() {
-        const referenceButton = document.querySelector(
-            '[data-a-target="home-link"]'
+    const logoContainer = twitchLogo.parentElement;
+
+    logoContainer.style.display = 'flex';
+    logoContainer.style.alignItems = 'center';
+    logoContainer.style.position = 'relative';
+
+    if (!logoContainer.contains(dropdownButton)) {
+        logoContainer.insertBefore(
+            dropdownButton,
+            twitchLogo.nextSibling
         );
-
-        /*
-         * Twitch rendert den Header verzögert.
-         * Wenn der Home-Link noch nicht vorhanden ist,
-         * versucht das äußere Startup-Intervall es später erneut.
-         */
-        if (
-            !referenceButton ||
-            !referenceButton.parentElement
-        ) {
-            return false;
-        }
-
-        const dropdownMenu =
-            referenceButton.parentElement;
-
-        dropdownMenu.style.position = 'relative';
-        dropdownMenu.style.display = 'flex';
-        dropdownMenu.style.alignItems = 'center';
-
-        const dropdownButton =
-            document.createElement('button');
-
-        dropdownButton.id = 'modMenu';
-        dropdownButton.type = 'button';
-        dropdownButton.title = 'Mod-Channels';
-        dropdownButton.setAttribute(
-            'aria-label',
-            'Mod-Channels öffnen'
-        );
-
-        dropdownButton.innerHTML = `
-            <img
-                src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
-                width="35"
-                height="35"
-                alt="Mod-Channels"
-            >
-        `;
-
-        dropdownButton.style.cssText = `
-            width: 25px;
-            height: 25px;
-            padding: 0;
-            margin-left: 8px;
-            margin-top: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            color: #9146FF;
-            background-color: transparent;
-            cursor: pointer;
-        `;
-
-        const dropdownList =
-            document.createElement('ul');
-
-        dropdownList.style.cssText = `
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            z-index: 99999999;
-            min-width: 180px;
-            max-height: 70vh;
-            overflow-y: auto;
-            margin: 0;
-            padding: 8px;
-            list-style: none;
-            background-color: #000;
-            border: 1px solid #444;
-            border-radius: 4px;
-        `;
-
-        /*
-         * Baut den Inhalt des Dropdowns aus dem aktuellen
-         * localStorage-Inhalt neu auf.
-         */
-        function renderDropdownList() {
-            dropdownList.replaceChildren();
-
-            const channels =
-                processStoredModChannels();
-
-            if (channels.length === 0) {
-                const listItem =
-                    document.createElement('li');
-
-                const linkItem =
-                    document.createElement('a');
-
-                linkItem.innerText =
-                    'Bitte lies die Anleitung hier';
-
-                linkItem.href =
-                    'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
-
-                linkItem.target = '_blank';
-                linkItem.rel =
-                    'noopener noreferrer';
-
-                linkItem.title =
-                    'Anleitung lesen';
-
-                listItem.appendChild(linkItem);
-                dropdownList.appendChild(listItem);
-
-                return;
-            }
-
-            channels.forEach((channel) => {
-                const listItem =
-                    document.createElement('li');
-
-                const linkItem =
-                    document.createElement('a');
-
-                linkItem.innerText = channel;
-
-                linkItem.href =
-                    'https://twitch.tv/moderator/' +
-                    encodeURIComponent(channel);
-
-                linkItem.target = '_blank';
-                linkItem.rel =
-                    'noopener noreferrer';
-
-                linkItem.title =
-                    'Mod-View für ' +
-                    channel +
-                    ' öffnen';
-
-                linkItem.style.cssText = `
-                    display: block;
-                    padding: 4px 8px;
-                    color: #fff;
-                    text-decoration: none;
-                    white-space: nowrap;
-                `;
-
-                listItem.appendChild(linkItem);
-                dropdownList.appendChild(listItem);
-            });
-        }
-
-        /*
-         * Wird von addCurrentModChannel() aufgerufen,
-         * wenn ein neuer Kanal gefunden wurde.
-         */
-        window.refreshQMDModMenu =
-            renderDropdownList;
-
-        renderDropdownList();
-
-        dropdownButton.addEventListener(
-            'click',
-            (event) => {
-                event.stopPropagation();
-
-                const isHidden =
-                    dropdownList.style.display === 'none';
-
-                dropdownList.style.display =
-                    isHidden ? 'block' : 'none';
-            }
-        );
-
-        /*
-         * Schließt das Menü bei einem Klick außerhalb.
-         */
-        document.addEventListener(
-            'click',
-            (event) => {
-                if (
-                    !dropdownMenu.contains(event.target)
-                ) {
-                    dropdownList.style.display =
-                        'none';
-                }
-            }
-        );
-
-        /*
-         * Fügt den Button nur ein, wenn aktuell
-         * eine Moderationsberechtigung erkannt wird.
-         */
-        function appendModMenuButton() {
-            const modViewLink =
-                getTwitchModViewLink();
-
-            const chatButton =
-                document.querySelector(
-                    '[data-a-target="chat-send-button"]'
-                );
-
-            const isModeratorPage =
-                window.location.pathname
-                    .startsWith('/moderator/');
-
-            /*
-             * Normale Ansicht:
-             *   Twitch-Mod-Link muss existieren.
-             *
-             * Mod-Ansicht:
-             *   URL /moderator/<kanal> und Chat-Button
-             *   müssen existieren.
-             */
-            const modToolsAvailable =
-                Boolean(modViewLink) ||
-                (
-                    isModeratorPage &&
-                    Boolean(chatButton)
-                );
-
-            /*
-             * Wenn keine Moderationsberechtigung mehr
-             * vorhanden ist, wird der Button entfernt.
-             */
-            if (!modToolsAvailable) {
-                dropdownButton.remove();
-                dropdownList.remove();
-
-                return;
-            }
-
-            /*
-             * Der Kanal wird nur bei bestätigten
-             * Moderationsrechten gespeichert.
-             */
-            addCurrentModChannel();
-
-            const twitchLogo =
-                document.querySelector(
-                    '[data-a-target="home-link"]'
-                );
-
-            if (
-                !twitchLogo ||
-                !twitchLogo.parentElement
-            ) {
-                return;
-            }
-
-            const logoContainer =
-                twitchLogo.parentElement;
-
-            logoContainer.style.display = 'flex';
-            logoContainer.style.alignItems = 'center';
-            logoContainer.style.position = 'relative';
-
-            /*
-             * Button direkt neben dem Twitch-Logo einfügen.
-             */
-            if (
-                !logoContainer.contains(
-                    dropdownButton
-                )
-            ) {
-                logoContainer.insertBefore(
-                    dropdownButton,
-                    twitchLogo.nextSibling
-                );
-            }
-
-            /*
-             * Dropdown ebenfalls in den Logo-Container einfügen.
-             */
-            if (
-                !logoContainer.contains(
-                    dropdownList
-                )
-            ) {
-                logoContainer.appendChild(
-                    dropdownList
-                );
-            }
-        }
-
-        /*
-         * Twitch ist eine Single-Page-Anwendung.
-         * Deshalb wird regelmäßig geprüft, ob Twitch den
-         * Header entfernt oder neu gerendert hat.
-         */
-        appendModMenuButton();
-
-        setInterval(
-            appendModMenuButton,
-            1000
-        );
-
-        return true;
     }
 
-    /*
-     * Menü einmalig erstellen.
-     *
-     * Wenn der Twitch-Header noch nicht vorhanden ist,
-     * wird false zurückgegeben. Das äußere Startup-Intervall
-     * versucht es später erneut.
-     */
-    const created =
-        createDropdownMenu();
-
-    if (created) {
-        modMenu._initialized = true;
+    if (!logoContainer.contains(dropdownList)) {
+        logoContainer.appendChild(dropdownList);
     }
+}
 
-    /*
-     * CSS für die Button-Animation nur einmal einfügen.
-     */
-    if (
-        !document.getElementById(
-            'mod-menu-style'
-        )
-    ) {
-        const style =
-            document.createElement('style');
+setInterval(appendModMenuButton, 5000);
+// ####################################################################################################
 
-        style.id =
-            'mod-menu-style';
+    dropdownButton.addEventListener('click', () => {
+        dropdownList.style.display =
+            dropdownList.style.display === 'none'
+                ? 'block'
+                : 'none';
+    });
+}
 
+
+
+    const links = processStoredModChannels();
+    createDropdownMenu(links);
+
+    if (!document.getElementById('mod-menu-style')) {
+        const style = document.createElement('style');
+        style.id = 'mod-menu-style';
         style.textContent = `
-            @keyframes qmd-mod-menu-pulse {
+            @keyframes pulse {
                 0% {
                     transform: scale(1);
                 }
@@ -1688,18 +1354,7 @@ function modMenu() {
             }
 
             #modMenu {
-                animation:
-                    qmd-mod-menu-pulse
-                    2s
-                    infinite;
-            }
-
-            #modMenu:hover {
-                filter: brightness(1.25);
-            }
-
-            #modMenu + ul a:hover {
-                background-color: #9146FF;
+                animation: pulse 2s infinite;
             }
         `;
 
@@ -1707,16 +1362,19 @@ function modMenu() {
     }
 }
 
-
-/*
- * Startup
- *
- * Twitch rendert viele Elemente verzögert.
- * Das Menü wird deshalb nicht nur einmal, sondern so lange
- * geprüft, wie das Userscript aktiv ist.
- */
+// Startup
 (function () {
-    setInterval(() => {
+    const intervalDuration = 5000;
+    const totalTime = 5000;
+    let elapsedTime = 0;
+
+    const modMenuInterval = setInterval(() => {
+        if (elapsedTime >= totalTime) {
+            clearInterval(modMenuInterval);
+            return;
+        }
+
         modMenu();
-    }, 1000);
+        elapsedTime += intervalDuration;
+    }, intervalDuration);
 })();
