@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.8
+// @version         1.9.5.9
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.8"
+    var myVersion = "1.9.5.9"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -706,7 +706,6 @@
     // Import functions using the generic importer
 
     function import_Suspect() {
-//      currentBanReason = 'suspect (QMD-List)';
       importMDGGeneric(
         "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt",
         "Button_Suspect",
@@ -714,7 +713,7 @@
         "Geladene Liste 'suspect.txt' anzeigen",
         "https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt",
         false,
-        "Verdächtiges Verhalten"
+        "suspect (QMD-List)"
       );
     }
 
@@ -1071,11 +1070,11 @@ function createDropdownMenu(links) {
     dropdownButton.title = 'Mod-Channels';
 
     dropdownButton.style.cssText = `
-        width: 30px;
-        height: 30px;
+        width: 25px;
+        height: 25px;
         padding: 0;
         margin-left: 8px;
-        margin-top: 8px;
+        margin-top: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
