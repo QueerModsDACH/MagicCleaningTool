@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.53
+// @version         1.9.5.144
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,34 +15,30 @@
 // ==/UserScript==
 
 /* jshint esversion: 8 */
+(function() {
+    'use strict';
+
+    function processStoredModChannels() {
+        const QMD_storedModChannels =
+            JSON.parse(localStorage.getItem("myModChannels"));
+    }
+
+    processStoredModChannels
+})();
 
 
 (function (urlCount) {
-    'use strict';
 
-    // Globale Sperre gegen mehrere laufende Script-Instanzen
-    if (window.__QMD_MCT_ALREADY_RUNNING__) {
-        console.warn(
-            '[QMD-MCT] Zweite Script-Instanz beendet.'
-        );
-        return;
-    }
-
-    window.__QMD_MCT_ALREADY_RUNNING__ = true;
-
-    // Load jQuery- and jQuery UI-Bibliothek
+    // Load jQuery- and jQuery UI-Bibliothek for draggable window
     var jqueryScript = document.createElement('script');
-    jqueryScript.src =
-        'https://code.jquery.com/jquery-3.6.0.min.js';
+    jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
     document.head.appendChild(jqueryScript);
-
     var jqueryUIScript = document.createElement('script');
-    jqueryUIScript.src =
-        'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
+    jqueryUIScript.src = 'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.53"
+    var myVersion = "1.9.5.144"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -460,7 +456,6 @@
 
     // Function activate button
     const activateBtn = document.createElement('button');
-    activateBtn.dataset.qmdMctInstance = "true";
     activateBtn.innerHTML = `
       <img
         src="${activateImage}"
@@ -491,79 +486,36 @@
     let watchdogTimer;
 
     function appendActivatorBtn() {
-        const existingButton = document.querySelector(
-            '[data-qmd-mct-instance="true"]'
-        );
-
-        // Falls bereits ein anderer Button existiert, keinen weiteren erzeugen
-        if (existingButton && existingButton !== activateBtn) {
-            return;
-        }
-
-        const modBtn = document.querySelector(
-            '[data-test-selector="mod-view-link"]'
-        );
-
+        const modBtn = document.querySelector('[data-test-selector="mod-view-link"]');
         if (modBtn) {
-            const twitchBar =
-                modBtn.parentElement.parentElement.parentElement;
-
+            const twitchBar = modBtn.parentElement.parentElement.parentElement;
             if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(
-                    LOGPREFIX,
-                    'Mod tools available. Adding button...'
-                );
-
-                twitchBar.insertBefore(
-                    activateBtn,
-                    twitchBar.firstChild
-                );
-
+                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
+                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
                 document.body.appendChild(d);
                 $('.raidhammer').draggable();
             }
-        } else if (
-            document.location.toString().includes('/moderator/')
-        ) {
-            const chatBtn = document.querySelector(
-                '[data-a-target="chat-send-button"]'
-            );
 
-            if (!chatBtn) {
-                return;
-            }
-
-            const twitchBar =
-                chatBtn.parentElement.parentElement.parentElement;
-
+        } else if (document.location.toString().includes('/moderator/')){
+            const chatBtn = document.querySelector('[data-a-target="chat-send-button"]');
+            const twitchBar = chatBtn.parentElement.parentElement.parentElement;
             if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(
-                    LOGPREFIX,
-                    'Mod tools available. Adding button...'
-                );
-
-                twitchBar.insertBefore(
-                    activateBtn,
-                    twitchBar.firstChild
-                );
-
+                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
+                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
                 document.body.appendChild(d);
                 $('.raidhammer').draggable();
             }
-        } else {
+        }
+        else {
             if (enabled) {
-                console.log(
-                    LOGPREFIX,
-                    'Mod tools not found. Stopped chatWatchdog!'
-                );
-
+                console.log(LOGPREFIX, 'Mod tools not found. Stopped chatWatchdog!');
                 watchdogTimer = enabled = false;
                 hide();
             }
         }
     }
     setInterval(appendActivatorBtn, 5000);
-// ####################################################################################################
+
     // Eventhandler
     d.querySelector(".ignoreAll").onclick = ignoreAll;
     d.querySelector(".banAll").onclick = banAll;
@@ -1086,6 +1038,18 @@ function modMenu() {
     'use strict';
 
     /*
+     * modMenu() wird weiter unten jede Sekunde aufgerufen.
+     * Diese Sperre sorgt dafür, dass nur eine einzige
+     * Mod-Menü-Instanz mit ihrem eigenen Button und Timer
+     * aktiv bleibt.
+     */
+    if (window.__QMD_MOD_MENU_INITIALIZED__) {
+        return;
+    }
+
+    window.__QMD_MOD_MENU_INITIALIZED__ = true;
+
+    /*
      * Verwendet den vorhandenen Schlüssel aus dem Script.
      * Falls QMD_LocalStorageModChannels nicht existiert,
      * wird der alte Schlüssel myModChannels verwendet.
@@ -1350,44 +1314,56 @@ function modMenu() {
      * passiert weiter unten in appendModMenuButton(),
      * genau wie in deiner alten Version.
      */
-
-
-    // NEU...
     function createDropdownMenu() {
-        const menus = document.querySelectorAll('#modMenu');
+        /*
+         * Verhindert, dass mehrere sichtbare Menüs
+         * gleichzeitig erstellt werden.
+         */
 
-        // Überzählige Buttons entfernen
-        menus.forEach((menu, index) => {
-            if (index > 0) {
-                menu.remove();
-            }
-        });
-
-        // Bereits vorhandenen Button nicht erneut erstellen
         if (document.getElementById('modMenu')) {
-            return;
+        return;
         }
 
-//        const referenceButton = document.querySelector(
-//            '[data-a-target="home-link"]'
-//        );
+//        const existingMenu =
+//            document.getElementById('modMenu');
 //
-//        if (!referenceButton || !referenceButton.parentElement) {
+//        if (existingMenu) {
 //            return;
 //        }
 
-        const dropdownMenu = referenceButton.parentElement;
+        const referenceButton =
+            document.querySelector(
+                '[data-a-target="home-link"]'
+            );
+
+        /*
+         * Twitch rendert den Header teilweise verzögert.
+         * Beim nächsten Aufruf von modMenu() wird erneut versucht,
+         * das Menü zu erstellen.
+         */
+        if (
+            !referenceButton ||
+            !referenceButton.parentElement
+        ) {
+            return;
+        }
+
+        const dropdownMenu =
+            referenceButton.parentElement;
 
         dropdownMenu.style.position = 'relative';
         dropdownMenu.style.display = 'flex';
         dropdownMenu.style.alignItems = 'center';
 
-        const dropdownButton = document.createElement('button');
+        /*
+         * Button mit dem Mod-Schwert erstellen.
+         */
+        const dropdownButton =
+            document.createElement('button');
 
         dropdownButton.id = 'modMenu';
         dropdownButton.type = 'button';
         dropdownButton.title = 'Mod-Channels';
-
 
         dropdownButton.innerHTML = `
             <img
@@ -1412,7 +1388,6 @@ function modMenu() {
             background-color: transparent;
             cursor: pointer;
         `;
-
 
         /*
          * Dropdown-Liste erstellen.
