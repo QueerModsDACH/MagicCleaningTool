@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.42
+// @version         1.9.5.43
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.42"
+    var myVersion = "1.9.5.43"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -1038,11 +1038,20 @@ function modMenu() {
     'use strict';
 
     /*
+     * Verwendet den vorhandenen Schlüssel aus dem Script.
+     * Falls QMD_LocalStorageModChannels nicht existiert,
+     * wird der alte Schlüssel myModChannels verwendet.
+     */
+    const MOD_CHANNEL_STORAGE_KEY =
+        typeof QMD_LocalStorageModChannels !== 'undefined'
+            ? QMD_LocalStorageModChannels
+            : 'myModChannels';
+    /*
      * Liest die gespeicherten Mod-Kanäle aus dem localStorage.
      */
     function processStoredModChannels() {
         const stored = localStorage.getItem(
-            QMD_LocalStorageModChannels
+            MOD_CHANNEL_STORAGE_KEY
         );
 
         try {
@@ -1095,22 +1104,21 @@ function modMenu() {
         });
 
         localStorage.setItem(
-            QMD_LocalStorageModChannels,
+            MOD_CHANNEL_STORAGE_KEY,
             JSON.stringify(uniqueChannels)
         );
-
-        /*
-         * Falls QMD_modChannelStore an anderer Stelle
-         * verwendet wird, halten wir es ebenfalls aktuell.
-         */
-        if (Array.isArray(QMD_modChannelStore)) {
+        // Falls QMD_modChannelStore an anderer Stelle verwendet wird, halten wir es ebenfalls aktuell.
+        if (
+            typeof QMD_modChannelStore !== 'undefined' &&
+            Array.isArray(QMD_modChannelStore)
+        ) {
             QMD_modChannelStore.length = 0;
             QMD_modChannelStore.push(...uniqueChannels);
         }
 
         return uniqueChannels;
     }
-
+// ##########
     /*
      * Sucht Twitchs Mod-View-Link.
      *
@@ -1251,24 +1259,14 @@ function modMenu() {
 
         const storedChannels =
             processStoredModChannels();
-
-        /*
-         * Kanal bereits vorhanden:
-         * Trotzdem sicherstellen, dass die Liste alphabetisch sortiert ist.
-         */
-        if (
-            storedChannels.includes(currentChannel)
-        ) {
+        // Kanal bereits vorhanden: Trotzdem sicherstellen, dass die Liste alphabetisch sortiert ist.
+        if (storedChannels.includes(currentChannel)) {
             sortAndStoreModChannels(
                 storedChannels
             );
-
             return;
         }
-
-        /*
-         * Neuen Kanal hinzufügen und alphabetisch speichern.
-         */
+        // Neuen Kanal hinzufügen und alphabetisch speichern.
         storedChannels.push(currentChannel);
 
         const sortedChannels =
