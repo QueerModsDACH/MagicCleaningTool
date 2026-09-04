@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.50
+// @version         1.9.5.52
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -16,21 +16,20 @@
 
 /* jshint esversion: 8 */
 
-(function() {
-    'use strict';
-        // Verhindert, dass das Userscript mehrfach aktiv wird
-        if (document.querySelector('[data-qmd-mct-instance="true"]')) {
-            return;
-        }
-    function processStoredModChannels() {
-        const QMD_storedModChannels = JSON.parse(localStorage.getItem("myModChannels"));
-    }
-
-    processStoredModChannels
-})();
-
 
 (function (urlCount) {
+    'use strict';
+
+    // Verhindert mehrere gleichzeitig laufende Script-Instanzen
+    if (window.__QMD_MCT_ALREADY_RUNNING__) {
+        console.warn(
+            '[QMD-MCT] Script läuft bereits – zweite Instanz beendet.'
+        );
+        return;
+    }
+
+    // Sofort setzen, bevor Timer oder externe Scripts gestartet werden
+    window.__QMD_MCT_ALREADY_RUNNING__ = true;
 
     // Load jQuery- and jQuery UI-Bibliothek for draggable window
     var jqueryScript = document.createElement('script');
@@ -41,7 +40,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.50"
+    var myVersion = "1.9.5.52"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -1349,47 +1348,40 @@ function modMenu() {
      * passiert weiter unten in appendModMenuButton(),
      * genau wie in deiner alten Version.
      */
+
+
+    // NEU...
     function createDropdownMenu() {
-        /*
-         * Verhindert, dass mehrere sichtbare Menüs
-         * gleichzeitig erstellt werden.
-         */
-        const existingMenu =
-            document.getElementById('modMenu');
+        // Überzählige Buttons entfernen
+        const menus = document.querySelectorAll('#modMenu');
 
-        if (existingMenu) {
+        menus.forEach((menu, index) => {
+            if (index > 0) {
+                menu.remove();
+            }
+        });
+
+        // Existiert bereits ein Button, keinen neuen erstellen
+        if (document.getElementById('modMenu')) {
             return;
         }
 
-        const referenceButton =
-            document.querySelector(
-                '[data-a-target="home-link"]'
-            );
+        // Twitch-Button suchen
+        const referenceButton = document.querySelector(
+            '[data-a-target="home-link"]'
+        );
 
-        /*
-         * Twitch rendert den Header teilweise verzögert.
-         * Beim nächsten Aufruf von modMenu() wird erneut versucht,
-         * das Menü zu erstellen.
-         */
-        if (
-            !referenceButton ||
-            !referenceButton.parentElement
-        ) {
+        if (!referenceButton || !referenceButton.parentElement) {
             return;
         }
 
-        const dropdownMenu =
-            referenceButton.parentElement;
+        const dropdownMenu = referenceButton.parentElement;
 
         dropdownMenu.style.position = 'relative';
         dropdownMenu.style.display = 'flex';
         dropdownMenu.style.alignItems = 'center';
 
-        /*
-         * Button mit dem Mod-Schwert erstellen.
-         */
-        const dropdownButton =
-            document.createElement('button');
+        const dropdownButton = document.createElement('button');
 
         dropdownButton.id = 'modMenu';
         dropdownButton.type = 'button';
@@ -1418,6 +1410,7 @@ function modMenu() {
             background-color: transparent;
             cursor: pointer;
         `;
+
 
         /*
          * Dropdown-Liste erstellen.
