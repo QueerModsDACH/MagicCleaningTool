@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.52
+// @version         1.9.5.53
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -20,27 +20,29 @@
 (function (urlCount) {
     'use strict';
 
-    // Verhindert mehrere gleichzeitig laufende Script-Instanzen
+    // Globale Sperre gegen mehrere laufende Script-Instanzen
     if (window.__QMD_MCT_ALREADY_RUNNING__) {
         console.warn(
-            '[QMD-MCT] Script läuft bereits – zweite Instanz beendet.'
+            '[QMD-MCT] Zweite Script-Instanz beendet.'
         );
         return;
     }
 
-    // Sofort setzen, bevor Timer oder externe Scripts gestartet werden
     window.__QMD_MCT_ALREADY_RUNNING__ = true;
 
-    // Load jQuery- and jQuery UI-Bibliothek for draggable window
+    // Load jQuery- and jQuery UI-Bibliothek
     var jqueryScript = document.createElement('script');
-    jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+    jqueryScript.src =
+        'https://code.jquery.com/jquery-3.6.0.min.js';
     document.head.appendChild(jqueryScript);
+
     var jqueryUIScript = document.createElement('script');
-    jqueryUIScript.src = 'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
+    jqueryUIScript.src =
+        'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.52"
+    var myVersion = "1.9.5.53"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -1352,28 +1354,27 @@ function modMenu() {
 
     // NEU...
     function createDropdownMenu() {
-        // Überzählige Buttons entfernen
         const menus = document.querySelectorAll('#modMenu');
 
+        // Überzählige Buttons entfernen
         menus.forEach((menu, index) => {
             if (index > 0) {
                 menu.remove();
             }
         });
 
-        // Existiert bereits ein Button, keinen neuen erstellen
+        // Bereits vorhandenen Button nicht erneut erstellen
         if (document.getElementById('modMenu')) {
             return;
         }
 
-        // Twitch-Button suchen
-        const referenceButton = document.querySelector(
-            '[data-a-target="home-link"]'
-        );
-
-        if (!referenceButton || !referenceButton.parentElement) {
-            return;
-        }
+//        const referenceButton = document.querySelector(
+//            '[data-a-target="home-link"]'
+//        );
+//
+//        if (!referenceButton || !referenceButton.parentElement) {
+//            return;
+//        }
 
         const dropdownMenu = referenceButton.parentElement;
 
@@ -1386,6 +1387,7 @@ function modMenu() {
         dropdownButton.id = 'modMenu';
         dropdownButton.type = 'button';
         dropdownButton.title = 'Mod-Channels';
+
 
         dropdownButton.innerHTML = `
             <img
