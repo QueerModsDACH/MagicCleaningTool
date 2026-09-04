@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.9
+// @version         1.9.5.10
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -38,7 +38,7 @@
     document.head.appendChild(jqueryUIScript);
 
     // Global required Variables
-    var myVersion = "1.9.5.9"
+    var myVersion = "1.9.5.10"
     var text;
     var banReason;
     var defaultBanReason = "Ban by QMD list"
@@ -288,8 +288,19 @@
     <div id="import" class="import" style="display:none;">
         <textarea id="textfield" placeholder="Ein Benutzername pro Zeile"></textarea>
         <div style="text-align:right;">
-            <input type="text" id="banReason" style="width:66%" placeholder="Gib einen Ban-Grund an" />
-            <button class="importBtn" title="Benutzer zur Liste hinzufügen" style="width:32%">➕ Hinzufügen</button>
+            <input
+                type="text"
+                id="banReason"
+                style="width:66%"
+                placeholder="Gib einen Ban-Grund an"
+            />
+            <button
+                class="importBtn"
+                title="Benutzer zur Liste hinzufügen"
+                style="width:32%"
+            >
+                ➕ Hinzufügen
+            </button>
         </div>
         <div style="align:center">
           <button id="Button_Suspect" class="Button_Suspect" style="width:32%" title="Importiert die 'suspect' Liste">${Button_Suspect_Text}</button>
@@ -385,8 +396,15 @@
         const usersToBan = [];
         const banReasonInput = document.getElementById("banReason");
 
-        if (!useUnban) {
-            // Der Grund dieser Liste wird für die aktuelle Liste gesetzt
+//        if (!useUnban) {
+//            // Der Grund dieser Liste wird für die aktuelle Liste gesetzt
+//            banReasonInput.value = listBanReason;
+//        }
+        if (
+            !useUnban &&
+            banReasonInput &&
+            banReasonInput.value.trim() === ""
+        ) {
             banReasonInput.value = listBanReason;
         }
 
