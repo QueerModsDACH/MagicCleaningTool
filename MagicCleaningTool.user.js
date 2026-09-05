@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.2
+// @version 1.9.6.3
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -52,7 +52,7 @@
     // ############################################################################
 
     // Versionsnummer des Tools
-    const toolVersion = '1.9.6.2';
+    const toolVersion = '1.9.6.3';
 
     // Allgemeine Text- und Aktionsvariablen
     let currentBanReason;
@@ -1103,71 +1103,28 @@
     // ##### JAVASCRIPT: EVENTHANDLER FÜR DAS TOOLFENSTER #####
     // ############################################################################
 
-    toolContainer.querySelector('.ignoreAll').onclick =
-        ignoreAllUsers;
-
-    toolContainer.querySelector('.banAll').onclick =
-        banAllUsers;
-
-    toolContainer.querySelector('.closeBtn').onclick =
-        hideTool;
-
-    toolContainer.querySelector('.modChannels').onclick =
-        addAllModChannels;
-
-    toolContainer.querySelector('.unbanAll').onclick =
-        unbanAllUsers;
-
-    toolContainer.querySelector('.back').onclick =
-        toggleBackView;
-
-    toolContainer.querySelector('.pause').onclick =
-        togglePause;
-
-    toolContainer.querySelector('.princess').onclick =
-        toggleTheme;
-
-    toolContainer.querySelector('.qmd').onclick =
-        openQueerModsDach;
-
-    toolContainer.querySelector('.import button.mdgBtnUnban').onclick =
-        importUnbanList;
-
-    toolContainer.querySelector('.import button.Button_Suspect').onclick =
-        importSuspectList;
-
-    toolContainer.querySelector('.import button.mdgBtnTrolls1').onclick =
-        importTrollList1;
-
-    toolContainer.querySelector('.import button.mdgBtnTrolls2').onclick =
-        importTrollList2;
-
-    toolContainer.querySelector('.import button.mdgBtnSec').onclick =
-        importSecurityList;
-
-    toolContainer.querySelector('.import button.mdgBtnViewerBots').onclick =
-        importViewerBotsList;
-
-    toolContainer.querySelector('.import button.mdgBtnFlirtyMad').onclick =
-        importFlirtyMadList;
-
-    toolContainer.querySelector('.import button.mdgBtnFollowBot').onclick =
-        importFollowBotList;
-
-    toolContainer.querySelector('.import button.mdgBtnAdvertising').onclick =
-        importAdvertisingList;
-
-    toolContainer.querySelector('.import button.mdgBtnSpamBots').onclick =
-        importSpamBotsList;
-
-    toolContainer.querySelector('.import button.mdgBtnPornBot').onclick =
-        importPornBotList;
-
-    toolContainer.querySelector('.import button.importBtn').onclick =
-        importManualList;
-
-    toolContainer.querySelector('.clearBannedUsers').onclick =
-        clearBannedUsers;
+    toolContainer.querySelector('.ignoreAll').onclick = ignoreAllUsers;
+    toolContainer.querySelector('.banAll').onclick = banAllUsers;
+    toolContainer.querySelector('.closeBtn').onclick = hideTool;
+    toolContainer.querySelector('.modChannels').onclick = addAllModChannels;
+    toolContainer.querySelector('.unbanAll').onclick = unbanAllUsers;
+    toolContainer.querySelector('.back').onclick = toggleBackView;
+    toolContainer.querySelector('.pause').onclick = togglePause;
+    toolContainer.querySelector('.princess').onclick = toggleTheme;
+    toolContainer.querySelector('.qmd').onclick = openQueerModsDach;
+    toolContainer.querySelector('.import button.mdgBtnUnban').onclick = importUnbanList;
+    toolContainer.querySelector('.import button.Button_Suspect').onclick = importSuspectList;
+    toolContainer.querySelector('.import button.mdgBtnTrolls1').onclick = importTrollList1;
+    toolContainer.querySelector('.import button.mdgBtnTrolls2').onclick = importTrollList2;
+    toolContainer.querySelector('.import button.mdgBtnSec').onclick = importSecurityList;
+    toolContainer.querySelector('.import button.mdgBtnViewerBots').onclick = importViewerBotsList;
+    toolContainer.querySelector('.import button.mdgBtnFlirtyMad').onclick = importFlirtyMadList;
+    toolContainer.querySelector('.import button.mdgBtnFollowBot').onclick = importFollowBotList;
+    toolContainer.querySelector('.import button.mdgBtnAdvertising').onclick = importAdvertisingList;
+    toolContainer.querySelector('.import button.mdgBtnSpamBots').onclick = importSpamBotsList;
+    toolContainer.querySelector('.import button.mdgBtnPornBot').onclick = importPornBotList;
+    toolContainer.querySelector('.import button.importBtn').onclick = importManualList;
+    toolContainer.querySelector('.clearBannedUsers').onclick = clearBannedUsers;
 
     // ############################################################################
     // ##### JAVASCRIPT: DELEGIERTE EVENTHANDLER #####
@@ -1978,23 +1935,12 @@
     // ############################################################################
 
     function renderUserList() {
-        toolContainer.querySelector('.ignoreAll').style.display =
-            queuedUsers.size ? '' : 'none';
-
-        toolContainer.querySelector('.banAll').style.display =
-            queuedUsers.size ? '' : 'none';
-
-        toolContainer.querySelector('.back').style.display =
-            queuedUsers.size ? '' : 'none';
-
-        toolContainer.querySelector('.pause').style.display =
-            queuedUsers.size ? '' : 'none';
-
-        toolContainer.querySelector('.modChannels').style.display =
-            queuedUsers.size ? '' : 'none';
-
-        toolContainer.querySelector('.unbanAll').style.display =
-            queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.ignoreAll').style.display = queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.banAll').style.display = queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.back').style.display = queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.pause').style.display = queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.modChannels').style.display = queuedUsers.size ? '' : 'none';
+        toolContainer.querySelector('.unbanAll').style.display = queuedUsers.size ? '' : 'none';
 
         const renderUserListItem = (username) => `
             <li>
