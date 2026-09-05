@@ -2,7 +2,7 @@
 // @name            Magic Cleaning Tool
 // @description     Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace       Magic Cleaning Tool ...for a little better World
-// @version         1.9.5.144
+// @version         1.9.6.1
 // @match           *://www.twitch.tv/*
 // @run-at          document-idle
 // @author          QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,6 +15,10 @@
 // ==/UserScript==
 
 /* jshint esversion: 8 */
+
+// ############################################################################
+// ##### USERSCRIPT-KOPF UND METADATEN #####
+// ############################################################################
 (function() {
     'use strict';
 
@@ -26,134 +30,305 @@
     processStoredModChannels
 })();
 
-
 (function (urlCount) {
+// ############################################################################
+// ##### EXTERNE BIBLIOTHEKEN LADEN #####
+// ############################################################################
 
-    // Load jQuery- and jQuery UI-Bibliothek for draggable window
-    var jqueryScript = document.createElement('script');
-    jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-    document.head.appendChild(jqueryScript);
-    var jqueryUIScript = document.createElement('script');
-    jqueryUIScript.src = 'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
-    document.head.appendChild(jqueryUIScript);
+// jQuery für draggable Fenster und weitere DOM-Funktionen laden
+var jqueryScript = document.createElement('script');
+jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+document.head.appendChild(jqueryScript);
 
-    // Global required Variables
-    var myVersion = "1.9.5.144"
-    var text;
-    var banReason;
-    var defaultBanReason = "Ban by QMD list"
-    var urlBannlisten = "https://github.com/QueerModsDACH/Listen"
-    var mdgBtnAdvertisingText = "➕ advertising"
-    var mdgBtnFollowBotText = "➕ follow_bots"
-    var Button_Suspect_Text = "➕ suspect"
-    var mdgBtnTrollsText1 = "➕ hate_trolls_2"
-    var mdgBtnTrollsText2 = "➕ hate_trolls_3"
-    var mdgBtnSec = "➕ security_list"
-    var mdgBtnUnbanText = "➕ UNBAN"
-    var mdgBtnViewerBotsText = "➕ viewer_bots"
-    var mdgBtnFlirtyMadText = "➕ mad_tos"
-    var mdgBtnSpamBotsText = "➕ spam_bots"
-    var mdgBtnPornBotText = "➕ porn_bots"
-    var Button_Info_Text = "info"
-    var replaceFooter = "none"
-    var isPaused = false;
-    var queueList = new Set();
-    var ignoredList = new Set();
-    var bannedList = new Set();
-    var LOGPREFIX = "[QMD_CCD_1]";
-    const activateImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
-    const delay = t => new Promise(r => setTimeout(r, t));
-    // Zentrale Delay-Werte in Millisekunden
-      const DELAY_BAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
-      const DELAY_UNBAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
-      const DELAY_PAUSE_CHECK = 1000; // 1000
-//  var themePrincess = "#FF1493"
-    var themePrincess = "#2F9C0B"
-//  var themeNormal = "#34AE0C"
-//  var themeNormal = "#EC007F"
-    var themeNormal = "#9146FF"
-    var themeTextColor = themeNormal
-    var updateText = "die Version ist aktuell ツ"
-    const urlParts = document.location.href.split("/");
-    var activeChannel;
-    if (urlParts[urlParts.length - 1] == "home" ) {
-      activeChannel = urlParts[urlParts.length - 2]
-    } else {
-      activeChannel = urlParts[urlParts.length - 1]
-    }
-    var QMD_LocalStorageBanList = activeChannel + "_banlist"
-    var QMD_LocalStorageUnBanList = activeChannel + "_unbanlist"
-    var QMD_bannedUsersStore = JSON.parse(localStorage.getItem(QMD_LocalStorageBanList)) || [];
-    var QMD_unbannedUsersStore = JSON.parse(localStorage.getItem(QMD_LocalStorageUnBanList)) || [];
-    var modChannelList = new Set();
-    var QMD_LocalStorageModChannels = "myModChannels"
-    var QMD_modChannelStore = JSON.parse(localStorage.getItem(QMD_LocalStorageModChannels)) || [];
+// jQuery UI für draggable Elemente laden
+var jqueryUIScript = document.createElement('script');
+jqueryUIScript.src = 'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
+document.head.appendChild(jqueryUIScript);
 
-    console.log(urlParts[urlParts.length - 2])
-    // This function is requried to disable CORS for importing the GitHub ban lists
-    // https://portswigger.net/web-security/cors
-    var QMD_corsDisable = {
-      "id": 1,
-      "enabled": true,
-      "name": "Allow All",
-      "match": "<all_urls>",
-      "action": "allow",
-      "responseHeaders": [{
-        "name": "Access-Control-Allow-Origin",
-        "value": "*"
-      }]
-    };
 
-    if (typeof GM_setValue === "function") {
-        GM_setValue("QMD_corsDisable", JSON.stringify(QMD_corsDisable));
-    } else {
-        localStorage.setItem("QMD_corsDisable", JSON.stringify(QMD_corsDisable));
-    }
+// ############################################################################
+// ##### ALLGEMEINE ANWENDUNGSKONFIGURATION #####
+// ############################################################################
 
-    if (typeof GM_addStyle == 'undefined') {
-      GM_addStyle = (css) => {
+// Versionsnummer des Tools
+var myVersion = "1.9.6.1";
+
+// Allgemeine Text- und Aktionsvariablen
+var text;
+var banReason;
+var defaultBanReason = "Ban by QMD list";
+
+// URL zur Quelle der Bannlisten
+var urlBannlisten =
+    "https://github.com/QueerModsDACH/Listen";
+
+// Log-Präfix für die Browser-Konsole
+var LOGPREFIX = "[QMD_MCT_1]";
+const BROWSER_STORAGE_PREFIX = '_QMD_';
+
+// ############################################################################
+// ##### TEXTE DER LISTEN- UND AKTIONSBUTTONS #####
+// ############################################################################
+
+// Werbe- und Botlisten
+var mdgBtnAdvertisingText = "➕ advertising";
+var mdgBtnFollowBotText = "➕ follow_bots";
+var mdgBtnViewerBotsText = "➕ viewer_bots";
+var mdgBtnSpamBotsText = "➕ spam_bots";
+var mdgBtnPornBotText = "➕ porn_bots";
+
+// Verdächtige Benutzer und Trolle
+var Button_Suspect_Text = "➕ suspect";
+var mdgBtnTrollsText1 = "➕ hate_trolls_2";
+var mdgBtnTrollsText2 = "➕ hate_trolls_3";
+
+// Sicherheits- und TOS-Listen
+var mdgBtnSec = "➕ security_list";
+var mdgBtnFlirtyMadText = "➕ mad_tos";
+
+// Unban- und Informationsbutton
+var mdgBtnUnbanText = "➕ UNBAN";
+var Button_Info_Text = "info";
+
+
+// ############################################################################
+// ##### LAUFZEITSTATUS UND BENUTZERLISTEN #####
+// ############################################################################
+
+// Allgemeiner Status der Benutzeroberfläche
+var replaceFooter = "none";
+var isPaused = false;
+
+// Interne Listen während der Laufzeit
+var queueList = new Set();
+var ignoredList = new Set();
+var bannedList = new Set();
+
+// Aktuell aktive Twitch-Seite beziehungsweise Kanal
+var activeChannel;
+
+
+// ############################################################################
+// ##### DESIGN- UND THEME-EINSTELLUNGEN #####
+// ############################################################################
+
+// Bild für den Aktivierungsbutton
+const activateImage =
+    'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
+
+// Alternative Theme-Farben
+// var themePrincess = "#FF1493";
+var themePrincess = "#2F9C0B";
+
+// var themeNormal = "#34AE0C";
+// var themeNormal = "#EC007F;
+var themeNormal = "#9146FF";
+
+var themeTextColor = themeNormal;
+
+// Text für die Versionsprüfung
+var updateText = "die Version ist aktuell ツ";
+
+
+// ############################################################################
+// ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN #####
+// ############################################################################
+
+// Allgemeine Delay-Funktion
+const delay = t =>
+    new Promise(resolve => setTimeout(resolve, t));
+
+// Zentrale Delay-Werte in Millisekunden
+//
+// Hinweis:
+// Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen
+// dadurch möglicherweise zu schnell hintereinander ausgeführt werden
+// und ein Shadow-Ban-Risiko entstehen kann.
+const DELAY_BAN_ACTION = 130;
+const DELAY_UNBAN_ACTION = 130;
+const DELAY_PAUSE_CHECK = 1000;
+
+
+// ############################################################################
+// ##### AKTUELLEN KANAL AUS DER URL ERMITTELN #####
+// ############################################################################
+
+const urlParts = document.location.href.split("/");
+
+if (urlParts[urlParts.length - 1] == "home") {
+    activeChannel = urlParts[urlParts.length - 2];
+} else {
+    activeChannel = urlParts[urlParts.length - 1];
+}
+
+console.log(
+    "Aktiver Kanal:",
+    activeChannel
+);
+
+
+// ############################################################################
+// ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN #####
+// ############################################################################
+
+// Für jeden Twitch-Kanal werden eigene Listen verwendet
+var QMD_LocalStorageBanList =
+    `${BROWSER_STORAGE_PREFIX}${activeChannel}_banlist`;
+
+var QMD_LocalStorageUnBanList =
+    `${BROWSER_STORAGE_PREFIX}${activeChannel}_unbanlist`;
+
+
+// ############################################################################
+// ##### GESPEICHERTE BANN- UND UNBANLISTEN LADEN #####
+// ############################################################################
+
+var QMD_bannedUsersStore =
+    JSON.parse(
+        localStorage.getItem(QMD_LocalStorageBanList)
+    ) || [];
+
+var QMD_unbannedUsersStore =
+    JSON.parse(
+        localStorage.getItem(QMD_LocalStorageUnBanList)
+    ) || [];
+
+
+// ############################################################################
+// ##### GESPEICHERTE MOD-KANÄLE LADEN #####
+// ############################################################################
+
+var modChannelList = new Set();
+
+var QMD_LocalStorageModChannels =
+    "myModChannels";
+
+var QMD_modChannelStore =
+    JSON.parse(
+        localStorage.getItem(QMD_LocalStorageModChannels)
+    ) || [];
+
+
+// ############################################################################
+// ##### CORS-KONFIGURATION FÜR DEN IMPORT VON GITHUB-LISTEN #####
+// ############################################################################
+//
+// Diese Konfiguration wird benötigt, damit externe Bannlisten
+// von GitHub importiert werden können.
+//
+// Hintergrundinformationen:
+// https://portswigger.net/web-security/cors
+
+var QMD_corsDisable = {
+    "id": 1,
+    "enabled": true,
+    "name": "Allow All",
+    "match": "<all_urls>",
+    "action": "allow",
+    "responseHeaders": [
+        {
+            "name": "Access-Control-Allow-Origin",
+            "value": "*"
+        }
+    ]
+};
+
+
+// ############################################################################
+// ##### CORS-KONFIGURATION SPEICHERN #####
+// ############################################################################
+
+if (typeof GM_setValue === "function") {
+    GM_setValue(
+        "QMD_corsDisable",
+        JSON.stringify(QMD_corsDisable)
+    );
+} else {
+    localStorage.setItem(
+        "QMD_corsDisable",
+        JSON.stringify(QMD_corsDisable)
+    );
+}
+
+
+// ############################################################################
+// ##### GM_ADDSTYLE-FALLBACK DEFINIEREN #####
+// ############################################################################
+//
+// Falls die Userscript-Umgebung GM_addStyle nicht bereitstellt,
+// wird eine einfache Ersatzfunktion verwendet.
+
+if (typeof GM_addStyle == 'undefined') {
+    GM_addStyle = (css) => {
         const style = document.createElement('style');
+
         style.textContent = css;
         document.head.appendChild(style);
-      }
-    }
+    };
+}
 
-    // Frontend
-    var html = /*html*/`
-    <div id="raidhammer" class="raidhammer">
+
+// ############################################################################
+// ##### HTML-STRUKTUR UND STYLES DES MOD-TOOLS #####
+// ############################################################################
+
+
+// ============================================================================
+// ##### FRONTEND: HTML-GRUNDAUFBAU #####
+// ============================================================================
+
+var html = /*html*/ `
+
+<div id="raidhammer" class="raidhammer">
+
+
+    <!-- ====================================================================
+         ##### CSS: HAUPTFENSTER UND ALLGEMEINE DARSTELLUNG #####
+         ==================================================================== -->
+
     <style>
+
+        /* --------------------------------------------------------------------
+           Hauptfenster
+           -------------------------------------------------------------------- */
+
         .raidhammer {
             z-index: 99999999;
             position: absolute;
             top: 250px;
             left: 350px;
+
+            min-width: 525px;
+            padding: 5px;
+
             background-color: var(--color-background-base);
             color: var(--color-text-base);
-            border: var(--border-width-default) solid var(--color-border-base);
+
+            border: var(--border-width-default)
+                solid var(--color-border-base);
+
             box-shadow: var(--shadow-elevation-2);
-            padding: 5px;
-            min-width: 525px;
+
             cursor: move;
         }
+
+
+        /* --------------------------------------------------------------------
+           Verschiebbarer Fensterbereich
+           -------------------------------------------------------------------- */
 
         .raidhammer .handle {
             cursor: move;
             user-select: none;
         }
 
+
+        /* --------------------------------------------------------------------
+           SVG- und Textfarben
+           -------------------------------------------------------------------- */
+
         .raidhammer .svg {
-            color: "${themeTextColor}"
-        }
-
-        .raidhammer .header {
-            display: flex;
-        }
-
-        .raidhammer .logo {
-            font-weight: var(--font-weight-semibold);
-            min-height: 30px;
-            line-height: 30px;
-            --color: var(--color-text-link);
+            color: "${themeTextColor}";
         }
 
         .raidhammer h6 {
@@ -165,11 +340,36 @@
             background: none;
         }
 
+
+        /* --------------------------------------------------------------------
+           Kopfbereich und Logo
+           -------------------------------------------------------------------- */
+
+        .raidhammer .header {
+            display: flex;
+        }
+
+        .raidhammer .logo {
+            min-height: 30px;
+            line-height: 30px;
+
+            font-weight: var(--font-weight-semibold);
+
+            --color: var(--color-text-link);
+        }
+
+
+        /* --------------------------------------------------------------------
+           Benutzerliste
+           -------------------------------------------------------------------- */
+
         .raidhammer .list {
-            padding: 8px;
             min-height: 8em;
             max-height: 350px;
+            padding: 8px;
+
             overflow-y: auto;
+
             background: var(--color-background-body);
         }
 
@@ -179,71 +379,123 @@
 
         .raidhammer .empty {
             padding: 2em;
+
             text-align: center;
             opacity: 0.85;
         }
 
+
+        /* --------------------------------------------------------------------
+           Allgemeine Buttons
+           -------------------------------------------------------------------- */
+
         .raidhammer button {
-            padding: 0 .5em;
-            margin: 1px;
-            font-weight: var(--font-weight-semibold);
-            border-radius: var(--border-radius-medium);
-            font-size: var(--button-text-default);
-            height: var(--button-size-default);
-            background-color: var(--color-background-button-secondary-default);
-            color: var(--color-text-button-secondary);
             min-width: 30px;
+            height: var(--button-size-default);
+            margin: 1px;
+            padding: 0 0.5em;
+
+            border-radius: var(--border-radius-medium);
+
+            background-color:
+                var(--color-background-button-secondary-default);
+
+            color: var(--color-text-button-secondary);
+
+            font-size: var(--button-text-default);
+            font-weight: var(--font-weight-semibold);
+
             text-align: center;
         }
 
+
+        /* --------------------------------------------------------------------
+           Ban- und Unban-Buttons
+           -------------------------------------------------------------------- */
+
         .raidhammer button.ban {
-            var(--color-text-button-primary);
-            background: #f44336;
             min-width: 60px;
+
+            background: #f44336;
+            color: var(--color-text-button-primary);
         }
 
         .raidhammer button.banAll {
-            var(--color-text-button-primary);
-            background: #f44336;
             min-width: 40px;
-        }
 
-        .raidhammer button.unbanAll {
-            var(--color-text-button-primary);
-            background: #34ae0c;
-            min-width: 40px;
+            background: #f44336;
+            color: var(--color-text-button-primary);
         }
 
         .raidhammer button.unban {
-            var(--color-text-button-primary);
-            background: #34ae0c;
             min-width: 60px;
+
+            background: #34ae0c;
+            color: var(--color-text-button-primary);
         }
 
+        .raidhammer button.unbanAll {
+            min-width: 40px;
+
+            background: #34ae0c;
+            color: var(--color-text-button-primary);
+        }
+
+
+        /* --------------------------------------------------------------------
+           Importbereich
+           -------------------------------------------------------------------- */
+
         .raidhammer .import {
-            background: var(--color-background-body);
-            border: var(--border-width-default) solid var(--color-border-base);
+            min-height: 20px;
             padding: 3px;
-            min-height: 20px
+
+            background: var(--color-background-body);
+
+            border: var(--border-width-default)
+                solid var(--color-border-base);
         }
 
         .raidhammer textarea {
-            background: var(--color-background-base);
-            color: var(--color-text-base);
-            padding: .5em;
-            font-size: 10pt;
             width: 100%;
             min-height: 8em;
+            padding: 0.5em;
+
+            background: var(--color-background-base);
+            color: var(--color-text-base);
+
+            font-size: 10pt;
         }
+
+
+        /* --------------------------------------------------------------------
+           Fußbereich
+           -------------------------------------------------------------------- */
+
         .raidhammer .footer {
             font-size: 7pt;
             text-align: center;
         }
 
     </style>
+
+
+    <!-- ====================================================================
+         ##### HTML: KOPFBEREICH #####
+         ==================================================================== -->
+
     <div class="header">
-        <span style="flex-grow: -1;"></span>
-        <span class="handle" style="flex-grow: -1;"></span>
+
+        <span style="flex-grow: 0;"></span>
+
+        <span
+            class="handle"
+            style="flex-grow: 0;"
+        ></span>
+
+
+        <!-- Optionaler Zauberstab-Button -->
+
         <button
             class="princess"
             style="display: none;"
@@ -257,9 +509,16 @@
             >
         </button>
 
-        <span style="flex-grow: 1;"></span>
-        <h5 id="header" class="logo">
 
+        <span style="flex-grow: 1;"></span>
+
+
+        <!-- Repository-Link und Tool-Titel -->
+
+        <h5
+            id="header"
+            class="logo"
+        >
             <a
                 href="https://github.com/QueerModsDACH/MagicCleaningTool"
                 target="_blank"
@@ -279,244 +538,702 @@
 
                 &nbsp;&nbsp;for a little better World
             </a>
+        </h5>
 
-        </h5><br>
+
+        <br>
 
         <span style="flex-grow: 1;"></span>
-        <button class="closeBtn">_</button>
+
+
+        <!-- Fenster schließen beziehungsweise minimieren -->
+
+        <button class="closeBtn">
+            _
+        </button>
+
     </div>
-    <div id="import" class="import" style="display:none;">
-        <textarea id="textfield" placeholder="Ein Benutzername pro Zeile"></textarea>
-        <div style="text-align:right;">
+
+
+    <!-- ====================================================================
+         ##### HTML: IMPORTBEREICH #####
+         ==================================================================== -->
+
+    <div
+        id="import"
+        class="import"
+        style="display: none;"
+    >
+
+        <!-- Benutzer manuell importieren -->
+
+        <textarea
+            id="textfield"
+            placeholder="Ein Benutzername pro Zeile"
+        ></textarea>
+
+
+        <!-- Ban-Grund und Import-Button -->
+
+        <div style="text-align: right;">
+
             <input
                 type="text"
                 id="banReason"
-                style="width:66%"
-                placeholder="hier optional ein eigenen Ban-Grund angeben"
-            />
+                style="width: 66%;"
+                placeholder="Hier optional einen eigenen Ban-Grund angeben"
+            >
+
             <button
                 class="importBtn"
                 title="Benutzer zur Liste hinzufügen"
-                style="width:32%"
+                style="width: 32%;"
             >
                 ➕ Hinzufügen
             </button>
+
         </div>
-        <div style="align:center">
-          <button id="Button_Suspect" class="Button_Suspect" style="width:32%" title="Importiert die 'suspect' Liste">${Button_Suspect_Text}</button>
-          <button id="mdgBtnTrolls1" class="mdgBtnTrolls1" style="width:33%" title="Importiert die hate_troll Liste 2">${mdgBtnTrollsText1}</button>
-          <button id="mdgBtnTrolls2" class="mdgBtnTrolls2" style="width:32%" title="Importiert die hate_troll Liste 3">${mdgBtnTrollsText2}</button>
+
+
+        <!-- Vordefinierte Listen: Kategorie 1 -->
+
+        <div style="text-align: center;">
+
+            <button
+                id="Button_Suspect"
+                class="Button_Suspect"
+                style="width: 32%;"
+                title="Importiert die suspect-Liste"
+            >
+                ${Button_Suspect_Text}
+            </button>
+
+            <button
+                id="mdgBtnTrolls1"
+                class="mdgBtnTrolls1"
+                style="width: 33%;"
+                title="Importiert die hate_troll-Liste 2"
+            >
+                ${mdgBtnTrollsText1}
+            </button>
+
+            <button
+                id="mdgBtnTrolls2"
+                class="mdgBtnTrolls2"
+                style="width: 32%;"
+                title="Importiert die hate_troll-Liste 3"
+            >
+                ${mdgBtnTrollsText2}
+            </button>
+
         </div>
-        <div style="align:center">
-          <button id="mdgBtnSec" class="mdgBtnSec" style="width:32%" title="Importiert security_ban Liste">${mdgBtnSec}</button>
-          <button id="mdgBtnViewerBots" class="mdgBtnViewerBots" style="width:33%" title="Importiert viewerbot Liste">${mdgBtnViewerBotsText}</button>
-          <button id="mdgBtnPornBot" class="mdgBtnPornBot" style="width:32%" title="Importiert porn_bots Liste">${mdgBtnPornBotText}</button>
+
+
+        <!-- Vordefinierte Listen: Kategorie 2 -->
+
+        <div style="text-align: center;">
+
+            <button
+                id="mdgBtnSec"
+                class="mdgBtnSec"
+                style="width: 32%;"
+                title="Importiert die security_ban-Liste"
+            >
+                ${mdgBtnSec}
+            </button>
+
+            <button
+                id="mdgBtnViewerBots"
+                class="mdgBtnViewerBots"
+                style="width: 33%;"
+                title="Importiert die viewerbot-Liste"
+            >
+                ${mdgBtnViewerBotsText}
+            </button>
+
+            <button
+                id="mdgBtnPornBot"
+                class="mdgBtnPornBot"
+                style="width: 32%;"
+                title="Importiert die porn_bots-Liste"
+            >
+                ${mdgBtnPornBotText}
+            </button>
+
         </div>
-        <div style="align:center">
-          <button id="mdgBtnFlirtyMad" class="mdgBtnFlirtyMad" style="width:32%" title="Importiert mad_tos Liste">${mdgBtnFlirtyMadText}</button>
-          <button id="mdgBtnFollowBot" class="mdgBtnFollowBot" style="width:33%" title="Importiert follow_bots Liste">${mdgBtnFollowBotText}</button>
-          <button id="mdgBtnUnban" class="mdgBtnUnban" style="width:32%;color:#34ae0c" title="Importiert unban Liste">${mdgBtnUnbanText}</button>
+
+
+        <!-- Vordefinierte Listen: Kategorie 3 -->
+
+        <div style="text-align: center;">
+
+            <button
+                id="mdgBtnFlirtyMad"
+                class="mdgBtnFlirtyMad"
+                style="width: 32%;"
+                title="Importiert die mad_tos-Liste"
+            >
+                ${mdgBtnFlirtyMadText}
+            </button>
+
+            <button
+                id="mdgBtnFollowBot"
+                class="mdgBtnFollowBot"
+                style="width: 33%;"
+                title="Importiert die follow_bots-Liste"
+            >
+                ${mdgBtnFollowBotText}
+            </button>
+
+            <button
+                id="mdgBtnUnban"
+                class="mdgBtnUnban"
+                style="width: 32%; color: #34ae0c;"
+                title="Importiert die unban-Liste"
+            >
+                ${mdgBtnUnbanText}
+            </button>
+
         </div>
-        <div style="align:center">
-          <button id="mdgBtnAdvertising" class="mdgBtnAdvertising" style="width:32%" title="Importiert advertising Liste">${mdgBtnAdvertisingText}</button>
-          <button id="mdgBtnSpamBots" class="mdgBtnSpamBots" style="width:33%" title="Importiert spam_bots Liste">${mdgBtnSpamBotsText}</button>
-          <button id="qmd" class="qmd" style="width:32%" title="QueerModsDACH">${Button_Info_Text}</button>
-          <script>document.getElementById("qmd").addEventListener("click", function () {window.open("https://github.com/QueerModsDACH", "_blank");});</script>
+
+
+        <!-- Vordefinierte Listen: Kategorie 4 -->
+
+        <div style="text-align: center;">
+
+            <button
+                id="mdgBtnAdvertising"
+                class="mdgBtnAdvertising"
+                style="width: 32%;"
+                title="Importiert die advertising-Liste"
+            >
+                ${mdgBtnAdvertisingText}
+            </button>
+
+            <button
+                id="mdgBtnSpamBots"
+                class="mdgBtnSpamBots"
+                style="width: 33%;"
+                title="Importiert die spam_bots-Liste"
+            >
+                ${mdgBtnSpamBotsText}
+            </button>
+
+            <button
+                id="qmd"
+                class="qmd"
+                style="width: 32%;"
+                title="QueerModsDACH"
+            >
+                ${Button_Info_Text}
+            </button>
+
         </div>
+
     </div>
+
+
+    <!-- ====================================================================
+         ##### HTML: HAUPTBEREICH UND BENUTZERLISTE #####
+         ==================================================================== -->
+
     <div class="body">
+
+        <!-- Dynamisch erzeugte Liste -->
+
         <div class="list"></div>
-        <div style="display: flex; margin: 5px;">
-          <span style="flex-grow: 2;"></span>
-          <div id="buttons" class="buttons">
-            <button class="back" title="Zurück">⬅</button>
-            <button class="clearBannedUsers" title="Gespeicherte gebannte Benutzer löschen">🗑 ban-cache leeren</button>
-            <button class="MooBot" title="Öffnet Moobot" onclick="window.open('https://moo.bot/','_blank')"><img src="https://moo.bot/favicon.ico" height="17px" style = "position:relative; top:1px;"></button>
-            <button class="NightBot" title="Öffnet Nightbot" onclick="window.open('https://nightbot.tv/dashboard','_blank')"><img src="https://logodix.com/logo/1909538.png" height="17px" style = "position:relative; top:1px;"></button>
-            <button class="comanderRoot" title="Öffnet ComanderRoot" onclick="window.open('https://twitch-tools.rootonline.de','_blank')">🤖</button>
-            <button class="sLabs" title="Öffnet Streamlabs" onclick="window.open('https://streamlabs.com/dashboard','_blank')"><img src="https://cdn.streamlabs.com/static/imgs/streamlabs-logos/app-icon/streamlabs-app-icon.png" height="17px" style = "position:relative; top:1px;"></button>
-            <button class="sElements" title="Öffnet Streamelements" onclick="window.open('https://streamelements.com/dashboard','_blank')"><img src="https://avatars.githubusercontent.com/u/16977512?s=17&v=4" style="position:relative; top:1px;"></button>
-            <button class="chatstats" title="Öffnet SullyGnome Kanal-Statistiken für den aktuellen Kanal" onclick="window.open('https://sullygnome.com/channel/${activeChannel}','_blank')">📈</button>
-            <button class="modLogger" title="Öffnet ModLogger für den aktuellen Kanal" onclick="window.open('https://jvpeek.github.io/twitchmodlogger/?channel=${activeChannel}','_blank')">🗄</button>
-            <button class="chatDeepStats" title="Öffnet ChatStats für den aktuellen Kanal" onclick="window.open('https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${activeChannel}','_blank')">🩻</button>
-            <button class="pause" id="pause" title="Pause/Play">⏸</button>
-            <button class="modChannels" title="Alle als Mod-Kanal hinzufügen">⚔</button>
-            <button class="ignoreAll" title="Liste leeren">🗑</button>
-            <button class="unbanAll" title="Alle auf der Liste entbannen">⚕</button>
-            <button class="banAll" title="Alle auf der Liste bannen">👹</button>
-          </div>
+
+
+        <!-- Aktionsleiste -->
+
+        <div
+            style="display: flex; margin: 5px;"
+        >
+
+            <span style="flex-grow: 2;"></span>
+
+            <div
+                id="buttons"
+                class="buttons"
+            >
+
+                <!-- Ansichten -->
+
+                <button
+                    class="back"
+                    title="Zurück"
+                >
+                    ⬅
+                </button>
+
+
+                <!-- Cache und externe Werkzeuge -->
+
+                <button
+                    class="clearBannedUsers"
+                    title="Gespeicherte gebannte Benutzer löschen"
+                >
+                    🗑 ban-cache leeren
+                </button>
+
+                <button
+                    class="MooBot"
+                    title="Öffnet Moobot"
+                    onclick="window.open('https://moo.bot/', '_blank')"
+                >
+                    <img
+                        src="https://moo.bot/favicon.ico"
+                        height="17px"
+                        style="position: relative; top: 1px;"
+                    >
+                </button>
+
+                <button
+                    class="NightBot"
+                    title="Öffnet Nightbot"
+                    onclick="window.open('https://nightbot.tv/dashboard', '_blank')"
+                >
+                    <img
+                        src="https://logodix.com/logo/1909538.png"
+                        height="17px"
+                        style="position: relative; top: 1px;"
+                    >
+                </button>
+
+                <button
+                    class="comanderRoot"
+                    title="Öffnet ComanderRoot"
+                    onclick="window.open('https://twitch-tools.rootonline.de', '_blank')"
+                >
+                    🤖
+                </button>
+
+                <button
+                    class="sLabs"
+                    title="Öffnet Streamlabs"
+                    onclick="window.open('https://streamlabs.com/dashboard', '_blank')"
+                >
+                    <img
+                        src="https://cdn.streamlabs.com/static/imgs/streamlabs-logos/app-icon/streamlabs-app-icon.png"
+                        height="17px"
+                        style="position: relative; top: 1px;"
+                    >
+                </button>
+
+                <button
+                    class="sElements"
+                    title="Öffnet Streamelements"
+                    onclick="window.open('https://streamelements.com/dashboard', '_blank')"
+                >
+                    <img
+                        src="https://avatars.githubusercontent.com/u/16977512?s=17&v=4"
+                        style="position: relative; top: 1px;"
+                    >
+                </button>
+
+
+                <!-- Kanalstatistiken und Moderationswerkzeuge -->
+
+                <button
+                    class="chatstats"
+                    title="Öffnet SullyGnome-Kanalstatistiken"
+                    onclick="window.open('https://sullygnome.com/channel/${activeChannel}', '_blank')"
+                >
+                    📈
+                </button>
+
+                <button
+                    class="modLogger"
+                    title="Öffnet ModLogger für den aktuellen Kanal"
+                    onclick="window.open('https://jvpeek.github.io/twitchmodlogger/?channel=${activeChannel}', '_blank')"
+                >
+                    🗄
+                </button>
+
+                <button
+                    class="chatDeepStats"
+                    title="Öffnet ChatStats für den aktuellen Kanal"
+                    onclick="window.open('https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${activeChannel}', '_blank')"
+                >
+                    🩻
+                </button>
+
+
+                <!-- Listenaktionen -->
+
+                <button
+                    class="pause"
+                    id="pause"
+                    title="Pause/Play"
+                >
+                    ⏸
+                </button>
+
+                <button
+                    class="modChannels"
+                    title="Alle als Mod-Kanal hinzufügen"
+                >
+                    ⚔
+                </button>
+
+                <button
+                    class="ignoreAll"
+                    title="Liste leeren"
+                >
+                    🗑
+                </button>
+
+                <button
+                    class="unbanAll"
+                    title="Alle auf der Liste entbannen"
+                >
+                    ⚕
+                </button>
+
+                <button
+                    class="banAll"
+                    title="Alle auf der Liste bannen"
+                >
+                    👹
+                </button>
+
+            </div>
         </div>
+
     </div>
-    <div id="footer" class="footer">
-    <a href="https://github.com/QueerModsDACH/Listen" target="_blank" style="color: ${themeTextColor};" id="replaceFooter" titel="Zur Liste">MagicCleaningTool Listen</a>&nbsp;-&nbsp;
-    <a id="manoooo" href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js" title="Aktuelle Version installieren">${updateText}</a>&nbsp;-&nbsp;&nbsp;${myVersion}
-    </div>`;
 
-    // Append Bann-Hammer after page load
-    document.addEventListener('DOMContentLoaded', () => {
-      document.body.appendChild(raidhammer);
-    });
 
-    // Function PauseButton
-    function pauseBanAll() {
-       isPaused = !isPaused;
-        const btn = document.getElementById("pause");
+    <!-- ====================================================================
+         ##### HTML: FOOTER #####
+         ==================================================================== -->
 
-        if (!btn) {
-            return;
-        }
+    <div
+        id="footer"
+        class="footer"
+    >
 
-        if (isPaused) {
-            btn.value = "unpause";
-            btn.textContent = "Unpause";
-        } else {
-            btn.value = "pause";
-            btn.textContent = "Pause";
-        }
+        <a
+            href="https://github.com/QueerModsDACH/Listen"
+            target="_blank"
+            style="color: ${themeTextColor};"
+            id="replaceFooter"
+            title="Zur Liste"
+        >
+            MagicCleaningTool Listen
+        </a>
+
+        &nbsp;-&nbsp;
+
+        <a
+            id="manoooo"
+            href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
+            title="Aktuelle Version installieren"
+        >
+            ${updateText}
+        </a>
+
+        &nbsp;-&nbsp;&nbsp;
+
+        ${myVersion}
+
+    </div>
+
+</div>
+`;
+
+
+// ############################################################################
+// ##### JAVASCRIPT: TOOLFENSTER IN DIE SEITE EINFÜGEN #####
+// ############################################################################
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.appendChild(raidhammer);
+});
+
+
+// ############################################################################
+// ##### JAVASCRIPT: PAUSE-FUNKTION #####
+// ############################################################################
+
+function pauseBanAll() {
+    isPaused = !isPaused;
+
+    const btn = document.getElementById('pause');
+
+    if (!btn) {
+        return;
     }
 
-    // Function Modal
-    const d = document.createElement("div");
-    d.style.display = 'none';
-    d.innerHTML = html;
-    const textarea = d.querySelector("textarea");
+    if (isPaused) {
+        btn.value = 'unpause';
+        btn.textContent = 'Unpause';
+    } else {
+        btn.value = 'pause';
+        btn.textContent = 'Pause';
+    }
+}
 
-    // Generic function to import MDG lists
-    function importMDGGeneric(
-        url,
-        buttonId,
-        defaultBtnText,
-        footerText,
-        footerHref,
-        useUnban = false,
-        listBanReason = defaultBanReason
+
+// ############################################################################
+// ##### JAVASCRIPT: MODAL UND TOOL-CONTAINER ERSTELLEN #####
+// ############################################################################
+
+const d = document.createElement('div');
+
+d.style.display = 'none';
+d.innerHTML = html;
+
+const textarea = d.querySelector('textarea');
+
+
+// ############################################################################
+// ##### JAVASCRIPT: ALLGEMEINER IMPORT VON LISTEN #####
+// ############################################################################
+
+function importMDGGeneric(
+    url,
+    buttonId,
+    defaultBtnText,
+    footerText,
+    footerHref,
+    useUnban = false,
+    listBanReason = defaultBanReason
+) {
+    queueList.clear();
+
+    const usersToBan = [];
+    const banReasonInput =
+        document.getElementById('banReason');
+
+
+    // ------------------------------------------------------------------------
+    // ##### BAN-GRUND DER AKTUELLEN LISTE SETZEN #####
+    // ------------------------------------------------------------------------
+
+    if (
+        !useUnban &&
+        banReasonInput &&
+        banReasonInput.value.trim() === ''
     ) {
-        queueList.clear();
-
-        const usersToBan = [];
-        const banReasonInput = document.getElementById("banReason");
-
-//        if (!useUnban) {
-//            // Der Grund dieser Liste wird für die aktuelle Liste gesetzt
-//            banReasonInput.value = listBanReason;
-//        }
-        if (
-            !useUnban &&
-            banReasonInput &&
-            banReasonInput.value.trim() === ""
-        ) {
-            banReasonInput.value = listBanReason;
-        }
-
-        fetch(url)
-            .then((response) => response.text())
-            .then((data) => {
-                usersToBan.push(
-                    ...data.split("\n").filter(Boolean)
-                );
-
-                if (useUnban) {
-                    usersToBan.forEach((name) => {
-                        userAlreadyUnBanned(
-                            name.replace(/\r/g, ""),
-                            buttonId
-                        );
-                    });
-                } else {
-                    usersToBan.forEach((name) => {
-                        userAlreadyBanned(
-                            name.replace(/\r/g, ""),
-                            buttonId
-                        );
-                    });
-                }
-
-                if (buttonId === "mdgBtnAdvertising") {
-                    renderList();
-                }
-
-                textarea.value = "";
-                insertText(Array.from(queueList));
-
-                if (queueList.size !== 0) {
-                    toggleImport();
-                    renderList();
-                }
-            });
-
-        document.getElementById("replaceFooter").innerHTML = footerText;
-        document.getElementById("replaceFooter").href = footerHref;
-
-        function dumdidum() {
-            document.getElementById(buttonId).innerHTML = defaultBtnText;
-        }
-
-        setTimeout(dumdidum, 5000);
+        banReasonInput.value = listBanReason;
     }
 
-    // Function activate button
-    const activateBtn = document.createElement('button');
-    activateBtn.innerHTML = `
-      <img
+
+    // ------------------------------------------------------------------------
+    // ##### LISTE VOM SERVER LADEN #####
+    // ------------------------------------------------------------------------
+
+    fetch(url)
+        .then((response) => response.text())
+        .then((data) => {
+            usersToBan.push(
+                ...data
+                    .split('\n')
+                    .filter(Boolean)
+            );
+
+
+            // ---------------------------------------------------------------
+            // ##### BENUTZER ALS BAN ODER UNBAN VERARBEITEN #####
+            // ---------------------------------------------------------------
+
+            if (useUnban) {
+                usersToBan.forEach((name) => {
+                    userAlreadyUnBanned(
+                        name.replace(/\r/g, ''),
+                        buttonId
+                    );
+                });
+            } else {
+                usersToBan.forEach((name) => {
+                    userAlreadyBanned(
+                        name.replace(/\r/g, ''),
+                        buttonId
+                    );
+                });
+            }
+
+
+            // ---------------------------------------------------------------
+            // ##### LISTE AKTUALISIEREN #####
+            // ---------------------------------------------------------------
+
+            if (buttonId === 'mdgBtnAdvertising') {
+                renderList();
+            }
+
+            textarea.value = '';
+
+            insertText(Array.from(queueList));
+
+            if (queueList.size !== 0) {
+                toggleImport();
+                renderList();
+            }
+        });
+
+
+    // ------------------------------------------------------------------------
+    // ##### FOOTER-TEXT AKTUALISIEREN #####
+    // ------------------------------------------------------------------------
+
+    document.getElementById('replaceFooter').innerHTML =
+        footerText;
+
+    document.getElementById('replaceFooter').href =
+        footerHref;
+
+
+    // ------------------------------------------------------------------------
+    // ##### BUTTON-TEXT ZURÜCKSETZEN #####
+    // ------------------------------------------------------------------------
+
+    function resetImportButtonText() {
+        document.getElementById(buttonId).innerHTML =
+            defaultBtnText;
+    }
+
+    setTimeout(resetImportButtonText, 5000);
+}
+
+
+// ############################################################################
+// ##### JAVASCRIPT: AKTIVIERUNGSBUTTON #####
+// ############################################################################
+
+const activateBtn = document.createElement('button');
+
+activateBtn.innerHTML = `
+    <img
         src="${activateImage}"
         alt="Aktivieren"
         width="25"
         height="25"
-      >
-    `;
+    >
+`;
 
-    activateBtn.style.cssText = `
-        display: inline-flex;
-        -webkit-box-align: center;
-        align-items: center;
-        -webkit-box-pack: center;
-        justify-content: center;
-        user-select: none;
-        height: var(--button-size-default);
-        width: var(--button-size-default);
-        border-radius: var(--border-radius-medium);
-        background-color: var(--color-background-button-text-default);
-        color: var(--color-fill-button-icon);
-    `;
-    activateBtn.setAttribute('id', 'hammer');
-    activateBtn.setAttribute('title', 'Magic Cleaning Tool');
-    activateBtn.onclick = toggle;
+activateBtn.style.cssText = `
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
 
-    let enabled;
-    let watchdogTimer;
+    height: var(--button-size-default);
+    width: var(--button-size-default);
 
-    function appendActivatorBtn() {
-        const modBtn = document.querySelector('[data-test-selector="mod-view-link"]');
-        if (modBtn) {
-            const twitchBar = modBtn.parentElement.parentElement.parentElement;
-            if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
-                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
-                document.body.appendChild(d);
-                $('.raidhammer').draggable();
-            }
+    border-radius: var(--border-radius-medium);
 
-        } else if (document.location.toString().includes('/moderator/')){
-            const chatBtn = document.querySelector('[data-a-target="chat-send-button"]');
-            const twitchBar = chatBtn.parentElement.parentElement.parentElement;
-            if (twitchBar && !twitchBar.contains(activateBtn)) {
-                console.log(LOGPREFIX, 'Mod tools available. Adding button...');
-                twitchBar.insertBefore(activateBtn, twitchBar.firstChild);
-                document.body.appendChild(d);
-                $('.raidhammer').draggable();
-            }
+    background-color:
+        var(--color-background-button-text-default);
+
+    color: var(--color-fill-button-icon);
+`;
+
+activateBtn.setAttribute('id', 'hammer');
+activateBtn.setAttribute(
+    'title',
+    'Magic Cleaning Tool'
+);
+activateBtn.onclick = toggle;
+
+let enabled;
+let watchdogTimer;
+
+
+// ############################################################################
+// ##### JAVASCRIPT: AKTIVIERUNGSBUTTON IM TWITCH-MENÜ #####
+// ############################################################################
+
+function appendActivatorBtn() {
+    const modBtn = document.querySelector(
+        '[data-test-selector="mod-view-link"]'
+    );
+
+    if (modBtn) {
+        const twitchBar =
+            modBtn.parentElement
+                .parentElement
+                .parentElement;
+
+        if (
+            twitchBar &&
+            !twitchBar.contains(activateBtn)
+        ) {
+            console.log(
+                LOGPREFIX,
+                'Mod tools available. Adding button...'
+            );
+
+            twitchBar.insertBefore(
+                activateBtn,
+                twitchBar.firstChild
+            );
+
+            document.body.appendChild(d);
+            $('.raidhammer').draggable();
         }
-        else {
-            if (enabled) {
-                console.log(LOGPREFIX, 'Mod tools not found. Stopped chatWatchdog!');
-                watchdogTimer = enabled = false;
-                hide();
-            }
+
+    } else if (
+        document.location
+            .toString()
+            .includes('/moderator/')
+    ) {
+        const chatBtn = document.querySelector(
+            '[data-a-target="chat-send-button"]'
+        );
+
+        if (!chatBtn) {
+            return;
+        }
+
+        const twitchBar =
+            chatBtn.parentElement
+                .parentElement
+                .parentElement;
+
+        if (
+            twitchBar &&
+            !twitchBar.contains(activateBtn)
+        ) {
+            console.log(
+                LOGPREFIX,
+                'Mod tools available. Adding button...'
+            );
+
+            twitchBar.insertBefore(
+                activateBtn,
+                twitchBar.firstChild
+            );
+
+            document.body.appendChild(d);
+            $('.raidhammer').draggable();
+        }
+
+    } else {
+        if (enabled) {
+            console.log(
+                LOGPREFIX,
+                'Mod tools not found. Stopped chatWatchdog!'
+            );
+
+            watchdogTimer = false;
+            enabled = false;
+
+            hide();
         }
     }
-    setInterval(appendActivatorBtn, 5000);
+}
 
-    // Eventhandler
+setInterval(
+    appendActivatorBtn,
+    5000
+);
+
+
+// ############################################################################
+// ##### JAVASCRIPT: EVENTHANDLER FÜR DAS TOOLFENSTER #####
+// ############################################################################
+
     d.querySelector(".ignoreAll").onclick = ignoreAll;
     d.querySelector(".banAll").onclick = banAll;
     d.querySelector(".closeBtn").onclick = hide;
@@ -541,7 +1258,10 @@
     d.querySelector(".clearBannedUsers").onclick = clearBannedUsers;
 
 
-    // delegated events
+// ############################################################################
+// ##### JAVASCRIPT: DELEGIERTE EVENTHANDLER #####
+// ############################################################################
+
     d.addEventListener('click', e => {
         const target = e.target;
         if (target.matches('.ignore')) ignoreItem(target.dataset.user);
@@ -555,17 +1275,39 @@
     });
 
 
-    // Damit wird die gespeicherte Bannliste des aktuell geöffneten Kanals gelöscht. Der übrige Browser-Cache sowie die gespeicherten Entbannlisten und Mod-Kanäle bleiben unangetastet.
-    function clearBannedUsers() {
-        localStorage.removeItem(QMD_LocalStorageBanList);
-        bannedUsersStore.length = 0;
-        renderList();
-    }
+// ############################################################################
+// ##### JAVASCRIPT: GESPEICHERTE BANNLISTE LÖSCHEN #####
+// ############################################################################
 
-    function qmd() {
-      window.open("https://github.com/QueerModsDACH/");
-    }
+// Damit wird die gespeicherte Bannliste des aktuell geöffneten Kanals
+// gelöscht. Der übrige Browser-Cache sowie die gespeicherten Entbannlisten
+// und Mod-Kanäle bleiben unangetastet.
 
+function clearBannedUsers() {
+    localStorage.removeItem(
+        QMD_LocalStorageBanList
+    );
+
+    bannedUsersStore.length = 0;
+
+    renderList();
+}
+
+
+// ############################################################################
+// ##### JAVASCRIPT: QUEER MODS DACH ÖFFNEN #####
+// ############################################################################
+
+function qmd() {
+    window.open(
+        'https://github.com/QueerModsDACH/'
+    );
+}
+
+
+// ############################################################################
+// ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #####
+// ############################################################################
     // Function toggleTheme
     function toggleTheme() {
         var dataHeader = document.getElementById('header').innerHTML;
@@ -593,6 +1335,9 @@
         }
     }
 
+// ############################################################################
+// ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #####
+// ############################################################################
     // Function toggle pause/play
     function togglePause() {
       const btn = document.getElementById("pause");
@@ -684,6 +1429,9 @@
       document.getElementById("replaceFooter").href = "https://github.com/QueerModsDACH/Listen"
     }
 
+// ############################################################################
+// ##### BENUTZERSTATUS UND LISTENAKTIONEN #####
+// ############################################################################
     // Function to verify a user is already banned/unbanned in a channel
     function userAlreadyBanned(user, button) {
       if (!QMD_bannedUsersStore.includes(user)) {
@@ -702,6 +1450,9 @@
       }
     }
 
+// ############################################################################
+// ##### IMPORT UND EINGABEVERARBEITUNG #####
+// ############################################################################
     // Function to import the list
     function importList() {
       const textarea = d.querySelector(".import textarea");
@@ -836,6 +1587,9 @@
       );
     }
 
+// ############################################################################
+// ##### EINZEL- UND MASSENAKTIONEN #####
+// ############################################################################
     // Functions to ban/unban/ignore/accountage
     function ignoreAll() {
       console.log(LOGPREFIX, 'Ignoring all...', queueList);
@@ -948,7 +1702,9 @@
       }
     }
 
-    // Functions for sending chat messages
+// ############################################################################
+// ##### NACHRICHTEN AN DEN TWITCH-CHAT SENDEN #####
+// ############################################################################
     function sendMessage(msg) {
       try{
         sendMessageOld(msg);
@@ -1001,7 +1757,9 @@
       _triggerKeyboardEvent(editor, 13);
     }
 
-    // Render list or show logo
+// ############################################################################
+// ##### LISTENANZEIGE UND RENDERING #####
+// ############################################################################
     function renderList() {
       d.querySelector(".ignoreAll").style.display = queueList.size ? '' : 'none';
       d.querySelector(".banAll").style.display = queueList.size ? '' : 'none';
@@ -1031,36 +1789,28 @@
     }
 })();
 
-// ####################################################################################################
-// ####################################################################################################
-// MOD-MENU
+// ############################################################################
+// ##### MOD-MENU #####
+// ############################################################################
 function modMenu() {
     'use strict';
 
-    /*
-     * modMenu() wird weiter unten jede Sekunde aufgerufen.
-     * Diese Sperre sorgt dafür, dass nur eine einzige
-     * Mod-Menü-Instanz mit ihrem eigenen Button und Timer
-     * aktiv bleibt.
-     */
+    // modMenu() wird weiter unten jede Sekunde aufgerufen.
+    // Diese Sperre sorgt dafür, dass nur eine einzige Mod-Menü-Instanz mit ihrem eigenen Button und Timer aktiv bleibt.
     if (window.__QMD_MOD_MENU_INITIALIZED__) {
         return;
     }
 
     window.__QMD_MOD_MENU_INITIALIZED__ = true;
 
-    /*
-     * Verwendet den vorhandenen Schlüssel aus dem Script.
-     * Falls QMD_LocalStorageModChannels nicht existiert,
-     * wird der alte Schlüssel myModChannels verwendet.
-     */
+    // Verwendet den vorhandenen Schlüssel aus dem Script.
+    // Falls QMD_LocalStorageModChannels nicht existiert, wird der alte Schlüssel myModChannels verwendet.
     const MOD_CHANNEL_STORAGE_KEY =
         typeof QMD_LocalStorageModChannels !== 'undefined'
             ? QMD_LocalStorageModChannels
             : 'myModChannels';
-    /*
-     * Liest die gespeicherten Mod-Kanäle aus dem localStorage.
-     */
+
+    // Liest die gespeicherten Mod-Kanäle aus dem localStorage.
     function processStoredModChannels() {
         const stored = localStorage.getItem(
             MOD_CHANNEL_STORAGE_KEY
@@ -1085,10 +1835,7 @@ function modMenu() {
         }
     }
 
-    /*
-     * Sortiert die Kanäle alphabetisch und speichert
-     * die sortierte Liste dauerhaft im localStorage.
-     */
+    // Sortiert die Kanäle alphabetisch und speichert die sortierte Liste dauerhaft im localStorage.
     function sortAndStoreModChannels(channels) {
         const uniqueChannels = [
             ...new Set(
@@ -1130,13 +1877,12 @@ function modMenu() {
 
         return uniqueChannels;
     }
-// ##########
-    /*
-     * Sucht Twitchs Mod-View-Link.
-     *
-     * Der wichtigste Selektor ist der aus deiner alten Version.
-     * Die weiteren Selektoren dienen nur als Fallback.
-     */
+
+// ############################################################################
+// ##### MOD-ANSICHT UND MOD-BERECHTIGUNGEN #####
+// ############################################################################
+
+    // Sucht Twitchs Mod-View-Link per Selektor.
     function getModViewButton() {
         return document.querySelector(
             [
@@ -1146,12 +1892,7 @@ function modMenu() {
         );
     }
 
-    /*
-     * Ermittelt den Kanalnamen aus dem Mod-View-Link.
-     *
-     * Beispiel:
-     * https://www.twitch.tv/moderator/channelname
-     */
+    // Ermittelt den Kanalnamen aus dem Mod-View-Link. z.B.: https://www.twitch.tv/moderator/channelname
     function getChannelFromModViewLink() {
         const modButton = getModViewButton();
 
@@ -1159,10 +1900,7 @@ function modMenu() {
             return null;
         }
 
-        /*
-         * Je nach Twitch-Version kann das Ziel im href,
-         * data-href oder in einem Kind-Element stehen.
-         */
+        // Je nach Twitch-Version kann das Ziel im href, data-href oder in einem Kind-Element stehen.
         const possibleHref =
             modButton.href ||
             modButton.getAttribute('href') ||
@@ -1200,12 +1938,7 @@ function modMenu() {
         }
     }
 
-    /*
-     * Ermittelt den Kanalnamen direkt aus der Mod-URL.
-     *
-     * Beispiel:
-     * /moderator/channelname
-     */
+    // Ermittelt den Kanalnamen direkt aus der Mod-URL. z.B.: /moderator/channelname
     function getChannelFromModeratorUrl() {
         const match = window.location.pathname.match(
             /^\/moderator\/([^/]+)/
@@ -1220,14 +1953,13 @@ function modMenu() {
         ).toLowerCase();
     }
 
-    /*
-     * Speichert den aktuell moderierten Kanal automatisch.
-     *
-     * In der normalen Kanalansicht muss Twitchs Mod-View-Link
-     * vorhanden sein.
-     *
-     * In der Mod-Ansicht wird zusätzlich ein Chat-Element geprüft.
-     */
+// ############################################################################
+// ##### MOD-KANÄLE AUTOMATISCH SPEICHERN #####
+// ############################################################################
+
+    // Speichert den aktuell moderierten Kanal automatisch.
+    // In der normalen Kanalansicht muss Twitchs Mod-View-Link vorhanden sein.
+    // In der Mod-Ansicht wird zusätzlich ein Chat-Element geprüft.
     function addCurrentModChannel() {
         const modButton = getModViewButton();
 
@@ -1242,17 +1974,13 @@ function modMenu() {
 
         let currentChannel = null;
 
-        /*
-         * Normale Twitch-Kanalansicht
-         */
+        // Normale Twitch-Kanalansicht
         if (modButton) {
             currentChannel =
                 getChannelFromModViewLink();
         }
 
-        /*
-         * Twitch-Mod-Ansicht
-         */
+        // Twitch-Mod-Ansicht
         if (
             !currentChannel &&
             isModeratorPage &&
@@ -1262,9 +1990,7 @@ function modMenu() {
                 getChannelFromModeratorUrl();
         }
 
-        /*
-         * Ohne eindeutige Mod-Berechtigung wird nichts gespeichert.
-         */
+        // Ohne eindeutige Mod-Berechtigung wird nichts gespeichert.
         if (!currentChannel) {
             return;
         }
@@ -1292,10 +2018,7 @@ function modMenu() {
             ' wurde automatisch zu den ModChannels hinzugefügt'
         );
 
-        /*
-         * Dropdown-Liste sofort aktualisieren,
-         * falls das Menü bereits erstellt wurde.
-         */
+        // Dropdown-Liste sofort aktualisieren, falls das Menü bereits erstellt wurde.
         if (
             typeof window.refreshQMDModMenu ===
             'function'
@@ -1306,41 +2029,25 @@ function modMenu() {
         }
     }
 
-    /*
-     * Erstellt das Dropdown-Menü.
-     *
-     * Der Button wird hier nur erzeugt.
-     * Das tatsächliche Einfügen neben dem Twitch-Logo
-     * passiert weiter unten in appendModMenuButton(),
-     * genau wie in deiner alten Version.
-     */
-    function createDropdownMenu() {
-        /*
-         * Verhindert, dass mehrere sichtbare Menüs
-         * gleichzeitig erstellt werden.
-         */
+// ############################################################################
+// ##### MOD-KANAL-DROPDOWN ERSTELLEN #####
+// ############################################################################
 
+    // Erstellt das Dropdown-Menü.
+    // Der Button wird hier nur erzeugt.
+    // Das tatsächliche Einfügen neben dem Twitch-Logo passiert weiter unten in appendModMenuButton().
+    function createDropdownMenu() {
+        // Verhindert, dass mehrere sichtbare Menüs gleichzeitig erstellt werden.
         if (document.getElementById('modMenu')) {
         return;
         }
-
-//        const existingMenu =
-//            document.getElementById('modMenu');
-//
-//        if (existingMenu) {
-//            return;
-//        }
 
         const referenceButton =
             document.querySelector(
                 '[data-a-target="home-link"]'
             );
 
-        /*
-         * Twitch rendert den Header teilweise verzögert.
-         * Beim nächsten Aufruf von modMenu() wird erneut versucht,
-         * das Menü zu erstellen.
-         */
+        // Twitch rendert den Header teilweise verzögert. Beim nächsten Aufruf von modMenu() wird erneut versucht, das Menü zu erstellen.
         if (
             !referenceButton ||
             !referenceButton.parentElement
@@ -1355,9 +2062,7 @@ function modMenu() {
         dropdownMenu.style.display = 'flex';
         dropdownMenu.style.alignItems = 'center';
 
-        /*
-         * Button mit dem Mod-Schwert erstellen.
-         */
+        // Button mit dem Mod-Schwert erstellen.
         const dropdownButton =
             document.createElement('button');
 
@@ -1389,9 +2094,7 @@ function modMenu() {
             cursor: pointer;
         `;
 
-        /*
-         * Dropdown-Liste erstellen.
-         */
+        // Dropdown-Liste erstellen.
         const dropdownList =
             document.createElement('ul');
 
@@ -1410,9 +2113,7 @@ function modMenu() {
             background-color: #000;
         `;
 
-        /*
-         * Baut den Inhalt der Liste neu auf.
-         */
+        // Baut den Inhalt der Liste neu auf.
         function renderDropdownList() {
             dropdownList.replaceChildren();
 
@@ -1447,9 +2148,7 @@ function modMenu() {
                 return;
             }
 
-            /*
-             * Die Kanäle werden alphabetisch ausgegeben.
-             */
+            // Die Kanäle werden alphabetisch ausgegeben.
             channels.forEach((channel) => {
                 const listItem =
                     document.createElement('li');
@@ -1482,22 +2181,14 @@ function modMenu() {
             });
         }
 
-        /*
-         * Liste beim Erstellen erstmalig aufbauen.
-         */
+        // Liste beim Erstellen erstmalig aufbauen.
         renderDropdownList();
 
-        /*
-         * Globale Aktualisierungsfunktion für
-         * addCurrentModChannel().
-         */
+        // Globale Aktualisierungsfunktion für addCurrentModChannel().
         window.refreshQMDModMenu =
             renderDropdownList;
 
-        /*
-         * Klick auf das Schwert öffnet oder schließt
-         * die Liste.
-         */
+        // Klick auf das Schwert öffnet oder schließt die Liste.
         dropdownButton.addEventListener(
             'click',
             (event) => {
@@ -1516,9 +2207,7 @@ function modMenu() {
             }
         );
 
-        /*
-         * Klick außerhalb des Menüs schließt die Liste.
-         */
+        // Klick außerhalb des Menüs schließt die Liste.
         document.addEventListener(
             'click',
             (event) => {
@@ -1533,24 +2222,19 @@ function modMenu() {
             }
         );
 
-        /*
-         * Fügt den Button – wie in deiner alten Version –
-         * nur dann neben dem Twitch-Logo ein, wenn eine
-         * Moderationsberechtigung erkannt wurde.
-         */
+// ############################################################################
+// ##### MOD-KANAL-BUTTON IM TWITCH-HEADER #####
+// ############################################################################
+
+        // Fügt den Button – wie in deiner alten Version – nur dann neben dem Twitch-Logo ein, wenn eine Moderationsberechtigung erkannt wurde.
         function appendModMenuButton() {
-            /*
-             * Das ist die ursprüngliche Erkennung aus
-             * deiner alten funktionierenden Version.
-             */
+            // Das ist die ursprüngliche Erkennung aus deiner alten funktionierenden Version.
             const modButton =
                 document.querySelector(
                     '[data-test-selector="mod-view-link"]'
                 );
 
-            /*
-             * Fallback für mögliche Twitch-Änderungen.
-             */
+            // Fallback für mögliche Twitch-Änderungen.
             const alternativeModButton =
                 document.querySelector(
                     '[data-a-target="mod-view-link"]'
@@ -1566,13 +2250,9 @@ function modMenu() {
                     '/moderator/'
                 );
 
-            /*
-             * Mod-Rechte gelten als vorhanden, wenn:
-             *
-             * 1. der Twitch-Mod-View-Link existiert oder
-             * 2. die Mod-Ansicht geöffnet ist und der Chat-Button
-             *    vorhanden ist.
-             */
+            // Mod-Rechte gelten als vorhanden, wenn:
+            // 1. der Twitch-Mod-View-Link existiert oder
+            // 2. die Mod-Ansicht geöffnet ist und der Chat-Button vorhanden ist.
             const modToolsAvailable =
                 Boolean(modButton) ||
                 Boolean(alternativeModButton) ||
@@ -1581,10 +2261,7 @@ function modMenu() {
                     Boolean(chatButton)
                 );
 
-            /*
-             * Auf nicht moderierten Seiten wird der Button
-             * aus dem Header entfernt.
-             */
+            // Auf nicht moderierten Seiten wird der Button aus dem Header entfernt.
             if (!modToolsAvailable) {
                 dropdownButton.remove();
                 dropdownList.remove();
@@ -1592,15 +2269,10 @@ function modMenu() {
                 return;
             }
 
-            /*
-             * Erst bei bestätigten Mod-Rechten wird der
-             * aktuelle Kanal gespeichert.
-             */
+            // Erst bei bestätigten Mod-Rechten wird der aktuelle Kanal gespeichert.
             addCurrentModChannel();
 
-            /*
-             * Twitch-Logo beziehungsweise Home-Link suchen.
-             */
+            // Twitch-Logo beziehungsweise Home-Link suchen.
             const twitchLogo =
                 document.querySelector(
                     '[data-a-target="home-link"]'
@@ -1622,10 +2294,7 @@ function modMenu() {
             logoContainer.style.position =
                 'relative';
 
-            /*
-             * Button direkt rechts neben dem Twitch-Logo
-             * einfügen – wie in der alten Version.
-             */
+            // Button direkt rechts neben dem Twitch-Logo einfügen – wie in der alten Version.
             if (
                 !logoContainer.contains(
                     dropdownButton
@@ -1637,9 +2306,7 @@ function modMenu() {
                 );
             }
 
-            /*
-             * Dropdown in denselben Container einfügen.
-             */
+            // Dropdown in denselben Container einfügen.
             if (
                 !logoContainer.contains(
                     dropdownList
@@ -1651,34 +2318,20 @@ function modMenu() {
             }
         }
 
-        /*
-         * Twitch ist eine Single-Page-Anwendung.
-         * Die Mod-Rechte und der Header können sich jederzeit
-         * durch Navigation oder Nachladen ändern.
-         */
+        // Twitch ist eine Single-Page-Anwendung. Die Mod-Rechte und der Header können sich jederzeit durch Navigation oder Nachladen ändern.
         setInterval(
             appendModMenuButton,
             1000
         );
 
-        /*
-         * Sofortiger erster Prüfdurchlauf.
-         */
+        // Sofortiger erster Prüfdurchlauf.
         appendModMenuButton();
     }
 
-    /*
-     * Menü erstellen.
-     *
-     * Wenn der Twitch-Header noch nicht vorhanden ist,
-     * wird beim nächsten globalen Durchlauf erneut versucht,
-     * das Menü zu erstellen.
-     */
+    // Menü erstellen. Wenn der Twitch-Header noch nicht vorhanden ist, wird beim nächsten globalen Durchlauf erneut versucht, das Menü zu erstellen.
     createDropdownMenu();
 
-    /*
-     * CSS für die Animation nur einmal hinzufügen.
-     */
+    // CSS für die Animation nur einmal hinzufügen.
     if (
         !document.getElementById(
             'mod-menu-style'
@@ -1714,29 +2367,17 @@ function modMenu() {
     }
 }
 
-
-/*
- * Startup
- *
- * Twitch lädt die Oberfläche dynamisch.
- * Deshalb wird nicht nur wenige Sekunden lang geprüft,
- * sondern dauerhaft in kurzen Abständen.
- */
+// ############################################################################
+// ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG #####
+// ############################################################################
+// Twitch lädt die Oberfläche dynamisch. Deshalb wird nicht nur wenige Sekunden lang geprüft, sondern dauerhaft in kurzen Abständen.
 (function () {
     const intervalDuration = 1000;
 
-    /*
-     * Sofortiger Start.
-     */
+    // Sofortiger erster Durchlauf
     modMenu();
 
-    /*
-     * Dauerhafte Prüfung für:
-     *
-     * - spätes Rendern des Twitch-Headers
-     * - Navigation zwischen Kanälen
-     * - Wechsel zwischen normaler Ansicht und Mod-Ansicht
-     */
+    // Wiederholte Prüfung wegen Twitch-SPA und dynamischem Rendering
     setInterval(
         modMenu,
         intervalDuration
