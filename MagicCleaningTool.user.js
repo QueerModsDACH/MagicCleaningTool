@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.104
+// @version 1.9.6.105
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.104';
+const myVersion = '1.9.6.105';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -2319,18 +2319,40 @@ dropdownList.style.display = 'none';
 }
 );
 
+// Schließt die Mod-Kanal-Liste bei einem Klick außerhalb
+// des Buttons beziehungsweise der Liste.
+//
+// Der Event-Listener wird in der Capture-Phase registriert.
+// Dadurch funktioniert das Schließen auch dann, wenn Twitch
+// oder ein anderes Element die normale Event-Weitergabe stoppt.
 if (!state.documentClickHandler) {
 state.documentClickHandler = (event) => {
+const clickedInsideMenu =
+(
+state.logoContainer &&
+state.logoContainer.contains(event.target)
+) ||
+(
+state.dropdownButton &&
+state.dropdownButton.contains(event.target)
+) ||
+(
+state.dropdownList &&
+state.dropdownList.contains(event.target)
+);
+
 if (
-!logoContainer.contains(event.target)
+!clickedInsideMenu &&
+state.dropdownList
 ) {
-dropdownList.style.display = 'none';
+state.dropdownList.style.display = 'none';
 }
 };
 
 document.addEventListener(
 'click',
-state.documentClickHandler
+state.documentClickHandler,
+true
 );
 }
 
