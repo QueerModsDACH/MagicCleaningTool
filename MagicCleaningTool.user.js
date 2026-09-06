@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.107
+// @version 1.9.6.108
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.107';
+const myVersion = '1.9.6.108';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -511,8 +511,8 @@ class="modMenuToggleImage"
 src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
 title="Mod-Menü ein- oder ausblenden"
 alt="Mod-Menü"
-width="20"
-height="20"
+width="32"
+height="32"
 >
 </button>
 
@@ -2353,7 +2353,7 @@ dropdownButton.setAttribute(
 
 dropdownButton.innerHTML = `
 <img
-src="https://static-cdn.jtvnw.net/mod-view-image-assets/modview-sword.svg"
+src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_axt.png"
 width="25"
 height="25"
 alt="Mod-Kanäle"
