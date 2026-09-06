@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.114
+// @version 1.9.6.115
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.114';
+const myVersion = '1.9.6.115';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -780,12 +780,14 @@ title="Öffnet ChatStats für den aktuellen Kanal"
 ⏸
 </button>
 
+<!-- ################################################## AUSKOMMENTIERT
 <button
 class="modChannels"
 title="Alle als Mod-Kanal hinzufügen"
 >
 ⚔
 </button>
+################################################## ENDE AUSKOMMENTIERUNG -->
 
 <button class="ignoreAll" title="Liste leeren">
 🗑
@@ -1975,11 +1977,14 @@ queueList.size ? '' : 'none';
 
 const renderItem = (item) => `
 <li>
+
+<!-- ################################################## AUSKOMMENTIERT
 <button
 class="accountage"
 data-user="${escapeHtml(item)}"
 title="Schreibt !accountage ${escapeHtml(item)} in den Chat"
 >?</button>
+################################################## ENDE AUSKOMMENTIERUNG -->
 
 <button
 class="ignore"
@@ -2001,6 +2006,7 @@ data-user="${escapeHtml(item)}"
 title="Benutzer bannen"
 >Ban</button>
 
+<!-- ################################################## AUSKOMMENTIERT
 <button
 class="addModChannels"
 data-user="${escapeHtml(item)}"
@@ -2016,6 +2022,7 @@ title="Kanal als Mod-Kanal entfernen"
 >
 ➖⚔
 </button>
+################################################## ENDE AUSKOMMENTIERUNG -->
 
 <span>
 <a
