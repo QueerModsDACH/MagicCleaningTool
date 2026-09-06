@@ -489,6 +489,25 @@ color: var(--color-text-base);
 font-size: 10pt;
 }
 
+/* Grafik für den Minimieren-Button */
+.raidhammer .closeBtn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-width: 30px;
+width: 30px;
+height: 30px;
+padding: 3px;
+line-height: 0;
+}
+
+.raidhammer .closeBtn img {
+display: block;
+width: 20px;
+height: 20px;
+object-fit: contain;
+}
+
 .raidhammer .footer {
 font-size: 7pt;
 text-align: center;
@@ -542,8 +561,19 @@ style="vertical-align: middle;"
 <span style="flex-grow: 1;"></span>
 
 <!-- Fenster schließen beziehungsweise minimieren -->
-<button class="closeBtn"><u>x</u></button>
-</div>
+<button
+class="closeBtn"
+type="button"
+title="Tool minimieren"
+aria-label="Tool minimieren"
+>
+<img
+src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png"
+alt="Tool minimieren"
+width="20"
+height="20"
+>
+</button>
 
 <!-- Importbereich -->
 <div id="import" class="import" style="display: none;">
