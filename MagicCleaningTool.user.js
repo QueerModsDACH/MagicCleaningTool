@@ -780,15 +780,6 @@ title="Öffnet ChatStats für den aktuellen Kanal"
 ⏸
 </button>
 
-<!-- ################################################## AUSKOMMENTIERT
-<button
-class="modChannels"
-title="Alle als Mod-Kanal hinzufügen"
->
-⚔
-</button>
-################################################## ENDE AUSKOMMENTIERUNG -->
-
 <button class="ignoreAll" title="Liste leeren">
 🗑
 </button>
@@ -1978,13 +1969,6 @@ queueList.size ? '' : 'none';
 const renderItem = (item) => `
 <li>
 
-<!-- ################################################## AUSKOMMENTIERT
-<button
-class="accountage"
-data-user="${escapeHtml(item)}"
-title="Schreibt !accountage ${escapeHtml(item)} in den Chat"
->?</button>
-################################################## ENDE AUSKOMMENTIERUNG -->
 
 <button
 class="ignore"
@@ -2006,23 +1990,6 @@ data-user="${escapeHtml(item)}"
 title="Benutzer bannen"
 >Ban</button>
 
-<!-- ################################################## AUSKOMMENTIERT
-<button
-class="addModChannels"
-data-user="${escapeHtml(item)}"
-title="Kanal als Mod-Kanal hinzufügen"
->
-➕⚔
-</button>
-
-<button
-class="removeModChannel"
-data-user="${escapeHtml(item)}"
-title="Kanal als Mod-Kanal entfernen"
->
-➖⚔
-</button>
-################################################## ENDE AUSKOMMENTIERUNG -->
 
 <span>
 <a
