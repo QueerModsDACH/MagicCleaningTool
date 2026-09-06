@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.105
+// @version 1.9.6.106
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.105';
+const myVersion = '1.9.6.106';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -1238,7 +1238,11 @@ openExternal(
 );
 
 d.addEventListener('click', (event) => {
-const target = event.target.closest('button');
+// Neben Buttons werden auch das Startbanner und andere Elemente
+// mit der Klasse "toggleImport" beziehungsweise "start" erkannt.
+const target = event.target.closest(
+'button, .toggleImport, .start'
+);
 
 if (!target) {
 return;
@@ -1260,6 +1264,9 @@ if (target.matches('.accountage')) {
 accountage(target.dataset.user);
 }
 
+// Das Startbanner Logo_1920x400.png besitzt die Klasse
+// "toggleImport" und öffnet damit wieder die Auswahl
+// der Bannlisten.
 if (target.matches('.toggleImport, .start')) {
 toggleImport();
 }
@@ -1269,7 +1276,7 @@ removeModChannel(target.dataset.user);
 }
 
 if (target.matches('.addModChannels')) {
-addModChannels(target.dataset.user);
+addModChannel(target.dataset.user);
 }
 });
 
