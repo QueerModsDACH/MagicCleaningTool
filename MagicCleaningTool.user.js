@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.103
+// @version 1.9.6.104
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.103';
+const myVersion = '1.9.6.104';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -1089,7 +1089,6 @@ image.title
 // Die Prüfung auf Moderationsrechte erfolgt weiterhin in modMenu().
 function applyModMenuVisibility() {
 const state = window.__QMD_MOD_MENU_STATE__;
-
 if (!state) {
 return;
 }
@@ -1102,10 +1101,12 @@ if (state.dropdownButton) {
 state.dropdownButton.style.display = displayValue;
 }
 
-if (state.dropdownList) {
-state.dropdownList.style.display = isModMenuVisible
-? 'none'
-: 'none';
+// Die Liste darf hier bei sichtbarem Mod-Menü nicht erneut
+// ausgeblendet werden. Sie wird durch den Klick auf den Button
+// geöffnet und bleibt anschließend geöffnet, bis außerhalb der
+// Liste geklickt oder eine Auswahl angeklickt wird.
+if (state.dropdownList && !isModMenuVisible) {
+state.dropdownList.style.display = 'none';
 }
 
 updateModMenuToggleImage();
@@ -2301,6 +2302,20 @@ dropdownList.style.display =
 dropdownList.style.display === 'none'
 ? 'block'
 : 'none';
+}
+);
+
+// Beim Anklicken einer Kanalauswahl wird die Dropdown-Liste
+// geschlossen. Der Link wird weiterhin wie bisher geöffnet.
+dropdownList.addEventListener(
+'click',
+(event) => {
+const selectedLink =
+event.target.closest('a');
+
+if (selectedLink) {
+dropdownList.style.display = 'none';
+}
 }
 );
 
