@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.114
+// @version 1.9.6.115
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.114';
+const myVersion = '1.9.6.115';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -39,7 +39,6 @@ const MOD_MENU_VISIBILITY_STORAGE_KEY =
 // Allgemeine Text- und Aktionsvariablen
 let text;
 let banReason;
-
 const defaultBanReason = 'Ban by QMD list';
 
 // URL zur Quelle der Bannlisten
@@ -372,9 +371,9 @@ loadExternalLibraries();
 // ############################################################################
 
 const html = /* html */ `
-<div id="raidhammer" class="raidhammer">
+<div id="magicMorningStar" class="magicMorningStar">
 <style>
-.raidhammer {
+.magicMorningStar {
 z-index: 99999999;
 position: absolute;
 top: 250px;
@@ -388,37 +387,37 @@ box-shadow: var(--shadow-elevation-2);
 cursor: move;
 }
 
-.raidhammer .handle {
+.magicMorningStar .handle {
 cursor: move;
 user-select: none;
 }
 
-.raidhammer .svg {
+.magicMorningStar .svg {
 color: "${themeTextColor}";
 }
 
-.raidhammer h6 {
+.magicMorningStar h6 {
 color: var(--color-hinted-grey-7);
 }
 
-.raidhammer h6 button {
+.magicMorningStar h6 button {
 height: auto;
 background: none;
 }
 
-.raidhammer .header {
+.magicMorningStar .header {
 display: flex;
 align-items: center;
 }
 
-.raidhammer .logo {
+.magicMorningStar .logo {
 min-height: 30px;
 line-height: 30px;
 font-weight: var(--font-weight-semibold);
 --color: var(--color-text-link);
 }
 
-.raidhammer .list {
+.magicMorningStar .list {
 min-height: 8em;
 max-height: 350px;
 padding: 8px;
@@ -426,17 +425,17 @@ overflow-y: auto;
 background: var(--color-background-body);
 }
 
-.raidhammer .list span {
+.magicMorningStar .list span {
 font-weight: var(--font-weight-semibold);
 }
 
-.raidhammer .empty {
+.magicMorningStar .empty {
 padding: 2em;
 text-align: center;
 opacity: 0.85;
 }
 
-.raidhammer button {
+.magicMorningStar button {
 min-width: 30px;
 height: var(--button-size-default);
 margin: 1px;
@@ -449,38 +448,38 @@ font-weight: var(--font-weight-semibold);
 text-align: center;
 }
 
-.raidhammer button.ban {
+.magicMorningStar button.ban {
 min-width: 60px;
 background: #f44336;
 color: var(--color-text-button-primary);
 }
 
-.raidhammer button.banAll {
+.magicMorningStar button.banAll {
 min-width: 40px;
 background: #f44336;
 color: var(--color-text-button-primary);
 }
 
-.raidhammer button.unban {
+.magicMorningStar button.unban {
 min-width: 60px;
 background: #34ae0c;
 color: var(--color-text-button-primary);
 }
 
-.raidhammer button.unbanAll {
+.magicMorningStar button.unbanAll {
 min-width: 40px;
 background: #34ae0c;
 color: var(--color-text-button-primary);
 }
 
-.raidhammer .import {
+.magicMorningStar .import {
 min-height: 20px;
 padding: 3px;
 background: var(--color-background-body);
 border: var(--border-width-default) solid var(--color-border-base);
 }
 
-.raidhammer textarea {
+.magicMorningStar textarea {
 width: 100%;
 min-height: 8em;
 padding: 0.5em;
@@ -489,7 +488,7 @@ color: var(--color-text-base);
 font-size: 10pt;
 }
 
-.raidhammer .footer {
+.magicMorningStar .footer {
 font-size: 7pt;
 text-align: center;
 }
@@ -555,7 +554,6 @@ width="18"
 height="18"
 >
 </button>
-
 </div>
 
 <!-- Importbereich -->
@@ -698,6 +696,8 @@ ${Button_Info_Text}
 </button>
 </div>
 </div>
+
+
 
 <!-- Hauptbereich und Benutzerliste -->
 <div class="body">
@@ -890,7 +890,7 @@ background-color: var(--color-background-button-text-default);
 color: var(--color-fill-button-icon);
 `;
 
-activateBtn.id = 'hammer';
+activateBtn.id = 'morningStar';
 activateBtn.title = 'Magic Cleaning Tool';
 
 let enabled = false;
@@ -901,7 +901,7 @@ let watchdogTimer = null;
 // ############################################################################
 
 function makeToolDraggable() {
-const tool = d.querySelector('.raidhammer');
+const tool = d.querySelector('.magicMorningStar');
 
 if (!tool) {
 return;
@@ -1077,7 +1077,6 @@ function show() {
 console.log(LOGPREFIX, 'Show');
 
 appendToolToDocument();
-
 d.style.display = '';
 enabled = true;
 
@@ -1121,7 +1120,6 @@ textField.focus();
 
 function toggleBack() {
 queueList.clear();
-
 d.querySelector('#textfield').value = '';
 
 const body = d.querySelector('.body');
@@ -1156,11 +1154,11 @@ isPaused = !isPaused;
 
 if (isPaused) {
 button.value = 'play';
-button.textContent = '▶';
+button.textContent = '▶️';
 button.title = 'Fortsetzen';
 } else {
 button.value = 'pause';
-button.textContent = '⏸';
+button.textContent = '⏸️';
 button.title = 'Pausieren';
 }
 }
@@ -1191,6 +1189,7 @@ image.title = isModMenuVisible
 : 'Mod-Menü einblenden';
 
 button.title = image.title;
+
 button.setAttribute(
 'aria-label',
 image.title
@@ -1201,6 +1200,7 @@ image.title
 // Die Prüfung auf Moderationsrechte erfolgt weiterhin in modMenu().
 function applyModMenuVisibility() {
 const state = window.__QMD_MOD_MENU_STATE__;
+
 if (!state) {
 return;
 }
@@ -1350,6 +1350,7 @@ openExternal(
 );
 
 d.addEventListener('click', (event) => {
+
 // Neben Buttons werden auch das Startbanner und andere Elemente
 // mit der Klasse "toggleImport" beziehungsweise "start" erkannt.
 const target = event.target.closest(
@@ -2089,7 +2090,6 @@ uniqueChannels
 );
 
 QMD_modChannelStore = uniqueChannels;
-
 return uniqueChannels;
 }
 
@@ -2293,7 +2293,6 @@ linkItem.title = 'Anleitung lesen';
 
 listItem.appendChild(linkItem);
 state.dropdownList.appendChild(listItem);
-
 return;
 }
 
@@ -2359,6 +2358,7 @@ document.createElement('button');
 dropdownButton.id = 'modMenu';
 dropdownButton.type = 'button';
 dropdownButton.title = 'Mod-Kanäle';
+
 dropdownButton.setAttribute(
 'aria-label',
 'Mod-Kanäle öffnen'
