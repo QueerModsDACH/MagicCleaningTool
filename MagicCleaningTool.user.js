@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.106
+// @version 1.9.6.107
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -24,7 +24,7 @@
 // ############################################################################
 
 // Versionsnummer des Tools
-const myVersion = '1.9.6.106';
+const myVersion = '1.9.6.107';
 
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
@@ -888,13 +888,112 @@ let watchdogTimer = null;
 // ############################################################################
 
 function makeToolDraggable() {
-if (
-window.jQuery &&
-window.jQuery.fn &&
-typeof window.jQuery.fn.draggable === 'function'
-) {
-window.jQuery('.raidhammer').draggable();
+const tool = d.querySelector('.raidhammer');
+
+if (!tool) {
+return;
 }
+
+// Verhindert, dass der Drag-Handler mehrfach registriert wird.
+if (tool.dataset.qmdDraggable === 'true') {
+return;
+}
+
+tool.dataset.qmdDraggable = 'true';
+tool.style.touchAction = 'none';
+
+let isDragging = false;
+let startPointerX = 0;
+let startPointerY = 0;
+let startLeft = 0;
+let startTop = 0;
+
+// Elemente, bei denen ein normaler Klick weiterhin möglich sein muss.
+const isInteractiveElement = (target) => {
+return Boolean(
+target.closest(
+'button, a, input, textarea, select, option, img, .import, .list'
+)
+);
+};
+
+tool.addEventListener(
+'pointerdown',
+(event) => {
+if (event.button !== 0) {
+return;
+}
+
+if (isInteractiveElement(event.target)) {
+return;
+}
+
+const toolRect = tool.getBoundingClientRect();
+
+isDragging = true;
+startPointerX = event.clientX;
+startPointerY = event.clientY;
+startLeft = toolRect.left;
+startTop = toolRect.top;
+
+// Die Position wird auf die aktuelle Bildschirmposition
+// umgestellt, damit beim ersten Verschieben kein Sprung entsteht.
+tool.style.left = `${startLeft}px`;
+tool.style.top = `${startTop}px`;
+tool.style.right = 'auto';
+tool.style.bottom = 'auto';
+
+tool.setPointerCapture(event.pointerId);
+event.preventDefault();
+},
+false
+);
+
+tool.addEventListener(
+'pointermove',
+(event) => {
+if (!isDragging) {
+return;
+}
+
+const newLeft =
+startLeft + (event.clientX - startPointerX);
+
+const newTop =
+startTop + (event.clientY - startPointerY);
+
+tool.style.left = `${newLeft}px`;
+tool.style.top = `${newTop}px`;
+},
+false
+);
+
+const stopDragging = (event) => {
+if (!isDragging) {
+return;
+}
+
+isDragging = false;
+
+if (
+event.pointerId !== undefined &&
+tool.hasPointerCapture(event.pointerId)
+) {
+tool.releasePointerCapture(event.pointerId);
+}
+};
+
+tool.addEventListener(
+'pointerup',
+stopDragging,
+false
+);
+
+tool.addEventListener(
+'pointercancel',
+stopDragging,
+false
+);
 }
 
 // ############################################################################
