@@ -2244,8 +2244,8 @@ class="toggleImport"
 src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
 title="Start Magic Cleaning Tool"
 alt="Magic Cleaning Tool starten"
-width="370"
-style="cursor: pointer; max-height: 80px; min-height: 80px"
+width="480"
+style="cursor: pointer; max-height: 240px; min-height: 240px"
 >
 </div>
 `;
