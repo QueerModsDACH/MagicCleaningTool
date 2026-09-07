@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.121
+// @version 1.9.6.122
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -22,7 +22,7 @@
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
 // ############################################################################
 // Versionsnummer des Tools
-const myVersion = '1.9.6.121';
+const myVersion = '1.9.6.122';
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
 // Alle lokalen Speicher-Schlüssel müssen diesen Prefix verwenden.
@@ -67,8 +67,7 @@ const Button_02_IdClass = 'Button_02';
 const Button_02_Text = 'Liste_02';
 const Button_02_AltText = 'Importiert die 02-Liste';
 const Button_02_FileName = 'hate_troll_list_2.txt';
-const Button_02_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/hate_troll_list_2.txt';
+const Button_02_URL = `${Listen_rawURL}${Button_02_FileName}`;
 const Button_02_BanReason = defaultBanReason;
 const Button_02_UseUnban = false;
 // Button 03
@@ -77,8 +76,7 @@ const Button_03_IdClass = 'Button_03';
 const Button_03_Text = 'Liste_03';
 const Button_03_AltText = 'Importiert die 03-Liste';
 const Button_03_FileName = 'hate_troll_list_3.txt';
-const Button_03_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/hate_troll_list_3.txt';
+const Button_03_URL = `${Listen_rawURL}${Button_03_FileName}`;
 const Button_03_BanReason = defaultBanReason;
 const Button_03_UseUnban = false;
 // Button 04
@@ -87,8 +85,7 @@ const Button_04_IdClass = 'Button_04';
 const Button_04_Text = 'Liste_04';
 const Button_04_AltText = 'Importiert die 04-Liste';
 const Button_04_FileName = 'security_ban_list.txt';
-const Button_04_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/security_ban_list.txt';
+const Button_04_URL = `${Listen_rawURL}${Button_04_FileName}`;
 const Button_04_BanReason = defaultBanReason;
 const Button_04_UseUnban = false;
 // Button 05
@@ -97,8 +94,7 @@ const Button_05_IdClass = 'Button_05';
 const Button_05_Text = 'Liste_05';
 const Button_05_AltText = 'Importiert die 05-Liste';
 const Button_05_FileName = 'viewer_bot_list.txt';
-const Button_05_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/viewer_bot_list.txt';
+const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
 const Button_05_BanReason = defaultBanReason;
 const Button_05_UseUnban = false;
 // Button 06
@@ -107,8 +103,7 @@ const Button_06_IdClass = 'Button_06';
 const Button_06_Text = 'Liste_06';
 const Button_06_AltText = 'Importiert die 06-Liste';
 const Button_06_FileName = 'porn_bot_acc_list.txt';
-const Button_06_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/porn_bot_acc_list.txt';
+const Button_06_URL = `${Listen_rawURL}${Button_06_FileName}`;
 const Button_06_BanReason = defaultBanReason;
 const Button_06_UseUnban = false;
 // Button 07
@@ -117,8 +112,7 @@ const Button_07_IdClass = 'Button_07';
 const Button_07_Text = 'Liste_07';
 const Button_07_AltText = 'Importiert die 07-Liste';
 const Button_07_FileName = 'mad_tos_list.txt';
-const Button_07_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/mad_tos_list.txt';
+const Button_07_URL = `${Listen_rawURL}${Button_07_FileName}`;
 const Button_07_BanReason = defaultBanReason;
 const Button_07_UseUnban = false;
 // Button 08
@@ -127,8 +121,7 @@ const Button_08_IdClass = 'Button_08';
 const Button_08_Text = 'Liste_08';
 const Button_08_AltText = 'Importiert die 08-Liste';
 const Button_08_FileName = 'follower_bot_list.txt';
-const Button_08_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/follower_bot_list.txt';
+const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
 const Button_08_BanReason = defaultBanReason;
 const Button_08_UseUnban = false;
 // Button 09
@@ -137,8 +130,7 @@ const Button_09_IdClass = 'Button_09';
 const Button_09_Text = 'Liste_09';
 const Button_09_AltText = 'Importiert die 09-Liste';
 const Button_09_FileName = 'seller_advertising_list.txt';
-const Button_09_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/seller_advertising_list.txt';
+const Button_09_URL = `${Listen_rawURL}${Button_09_FileName}`;
 const Button_09_BanReason = defaultBanReason;
 const Button_09_UseUnban = false;
 // Button 10
@@ -147,8 +139,7 @@ const Button_10_IdClass = 'Button_10';
 const Button_10_Text = 'Liste_10';
 const Button_10_AltText = 'Importiert die 10-Liste';
 const Button_10_FileName = 'spam_bot_list.txt';
-const Button_10_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/spam_bot_list.txt';
+const Button_10_URL = `${Listen_rawURL}${Button_10_FileName}`;
 const Button_10_BanReason = defaultBanReason;
 const Button_10_UseUnban = false;
 // Button 11
@@ -157,8 +148,7 @@ const Button_11_IdClass = 'Button_11';
 const Button_11_Text = 'Liste_11';
 const Button_11_AltText = 'Importiert die 11-Liste';
 const Button_11_FileName = 'list_11.txt';
-const Button_11_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/list_11.txt';
+const Button_11_URL = `${Listen_rawURL}${Button_11_FileName}`;
 const Button_11_BanReason = defaultBanReason;
 const Button_11_UseUnban = false;
 // Button 12
@@ -167,8 +157,7 @@ const Button_12_IdClass = 'Button_12';
 const Button_12_Text = 'Liste_12';
 const Button_12_AltText = 'Platzhalter für die 12-Liste';
 const Button_12_FileName = 'list_12.txt';
-const Button_12_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/list_12.txt';
+const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
 const Button_12_BanReason = defaultBanReason;
 const Button_12_UseUnban = false;
 // Button 13
@@ -176,92 +165,61 @@ const Button_13_ListSaveSuffix = '_List13';
 const Button_13_IdClass = 'Button_13';
 const Button_13_Text = 'Liste_13';
 const Button_13_AltText = 'Platzhalter für die 13-Liste';
-const Button_13_FileName = '';
-const Button_13_URL = '';
+const Button_13_FileName = 'list_13.txt';
+const Button_13_URL = `${Listen_rawURL}${Button_13_FileName}`;
 const Button_13_BanReason = defaultBanReason;
 const Button_13_UseUnban = false;
 // Button 14
-const Button_14_ListSaveSuffix = '_List14';
+const Button_14_ListSaveSuffix = '_WHITELISTED_user';
 const Button_14_IdClass = 'Button_14';
-const Button_14_Text = 'Liste_14';
-const Button_14_AltText = 'Platzhalter für die 14-Liste';
-const Button_14_FileName = '';
-const Button_14_URL = '';
+const Button_14_Text = 'UNBAN Whitelisted User';
+const Button_14_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
+const Button_14_FileName = 'WHITELISTED_user.txt';
+const Button_14_URL = `${Listen_rawURL}${Button_14_FileName}`;
 const Button_14_BanReason = defaultBanReason;
-const Button_14_UseUnban = false;
+const Button_14_UseUnban = true;
 // Button 15
-const Button_15_ListSaveSuffix = '_List15';
+const Button_15_ListSaveSuffix = '_WHITELISTED_bots';
 const Button_15_IdClass = 'Button_15';
-const Button_15_Text = 'UNBAN';
-const Button_15_AltText = 'Importiert die UNBAN-Liste';
-const Button_15_FileName = 'unbanlist.txt';
-const Button_15_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/unbanlist.txt';
+const Button_15_Text = 'UNBAN Whitelisted Bots';
+const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
+const Button_15_FileName = 'WHITELISTED_bots.txt';
+const Button_15_URL = `${Listen_rawURL}${Button_15_FileName}`;
 const Button_15_BanReason = defaultBanReason;
 const Button_15_UseUnban = true;
 // -----------------------------------------------------------------------------
 // Zentrale Zusammenfassung aller Listenbuttons.
 const LIST_BUTTONS = [
-{
-number: '01', saveSuffix: Button_01_ListSaveSuffix, id: Button_01_IdClass, className: Button_01_IdClass, text: Button_01_Text, altText: Button_01_AltText,
-fileName: Button_01_FileName, url: Button_01_URL, banReason: Button_01_BanReason, useUnban: Button_01_UseUnban, placeholder: false
-},
-{
-number: '02', saveSuffix: Button_02_ListSaveSuffix, id: Button_02_IdClass, className: Button_02_IdClass, text: Button_02_Text, altText: Button_02_AltText,
-fileName: Button_02_FileName, url: Button_02_URL, banReason: Button_02_BanReason, useUnban: Button_02_UseUnban, placeholder: false
-},
-{
-number: '03', saveSuffix: Button_03_ListSaveSuffix, id: Button_03_IdClass, className: Button_03_IdClass, text: Button_03_Text, altText: Button_03_AltText,
-fileName: Button_03_FileName, url: Button_03_URL, banReason: Button_03_BanReason, useUnban: Button_03_UseUnban, placeholder: false
-},
-{
-number: '04', saveSuffix: Button_04_ListSaveSuffix, id: Button_04_IdClass, className: Button_04_IdClass, text: Button_04_Text, altText: Button_04_AltText,
-fileName: Button_04_FileName, url: Button_04_URL, banReason: Button_04_BanReason, useUnban: Button_04_UseUnban, placeholder: false
-},
-{
-number: '05', saveSuffix: Button_05_ListSaveSuffix, id: Button_05_IdClass, className: Button_05_IdClass, text: Button_05_Text, altText: Button_05_AltText,
-fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, useUnban: Button_05_UseUnban, placeholder: false
-},
-{
-number: '06', saveSuffix: Button_06_ListSaveSuffix, id: Button_06_IdClass, className: Button_06_IdClass, text: Button_06_Text, altText: Button_06_AltText,
-fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, useUnban: Button_06_UseUnban, placeholder: false
-},
-{
-number: '07', saveSuffix: Button_07_ListSaveSuffix, id: Button_07_IdClass, className: Button_07_IdClass, text: Button_07_Text, altText: Button_07_AltText,
-fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, useUnban: Button_07_UseUnban, placeholder: true
-},
-{
-number: '08', saveSuffix: Button_08_ListSaveSuffix, id: Button_08_IdClass, className: Button_08_IdClass, text: Button_08_Text, altText: Button_08_AltText,
-fileName: Button_08_FileName, url: Button_08_URL, banReason: Button_08_BanReason, useUnban: Button_08_UseUnban, placeholder: true
-},
-{
-number: '09', saveSuffix: Button_09_ListSaveSuffix, id: Button_09_IdClass, className: Button_09_IdClass, text: Button_09_Text, altText: Button_09_AltText,
-fileName: Button_09_FileName, url: Button_09_URL, banReason: Button_09_BanReason, useUnban: Button_09_UseUnban, placeholder: true
-},
-{
-number: '10', saveSuffix: Button_10_ListSaveSuffix, id: Button_10_IdClass, className: Button_10_IdClass, text: Button_10_Text, altText: Button_10_AltText,
-fileName: Button_10_FileName, url: Button_10_URL, banReason: Button_10_BanReason, useUnban: Button_10_UseUnban, placeholder: true
-},
-{
-number: '11', saveSuffix: Button_11_ListSaveSuffix, id: Button_11_IdClass, className: Button_11_IdClass, text: Button_11_Text, altText: Button_11_AltText,
-fileName: Button_11_FileName, url: Button_11_URL, banReason: Button_11_BanReason, useUnban: Button_11_UseUnban, placeholder: true
-},
-{
-number: '12', saveSuffix: Button_12_ListSaveSuffix, id: Button_12_IdClass, className: Button_12_IdClass, text: Button_12_Text, altText: Button_12_AltText,
-fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, useUnban: Button_12_UseUnban, placeholder: true
-},
-{
-number: '13', saveSuffix: Button_13_ListSaveSuffix, id: Button_13_IdClass, className: Button_13_IdClass, text: Button_13_Text, altText: Button_13_AltText,
-fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, useUnban: Button_13_UseUnban, placeholder: true
-},
-{
-number: '14', saveSuffix: Button_14_ListSaveSuffix, id: Button_14_IdClass, className: Button_14_IdClass, text: Button_14_Text, altText: Button_14_AltText,
-fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, useUnban: Button_14_UseUnban, placeholder: true
-},
-{
-number: '15', saveSuffix: Button_15_ListSaveSuffix, id: Button_15_IdClass, className: Button_15_IdClass, text: Button_15_Text, altText: Button_15_AltText,
-fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, useUnban: Button_15_UseUnban, placeholder: false
-}
+{ number: '01', saveSuffix: Button_01_ListSaveSuffix, id: Button_01_IdClass, className: Button_01_IdClass, text: Button_01_Text, altText: Button_01_AltText,
+fileName: Button_01_FileName, url: Button_01_URL, banReason: Button_01_BanReason, useUnban: Button_01_UseUnban, placeholder: false },
+{ number: '02', saveSuffix: Button_02_ListSaveSuffix, id: Button_02_IdClass, className: Button_02_IdClass, text: Button_02_Text, altText: Button_02_AltText,
+fileName: Button_02_FileName, url: Button_02_URL, banReason: Button_02_BanReason, useUnban: Button_02_UseUnban, placeholder: false },
+{ number: '03', saveSuffix: Button_03_ListSaveSuffix, id: Button_03_IdClass, className: Button_03_IdClass, text: Button_03_Text, altText: Button_03_AltText,
+fileName: Button_03_FileName, url: Button_03_URL, banReason: Button_03_BanReason, useUnban: Button_03_UseUnban, placeholder: true },
+{ number: '04', saveSuffix: Button_04_ListSaveSuffix, id: Button_04_IdClass, className: Button_04_IdClass, text: Button_04_Text, altText: Button_04_AltText,
+fileName: Button_04_FileName, url: Button_04_URL, banReason: Button_04_BanReason, useUnban: Button_04_UseUnban, placeholder: true },
+{ number: '05', saveSuffix: Button_05_ListSaveSuffix, id: Button_05_IdClass, className: Button_05_IdClass, text: Button_05_Text, altText: Button_05_AltText,
+fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, useUnban: Button_05_UseUnban, placeholder: true },
+{ number: '06', saveSuffix: Button_06_ListSaveSuffix, id: Button_06_IdClass, className: Button_06_IdClass, text: Button_06_Text, altText: Button_06_AltText,
+fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, useUnban: Button_06_UseUnban, placeholder: true },
+{ number: '07', saveSuffix: Button_07_ListSaveSuffix, id: Button_07_IdClass, className: Button_07_IdClass, text: Button_07_Text, altText: Button_07_AltText,
+fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, useUnban: Button_07_UseUnban, placeholder: true },
+{ number: '08', saveSuffix: Button_08_ListSaveSuffix, id: Button_08_IdClass, className: Button_08_IdClass, text: Button_08_Text, altText: Button_08_AltText,
+fileName: Button_08_FileName, url: Button_08_URL, banReason: Button_08_BanReason, useUnban: Button_08_UseUnban, placeholder: true },
+{ number: '09', saveSuffix: Button_09_ListSaveSuffix, id: Button_09_IdClass, className: Button_09_IdClass, text: Button_09_Text, altText: Button_09_AltText,
+fileName: Button_09_FileName, url: Button_09_URL, banReason: Button_09_BanReason, useUnban: Button_09_UseUnban, placeholder: true },
+{ number: '10', saveSuffix: Button_10_ListSaveSuffix, id: Button_10_IdClass, className: Button_10_IdClass, text: Button_10_Text, altText: Button_10_AltText,
+fileName: Button_10_FileName, url: Button_10_URL, banReason: Button_10_BanReason, useUnban: Button_10_UseUnban, placeholder: true },
+{ number: '11', saveSuffix: Button_11_ListSaveSuffix, id: Button_11_IdClass, className: Button_11_IdClass, text: Button_11_Text, altText: Button_11_AltText,
+fileName: Button_11_FileName, url: Button_11_URL, banReason: Button_11_BanReason, useUnban: Button_11_UseUnban, placeholder: true },
+{ number: '12', saveSuffix: Button_12_ListSaveSuffix, id: Button_12_IdClass, className: Button_12_IdClass, text: Button_12_Text, altText: Button_12_AltText,
+fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, useUnban: Button_12_UseUnban, placeholder: true },
+{ number: '13', saveSuffix: Button_13_ListSaveSuffix, id: Button_13_IdClass, className: Button_13_IdClass, text: Button_13_Text, altText: Button_13_AltText,
+fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, useUnban: Button_13_UseUnban, placeholder: true },
+{ number: '14', saveSuffix: Button_14_ListSaveSuffix, id: Button_14_IdClass, className: Button_14_IdClass, text: Button_14_Text, altText: Button_14_AltText,
+fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, useUnban: Button_14_UseUnban, placeholder: false },
+{ number: '15', saveSuffix: Button_15_ListSaveSuffix, id: Button_15_IdClass, className: Button_15_IdClass, text: Button_15_Text, altText: Button_15_AltText,
+fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, useUnban: Button_15_UseUnban, placeholder: false }
 ];
 // -----------------------------------------------------------------------------
 // Allgemeiner Status der Benutzeroberfläche
@@ -270,7 +228,6 @@ let isPaused = false;
 const queueList = new Set();
 // Hilfsfunktion zum Hinzufügen der Listenzuordnung
 const queueListSources = new Map();
-
 
 // Das ist wichtig, wenn derselbe Name in verschidenen Listen vorkommt
 function addUsersToQueue(users, listSuffix) {
@@ -297,10 +254,6 @@ queueListSources
 }
 }
 }
-
-
-
-
 
 const ignoredList = new Set();
 const bannedList = new Set();
