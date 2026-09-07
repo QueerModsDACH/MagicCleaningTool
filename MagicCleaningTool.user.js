@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.116
+// @version 1.9.6.118
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,6 +15,7 @@
 // @license MIT
 // ==/UserScript==
 
+// Anweisung für das Prüfwerkzeug JSHint, nach den Regeln von ECMAScript 2018 prüfen.
 /* jshint esversion: 8 */
 
 (function () {
@@ -23,25 +24,19 @@
 // ############################################################################
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
 // ############################################################################
-
 // Versionsnummer des Tools
-const myVersion = '1.9.6.116';
-
+const myVersion = '1.9.6.118';
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
-
 // Alle lokalen Speicher-Schlüssel müssen diesen Prefix verwenden.
 const BROWSER_STORAGE_PREFIX = '_QMD_';
-
 // Speicher-Schlüssel für die Sichtbarkeit des Mod-Menüs
 const MOD_MENU_VISIBILITY_STORAGE_KEY =
 'visibility_of_mod_menu';
-
 // Allgemeine Text- und Aktionsvariablen
 let text;
 let banReason;
 const defaultBanReason = 'Ban by QMD list';
-
 // URL zur Quelle der Bannlisten
 const urlBannlisten =
 'https://github.com/QueerModsDACH/Listen';
@@ -49,40 +44,23 @@ const urlBannlisten =
 // ############################################################################
 // ##### ZENTRALE KONFIGURATION DER LISTENBUTTONS #############################
 // ############################################################################
-//
 // Jede Liste besitzt eigene zentrale Variablen:
-//
-// - ID
-// - Klasse
-// - Button-Text
-// - Alt-/ARIA-Text
-// - Listenname
-// - URL
-// - Ban-Grund
-// - Unban-Modus
-//
-// Die Nummerierung der Buttons ist unabhängig vom bisherigen Listennamen.
-// Dadurch können die Listen später einfach umbenannt oder ausgetauscht
-// werden, ohne die HTML-Struktur oder die Importlogik ändern zu müssen.
-
+const Listen_rawURL =
+'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/';
 // -----------------------------------------------------------------------------
 // Button 01
-// -----------------------------------------------------------------------------
-const Button_01_ID = 'Button_01';
-const Button_01_Class = 'Button_01';
+const Button_01_ListSaveSuffix = '_Suspect_List';
+const Button_01_IdClass = 'Button_01';
 const Button_01_Text = 'suspect';
 const Button_01_AltText = 'Importiert die 01-Liste';
 const Button_01_FileName = 'suspect.txt';
-const Button_01_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/suspect.txt';
+const Button_01_URL = `${Listen_rawURL}${Button_01_FileName}`;
 const Button_01_BanReason = 'suspect (QMD-List)';
 const Button_01_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 02
-// -----------------------------------------------------------------------------
-const Button_02_ID = 'Button_02';
-const Button_02_Class = 'Button_02';
+const Button_02_ListSaveSuffix = '_List02';
+const Button_02_IdClass = 'Button_02';
 const Button_02_Text = 'Liste_02';
 const Button_02_AltText = 'Importiert die 02-Liste';
 const Button_02_FileName = 'hate_troll_list_2.txt';
@@ -90,12 +68,10 @@ const Button_02_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/hate_troll_list_2.txt';
 const Button_02_BanReason = defaultBanReason;
 const Button_02_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 03
-// -----------------------------------------------------------------------------
-const Button_03_ID = 'Button_03';
-const Button_03_Class = 'Button_03';
+const Button_03_ListSaveSuffix = '_List03';
+const Button_03_IdClass = 'Button_03';
 const Button_03_Text = 'Liste_03';
 const Button_03_AltText = 'Importiert die 03-Liste';
 const Button_03_FileName = 'hate_troll_list_3.txt';
@@ -103,12 +79,10 @@ const Button_03_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/hate_troll_list_3.txt';
 const Button_03_BanReason = defaultBanReason;
 const Button_03_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 04
-// -----------------------------------------------------------------------------
-const Button_04_ID = 'Button_04';
-const Button_04_Class = 'Button_04';
+const Button_04_ListSaveSuffix = '_List04';
+const Button_04_IdClass = 'Button_04';
 const Button_04_Text = 'Liste_04';
 const Button_04_AltText = 'Importiert die 04-Liste';
 const Button_04_FileName = 'security_ban_list.txt';
@@ -116,12 +90,10 @@ const Button_04_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/security_ban_list.txt';
 const Button_04_BanReason = defaultBanReason;
 const Button_04_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 05
-// -----------------------------------------------------------------------------
-const Button_05_ID = 'Button_05';
-const Button_05_Class = 'Button_05';
+const Button_05_ListSaveSuffix = '_List05';
+const Button_05_IdClass = 'Button_05';
 const Button_05_Text = 'Liste_05';
 const Button_05_AltText = 'Importiert die 05-Liste';
 const Button_05_FileName = 'viewer_bot_list.txt';
@@ -129,12 +101,10 @@ const Button_05_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/viewer_bot_list.txt';
 const Button_05_BanReason = defaultBanReason;
 const Button_05_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 06
-// -----------------------------------------------------------------------------
-const Button_06_ID = 'Button_06';
-const Button_06_Class = 'Button_06';
+const Button_06_ListSaveSuffix = '_List06';
+const Button_06_IdClass = 'Button_06';
 const Button_06_Text = 'Liste_06';
 const Button_06_AltText = 'Importiert die 06-Liste';
 const Button_06_FileName = 'porn_bot_acc_list.txt';
@@ -142,12 +112,10 @@ const Button_06_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/porn_bot_acc_list.txt';
 const Button_06_BanReason = defaultBanReason;
 const Button_06_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 07
-// -----------------------------------------------------------------------------
-const Button_07_ID = 'Button_07';
-const Button_07_Class = 'Button_07';
+const Button_07_ListSaveSuffix = '_List07';
+const Button_07_IdClass = 'Button_07';
 const Button_07_Text = 'Liste_07';
 const Button_07_AltText = 'Importiert die 07-Liste';
 const Button_07_FileName = 'mad_tos_list.txt';
@@ -155,12 +123,10 @@ const Button_07_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/mad_tos_list.txt';
 const Button_07_BanReason = defaultBanReason;
 const Button_07_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 08
-// -----------------------------------------------------------------------------
-const Button_08_ID = 'Button_08';
-const Button_08_Class = 'Button_08';
+const Button_08_ListSaveSuffix = '_List08';
+const Button_08_IdClass = 'Button_08';
 const Button_08_Text = 'Liste_08';
 const Button_08_AltText = 'Importiert die 08-Liste';
 const Button_08_FileName = 'follower_bot_list.txt';
@@ -168,12 +134,10 @@ const Button_08_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/follower_bot_list.txt';
 const Button_08_BanReason = defaultBanReason;
 const Button_08_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 09
-// -----------------------------------------------------------------------------
-const Button_09_ID = 'Button_09';
-const Button_09_Class = 'Button_09';
+const Button_09_ListSaveSuffix = '_List09';
+const Button_09_IdClass = 'Button_09';
 const Button_09_Text = 'Liste_09';
 const Button_09_AltText = 'Importiert die 09-Liste';
 const Button_09_FileName = 'seller_advertising_list.txt';
@@ -181,12 +145,10 @@ const Button_09_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/seller_advertising_list.txt';
 const Button_09_BanReason = defaultBanReason;
 const Button_09_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 10
-// -----------------------------------------------------------------------------
-const Button_10_ID = 'Button_10';
-const Button_10_Class = 'Button_10';
+const Button_10_ListSaveSuffix = '_List10';
+const Button_10_IdClass = 'Button_10';
 const Button_10_Text = 'Liste_10';
 const Button_10_AltText = 'Importiert die 10-Liste';
 const Button_10_FileName = 'spam_bot_list.txt';
@@ -194,12 +156,10 @@ const Button_10_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/spam_bot_list.txt';
 const Button_10_BanReason = defaultBanReason;
 const Button_10_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 11
-// -----------------------------------------------------------------------------
-const Button_11_ID = 'Button_11';
-const Button_11_Class = 'Button_11';
+const Button_11_ListSaveSuffix = '_List11';
+const Button_11_IdClass = 'Button_11';
 const Button_11_Text = 'Liste_11';
 const Button_11_AltText = 'Importiert die 11-Liste';
 const Button_11_FileName = 'list_11.txt';
@@ -207,12 +167,10 @@ const Button_11_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/list_11.txt';
 const Button_11_BanReason = defaultBanReason;
 const Button_11_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 12 – Platzhalter
-// -----------------------------------------------------------------------------
-const Button_12_ID = 'Button_12';
-const Button_12_Class = 'Button_12';
+const Button_12_ListSaveSuffix = '_List12';
+const Button_12_IdClass = 'Button_12';
 const Button_12_Text = 'Liste_12';
 const Button_12_AltText = 'Platzhalter für die 12-Liste';
 const Button_12_FileName = 'list_12.txt';
@@ -220,36 +178,30 @@ const Button_12_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/list_12.txt';
 const Button_12_BanReason = defaultBanReason;
 const Button_12_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 13 – Platzhalter
-// -----------------------------------------------------------------------------
-const Button_13_ID = 'Button_13';
-const Button_13_Class = 'Button_13';
+const Button_13_ListSaveSuffix = '_List13';
+const Button_13_IdClass = 'Button_13';
 const Button_13_Text = 'Liste_13';
 const Button_13_AltText = 'Platzhalter für die 13-Liste';
 const Button_13_FileName = '';
 const Button_13_URL = '';
 const Button_13_BanReason = defaultBanReason;
 const Button_13_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 14 – Platzhalter
-// -----------------------------------------------------------------------------
-const Button_14_ID = 'Button_14';
-const Button_14_Class = 'Button_14';
+const Button_14_ListSaveSuffix = '_List14';
+const Button_14_IdClass = 'Button_14';
 const Button_14_Text = 'Liste_14';
 const Button_14_AltText = 'Platzhalter für die 14-Liste';
 const Button_14_FileName = '';
 const Button_14_URL = '';
 const Button_14_BanReason = defaultBanReason;
 const Button_14_UseUnban = false;
-
 // -----------------------------------------------------------------------------
 // Button 15 – Platzhalter
-// -----------------------------------------------------------------------------
-const Button_15_ID = 'Button_15';
-const Button_15_Class = 'Button_15';
+const Button_15_ListSaveSuffix = '_List15';
+const Button_15_IdClass = 'Button_15';
 const Button_15_Text = 'UNBAN';
 const Button_15_AltText = 'Importiert die UNBAN-Liste';
 const Button_15_FileName = 'unbanlist.txt';
@@ -257,13 +209,14 @@ const Button_15_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/unbanlist.txt';
 const Button_15_BanReason = defaultBanReason;
 const Button_15_UseUnban = true;
-
+// -----------------------------------------------------------------------------
 // Zentrale Zusammenfassung aller Listenbuttons.
 const LIST_BUTTONS = [
 {
 number: '01',
-id: Button_01_ID,
-className: Button_01_Class,
+listSaveSuffix: Button_01_ListSaveSuffix,
+id: Button_01_IdClass,
+className: Button_01_IdClass,
 text: Button_01_Text,
 altText: Button_01_AltText,
 fileName: Button_01_FileName,
@@ -274,8 +227,9 @@ placeholder: false
 },
 {
 number: '02',
-id: Button_02_ID,
-className: Button_02_Class,
+listSaveSuffix: Button_02_ListSaveSuffix,
+id: Button_02_IdClass,
+className: Button_02_IdClass,
 text: Button_02_Text,
 altText: Button_02_AltText,
 fileName: Button_02_FileName,
@@ -286,8 +240,9 @@ placeholder: false
 },
 {
 number: '03',
-id: Button_03_ID,
-className: Button_03_Class,
+listSaveSuffix: Button_03_ListSaveSuffix,
+id: Button_03_IdClass,
+className: Button_03_IdClass,
 text: Button_03_Text,
 altText: Button_03_AltText,
 fileName: Button_03_FileName,
@@ -298,8 +253,9 @@ placeholder: false
 },
 {
 number: '04',
-id: Button_04_ID,
-className: Button_04_Class,
+listSaveSuffix: Button_04_ListSaveSuffix,
+id: Button_04_IdClass,
+className: Button_04_IdClass,
 text: Button_04_Text,
 altText: Button_04_AltText,
 fileName: Button_04_FileName,
@@ -310,8 +266,9 @@ placeholder: false
 },
 {
 number: '05',
-id: Button_05_ID,
-className: Button_05_Class,
+listSaveSuffix: Button_05_ListSaveSuffix,
+id: Button_05_IdClass,
+className: Button_05_IdClass,
 text: Button_05_Text,
 altText: Button_05_AltText,
 fileName: Button_05_FileName,
@@ -322,8 +279,9 @@ placeholder: false
 },
 {
 number: '06',
-id: Button_06_ID,
-className: Button_06_Class,
+listSaveSuffix: Button_06_ListSaveSuffix,
+id: Button_06_IdClass,
+className: Button_06_IdClass,
 text: Button_06_Text,
 altText: Button_06_AltText,
 fileName: Button_06_FileName,
@@ -334,8 +292,9 @@ placeholder: false
 },
 {
 number: '07',
-id: Button_07_ID,
-className: Button_07_Class,
+listSaveSuffix: Button_07_ListSaveSuffix,
+id: Button_07_IdClass,
+className: Button_07_IdClass,
 text: Button_07_Text,
 altText: Button_07_AltText,
 fileName: Button_07_FileName,
@@ -346,8 +305,9 @@ placeholder: true
 },
 {
 number: '08',
-id: Button_08_ID,
-className: Button_08_Class,
+listSaveSuffix: Button_08_ListSaveSuffix,
+id: Button_08_IdClass,
+className: Button_08_IdClass,
 text: Button_08_Text,
 altText: Button_08_AltText,
 fileName: Button_08_FileName,
@@ -358,8 +318,9 @@ placeholder: true
 },
 {
 number: '09',
-id: Button_09_ID,
-className: Button_09_Class,
+listSaveSuffix: Button_09_ListSaveSuffix,
+id: Button_09_IdClass,
+className: Button_09_IdClass,
 text: Button_09_Text,
 altText: Button_09_AltText,
 fileName: Button_09_FileName,
@@ -370,8 +331,9 @@ placeholder: true
 },
 {
 number: '10',
-id: Button_10_ID,
-className: Button_10_Class,
+listSaveSuffix: Button_10_ListSaveSuffix,
+id: Button_10_IdClass,
+className: Button_10_IdClass,
 text: Button_10_Text,
 altText: Button_10_AltText,
 fileName: Button_10_FileName,
@@ -382,8 +344,9 @@ placeholder: true
 },
 {
 number: '11',
-id: Button_11_ID,
-className: Button_11_Class,
+listSaveSuffix: Button_11_ListSaveSuffix,
+id: Button_11_IdClass,
+className: Button_11_IdClass,
 text: Button_11_Text,
 altText: Button_11_AltText,
 fileName: Button_11_FileName,
@@ -394,8 +357,9 @@ placeholder: true
 },
 {
 number: '12',
-id: Button_12_ID,
-className: Button_12_Class,
+listSaveSuffix: Button_12_ListSaveSuffix,
+id: Button_12_IdClass,
+className: Button_12_IdClass,
 text: Button_12_Text,
 altText: Button_12_AltText,
 fileName: Button_12_FileName,
@@ -406,8 +370,9 @@ placeholder: true
 },
 {
 number: '13',
-id: Button_13_ID,
-className: Button_13_Class,
+listSaveSuffix: Button_13_ListSaveSuffix,
+id: Button_13_IdClass,
+className: Button_13_IdClass,
 text: Button_13_Text,
 altText: Button_13_AltText,
 fileName: Button_13_FileName,
@@ -418,8 +383,9 @@ placeholder: true
 },
 {
 number: '14',
-id: Button_14_ID,
-className: Button_14_Class,
+listSaveSuffix: Button_14_ListSaveSuffix,
+id: Button_14_IdClass,
+className: Button_14_IdClass,
 text: Button_14_Text,
 altText: Button_14_AltText,
 fileName: Button_14_FileName,
@@ -430,8 +396,9 @@ placeholder: true
 },
 {
 number: '15',
-id: Button_15_ID,
-className: Button_15_Class,
+listSaveSuffix: Button_15_ListSaveSuffix,
+id: Button_15_IdClass,
+className: Button_15_IdClass,
 text: Button_15_Text,
 altText: Button_15_AltText,
 fileName: Button_15_FileName,
@@ -441,58 +408,29 @@ useUnban: Button_15_UseUnban,
 placeholder: false
 }
 ];
-
-// Werbe- und Botlisten
-const mdgBtnAdvertisingText = Button_09_Text;
-const mdgBtnFollowBotText = Button_08_Text;
-const mdgBtnViewerBotsText = Button_05_Text;
-const mdgBtnSpamBotsText = Button_10_Text;
-const mdgBtnPornBotText = Button_06_Text;
-
-// Verdächtige Benutzer und Trolle
-const Button_Suspect_Text = Button_01_Text;
-const mdgBtnTrollsText1 = Button_02_Text;
-const mdgBtnTrollsText2 = Button_03_Text;
-
-// Sicherheits- und TOS-Listen
-const mdgBtnSec = Button_04_Text;
-const mdgBtnFlirtyMadText = Button_07_Text;
-
-// Unban- und Informationsbutton
-const mdgBtnUnbanText = Button_11_Text;
-const Button_Info_Text = 'info';
-
+// -----------------------------------------------------------------------------
 // Allgemeiner Status der Benutzeroberfläche
 let replaceFooter = 'none';
 let isPaused = false;
-
 // Interne Listen während der Laufzeit
 const queueList = new Set();
 const ignoredList = new Set();
 const bannedList = new Set();
-
 // Aktuell aktive Twitch-Seite beziehungsweise Kanal
 let activeChannel = getActiveChannel();
-
 // Bilder für die Benutzeroberfläche
 const activateImage =
 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
-
 const modMenuOnImage =
 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_on.png';
-
 const modMenuOffImage =
 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_off.png';
-
 // Alternative Theme-Farbe
 const themeNormal = '#9146FF';
 const themeTextColor = themeNormal;
-
 // Text für die Versionsprüfung
 const updateText = 'die Version ist aktuell ツ';
-
-// Der gespeicherte Sichtbarkeitszustand wird standardmäßig auf
-// "sichtbar" gesetzt.
+// Der gespeicherte Sichtbarkeitszustand wird standardmäßig auf "sichtbar" gesetzt.
 let isModMenuVisible = readStorageValue(
 MOD_MENU_VISIBILITY_STORAGE_KEY,
 true
@@ -501,13 +439,10 @@ true
 // ############################################################################
 // ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN ####################################
 // ############################################################################
-
 // Allgemeine Delay-Funktion
 const delay = (time) =>
 new Promise((resolve) => setTimeout(resolve, time));
-
 // Zentrale Delay-Werte in Millisekunden
-//
 // Hinweis:
 // Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen
 // dadurch möglicherweise zu schnell hintereinander ausgeführt werden
@@ -519,12 +454,10 @@ const DELAY_PAUSE_CHECK = 1000;
 // ############################################################################
 // ##### LOCALSTORAGE-HILFSFUNKTIONEN #########################################
 // ############################################################################
-
 // Erstellt einen lokalen Speicher-Schlüssel mit dem zentralen Prefix.
 function storageKey(key) {
 return `${BROWSER_STORAGE_PREFIX}${key}`;
 }
-
 // Liest eine JSON-Liste sicher aus dem localStorage.
 function readStorageList(key) {
 try {
@@ -587,41 +520,9 @@ JSON.stringify(value)
 );
 }
 
-// Einmalige Migration des alten Mod-Kanal-Schlüssels.
-function migrateLegacyStorage() {
-const currentKey = storageKey('myModChannels');
-const legacyKey = 'myModChannels';
-
-if (
-!localStorage.getItem(currentKey) &&
-localStorage.getItem(legacyKey)
-) {
-try {
-const legacyChannels =
-JSON.parse(localStorage.getItem(legacyKey));
-
-if (Array.isArray(legacyChannels)) {
-writeStorageList(
-'myModChannels',
-legacyChannels
-);
-}
-} catch (error) {
-console.error(
-LOGPREFIX,
-'Die alten Mod-Kanäle konnten nicht übernommen werden:',
-error
-);
-}
-}
-}
-
-migrateLegacyStorage();
-
 // ############################################################################
 // ##### AKTUELLEN KANAL AUS DER URL ERMITTELN ###############################
 // ############################################################################
-
 function getActiveChannel() {
 const pathname = window.location.pathname
 .replace(/^\/+|\/+$/g, '');
@@ -656,7 +557,6 @@ activeChannel
 // ############################################################################
 // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
 // ############################################################################
-
 // Für jeden Twitch-Kanal werden eigene Listen verwendet.
 const QMD_LocalStorageBanList =
 storageKey(`${activeChannel}_banlist`);
@@ -687,7 +587,6 @@ readStorageList('myModChannels');
 // ############################################################################
 // ##### CORS-KONFIGURATION FÜR DEN IMPORT VON GITHUB-LISTEN #################
 // ############################################################################
-
 const QMD_corsDisable = {
 id: 1,
 enabled: true,
@@ -705,7 +604,6 @@ value: '*'
 // ############################################################################
 // ##### CORS-KONFIGURATION SPEICHERN ########################################
 // ############################################################################
-
 if (typeof GM_setValue === 'function') {
 GM_setValue(
 storageKey('corsDisable'),
@@ -721,7 +619,6 @@ QMD_corsDisable
 // ############################################################################
 // ##### GM_ADDSTYLE-FALLBACK DEFINIEREN #####################################
 // ############################################################################
-
 if (typeof GM_addStyle === 'undefined') {
 window.GM_addStyle = (css) => {
 const style = document.createElement('style');
@@ -733,7 +630,6 @@ document.head.appendChild(style);
 // ############################################################################
 // ##### EXTERNE BIBLIOTHEKEN LADEN ###########################################
 // ############################################################################
-
 function loadExternalLibraries() {
 if (!window.jQuery) {
 const jqueryScript = document.createElement('script');
@@ -761,7 +657,6 @@ loadExternalLibraries();
 // ############################################################################
 // ##### HTML-HILFSFUNKTIONEN FÜR DIE LISTENBUTTONS ##########################
 // ############################################################################
-
 // Erzeugt einen einzelnen Listenbutton aus der zentralen Konfiguration.
 function createListButtonHtml(listConfig, width = '32%') {
 const disabledAttributes = listConfig.placeholder
@@ -814,7 +709,6 @@ const listButtonsHtml = createAllListButtonsHtml();
 // ############################################################################
 // ##### HTML-STRUKTUR UND STYLES DES MOD-TOOLS ##############################
 // ############################################################################
-
 const html = /* html */ `
 <div id="magicMorningStar" class="magicMorningStar">
 
@@ -1168,14 +1062,6 @@ title="Pause/Play"
 </button>
 
 <button
-class="modChannels"
-type="button"
-title="Alle als Mod-Kanal hinzufügen"
->
-⚔
-</button>
-
-<button
 class="ignoreAll"
 type="button"
 title="Liste leeren"
@@ -1236,15 +1122,13 @@ ${myVersion}
 // ############################################################################
 // ##### JAVASCRIPT: MODAL UND TOOL-CONTAINER ERSTELLEN #######################
 // ############################################################################
-
 const d = document.createElement('div');
 d.style.display = 'none';
 d.innerHTML = html;
 
 const textarea = d.querySelector('#textfield');
 
-// Fügt das Tool auch dann ein, wenn document-idle bereits nach
-// DOMContentLoaded ausgeführt wurde.
+// Fügt das Tool auch dann ein, wenn document-idle bereits nach DOMContentLoaded ausgeführt wurde.
 function appendToolToDocument() {
 if (!document.body.contains(d)) {
 document.body.appendChild(d);
@@ -1294,7 +1178,6 @@ let watchdogTimer = null;
 // ############################################################################
 // ##### HILFSFUNKTION FÜR DRAGGABLE ##########################################
 // ############################################################################
-
 function makeToolDraggable() {
 const tool = d.querySelector('.magicMorningStar');
 
@@ -1344,8 +1227,7 @@ startPointerY = event.clientY;
 startLeft = toolRect.left;
 startTop = toolRect.top;
 
-// Die Position wird auf die aktuelle Bildschirmposition
-// umgestellt, damit beim ersten Verschieben kein Sprung entsteht.
+// Die Position wird auf die aktuelle Bildschirmposition umgestellt, damit beim ersten Verschieben kein Sprung entsteht.
 tool.style.left = `${startLeft}px`;
 tool.style.top = `${startTop}px`;
 tool.style.right = 'auto';
@@ -1407,7 +1289,6 @@ false
 // ############################################################################
 // ##### BENUTZERSTATUS UND LISTENAKTIONEN ####################################
 // ############################################################################
-
 function userAlreadyBanned(user, buttonId) {
 if (!QMD_bannedUsersStore.includes(user)) {
 queueList.add(user);
@@ -1445,7 +1326,6 @@ LOGPREFIX,
 // ############################################################################
 // ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #############################
 // ############################################################################
-
 function show() {
 console.log(LOGPREFIX, 'Show');
 
@@ -1541,7 +1421,6 @@ button.title = 'Pausieren';
 // ############################################################################
 // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
 // ############################################################################
-
 // Aktualisiert das Bild des Mod-Menü-Umschalters.
 function updateModMenuToggleImage() {
 const button = d.querySelector('.modMenuToggle');
@@ -1587,8 +1466,7 @@ if (state.dropdownButton) {
 state.dropdownButton.style.display = displayValue;
 }
 
-// Die Liste darf bei sichtbarem Mod-Menü nicht erneut
-// ausgeblendet werden.
+// Die Liste darf bei sichtbarem Mod-Menü nicht erneut ausgeblendet werden.
 if (state.dropdownList && !isModMenuVisible) {
 state.dropdownList.style.display = 'none';
 }
@@ -1596,8 +1474,7 @@ state.dropdownList.style.display = 'none';
 updateModMenuToggleImage();
 }
 
-// Schaltet das Mod-Menü ein beziehungsweise aus und speichert
-// den neuen Zustand dauerhaft im Browser.
+// Schaltet das Mod-Menü ein beziehungsweise aus und speichert den neuen Zustand dauerhaft im Browser.
 function toggleModMenuVisibility() {
 isModMenuVisible = !isModMenuVisible;
 
@@ -1619,7 +1496,6 @@ isModMenuVisible ? 'sichtbar' : 'verborgen'
 // ############################################################################
 // ##### VERSIONS- UND EXTERNE FUNKTIONEN #####################################
 // ############################################################################
-
 function checkVersion() {
 fetch(
 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/MagicCleaningTool.user.js'
@@ -1681,59 +1557,25 @@ openExternal(
 // ############################################################################
 // ##### BUTTON-EVENTS EINRICHTEN ############################################
 // ############################################################################
-
 function setupButtonEvents() {
 d.querySelector('.ignoreAll').onclick = ignoreAll;
 d.querySelector('.banAll').onclick = banAll;
 d.querySelector('.closeBtn').onclick = hide;
-d.querySelector('.modChannels').onclick = addModChannelsAll;
 d.querySelector('.unbanAll').onclick = unbanAll;
 d.querySelector('.back').onclick = toggleBack;
 d.querySelector('.pause').onclick = togglePause;
-
-d.querySelector('.modMenuToggle').onclick =
-toggleModMenuVisibility;
-
-d.querySelector('.qmd')?.addEventListener(
-'click',
-qmd
-);
-
-d.querySelector('.importBtn').onclick =
-importList;
-
-d.querySelector('.clearBannedUsers').onclick =
-clearBannedUsers;
-
-d.querySelector('.MooBot').onclick = () =>
-openExternal('https://moo.bot/');
-
-d.querySelector('.NightBot').onclick = () =>
-openExternal('https://nightbot.tv/dashboard');
-
-d.querySelector('.comanderRoot').onclick = () =>
-openExternal('https://twitch-tools.rootonline.de');
-
-d.querySelector('.sLabs').onclick = () =>
-openExternal('https://streamlabs.com/dashboard');
-
-d.querySelector('.sElements').onclick = () =>
-openExternal('https://streamelements.com/dashboard');
-
-d.querySelector('.chatstats').onclick = () =>
-openExternal(
-`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`
-);
-
-d.querySelector('.modLogger').onclick = () =>
-openExternal(
-`https://jvpeek.github.io/twitchmodlogger/?channel=${encodeURIComponent(activeChannel)}`
-);
-
-d.querySelector('.chatDeepStats').onclick = () =>
-openExternal(
-`https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${encodeURIComponent(activeChannel)}`
-);
+d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
+d.querySelector('.qmd')?.addEventListener( 'click', qmd );
+d.querySelector('.importBtn').onclick = importList;
+d.querySelector('.clearBannedUsers').onclick = clearBannedUsers;
+d.querySelector('.MooBot').onclick = () => openExternal('https://moo.bot/');
+d.querySelector('.NightBot').onclick = () => openExternal('https://nightbot.tv/dashboard');
+d.querySelector('.comanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
+d.querySelector('.sLabs').onclick = () => openExternal('https://streamlabs.com/dashboard');
+d.querySelector('.sElements').onclick = () => openExternal('https://streamelements.com/dashboard');
+d.querySelector('.chatstats').onclick = () => openExternal( `https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}` );
+d.querySelector('.modLogger').onclick = () => openExternal( `https://jvpeek.github.io/twitchmodlogger/?channel=${encodeURIComponent(activeChannel)}` );
+d.querySelector('.chatDeepStats').onclick = () => openExternal( `https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${encodeURIComponent(activeChannel)}` );
 
 // Alle Listenbuttons zentral verbinden.
 LIST_BUTTONS.forEach((listConfig) => {
@@ -1749,8 +1591,7 @@ button.onclick = () =>
 importListByNumber(listConfig.number);
 });
 
-// Der Aktivierungsbutton wird erst hier mit seiner Funktion
-// verbunden, damit alle benötigten Funktionen bereits definiert sind.
+// Der Aktivierungsbutton wird erst hier mit seiner Funktion verbunden, damit alle benötigten Funktionen bereits definiert sind.
 activateBtn.onclick = toggle;
 
 d.addEventListener('click', (event) => {
@@ -1798,7 +1639,6 @@ setupButtonEvents();
 // ############################################################################
 // ##### GESPEICHERTE BANNLISTE LÖSCHEN #######################################
 // ############################################################################
-
 function clearBannedUsers() {
 localStorage.removeItem(QMD_LocalStorageBanList);
 
@@ -1810,7 +1650,6 @@ renderList();
 // ############################################################################
 // ##### IMPORT UND EINGABEVERARBEITUNG #######################################
 // ############################################################################
-
 function insertText(value) {
 d.querySelector('#textfield').value =
 Array.isArray(value)
@@ -1924,66 +1763,20 @@ function import_Liste_11() {
 importListByNumber('11');
 }
 
-// Die Buttons 12 bis 15 sind absichtlich als Platzhalter vorhanden.
 function import_Liste_12() {
-console.warn(LOGPREFIX, 'Liste 12 ist noch nicht eingerichtet.');
+importListByNumber('12');
 }
 
 function import_Liste_13() {
-console.warn(LOGPREFIX, 'Liste 13 ist noch nicht eingerichtet.');
+importListByNumber('13');
 }
 
 function import_Liste_14() {
-console.warn(LOGPREFIX, 'Liste 14 ist noch nicht eingerichtet.');
+importListByNumber('14');
 }
 
 function import_Liste_15() {
-console.warn(LOGPREFIX, 'Liste 15 ist noch nicht eingerichtet.');
-}
-
-// Abwärtskompatible Funktionsnamen.
-function import_Suspect() {
-import_Liste_01();
-}
-
-function importMDGtrolls1() {
-import_Liste_02();
-}
-
-function importMDGtrolls2() {
-import_Liste_03();
-}
-
-function importMDGsec() {
-import_Liste_04();
-}
-
-function importMDGViewerBots() {
-import_Liste_05();
-}
-
-function importMDGPorn() {
-import_Liste_06();
-}
-
-function importMDGFlirtyMad() {
-import_Liste_07();
-}
-
-function importMDGFollowBot() {
-import_Liste_08();
-}
-
-function importMDGAdvertising() {
-import_Liste_09();
-}
-
-function importMDGSpamBots() {
-import_Liste_10();
-}
-
-function importMDGUnban() {
-import_Liste_11();
+importListByNumber('15');
 }
 
 // Allgemeine Importfunktion für externe Listen.
@@ -2077,7 +1870,6 @@ button.innerHTML = defaultButtonText;
 // ############################################################################
 // ##### EINZEL- UND MASSENAKTIONEN ###########################################
 // ############################################################################
-
 function ignoreAll() {
 console.log(
 LOGPREFIX,
@@ -2282,15 +2074,9 @@ LOGPREFIX,
 }
 }
 
-// Abwärtskompatibler Alias zum bisherigen Funktionsnamen.
-function addModChannels(user) {
-addModChannel(user);
-}
-
 // ############################################################################
 // ##### NACHRICHTEN AN DEN TWITCH-CHAT SENDEN ###############################
 // ############################################################################
-
 function sendMessage(message) {
 try {
 sendMessageOld(message);
@@ -2384,14 +2170,12 @@ which: 13
 // ############################################################################
 // ##### LISTENANZEIGE UND RENDERING #########################################
 // ############################################################################
-
 function renderList() {
 const buttonsToToggle = [
 '.ignoreAll',
 '.banAll',
 '.back',
 '.pause',
-'.modChannels',
 '.unbanAll'
 ];
 
@@ -2438,22 +2222,6 @@ title="Benutzer bannen"
 Ban
 </button>
 
-<button
-class="addModChannels"
-data-user="${escapeHtml(item)}"
-title="Kanal als Mod-Kanal hinzufügen"
->
-➕⚔
-</button>
-
-<button
-class="removeModChannel"
-data-user="${escapeHtml(item)}"
-title="Kanal als Mod-Kanal entfernen"
->
-➖⚔
-</button>
-
 <span>
 <a
 href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
@@ -2473,7 +2241,7 @@ const inner = queueList.size
 <div id="empty" class="empty">
 <img
 class="toggleImport"
-src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Logo_1920x400.png"
+src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
 title="Start Magic Cleaning Tool"
 alt="Magic Cleaning Tool starten"
 width="370"
@@ -2499,7 +2267,6 @@ return String(value)
 // ############################################################################
 // ##### MOD-MENÜ ############################################################
 // ############################################################################
-
 function sortAndStoreModChannels(channels) {
 const uniqueChannels = [
 ...new Set(
@@ -3044,7 +2811,6 @@ state.run();
 // ############################################################################
 // ##### AKTIVIERUNGSBUTTON IM TWITCH-MENÜ ###############################
 // ############################################################################
-
 function appendActivatorBtn() {
 const modBtn =
 document.querySelector(
@@ -3130,8 +2896,7 @@ hide();
 }
 }
 
-// Twitch rendert Header und Mod-Ansicht dynamisch.
-// Deshalb werden beide Buttons dauerhaft geprüft.
+// Twitch rendert Header und Mod-Ansicht dynamisch. Deshalb werden beide Buttons dauerhaft geprüft.
 setInterval(
 appendActivatorBtn,
 1000
@@ -3140,9 +2905,7 @@ appendActivatorBtn,
 // ############################################################################
 // ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG ###############################
 // ############################################################################
-
-// Der Prüfzyklus bleibt aktiv und erstellt den Button beim ersten
-// vollständig verfügbaren Header.
+// Der Prüfzyklus bleibt aktiv und erstellt den Button beim ersten vollständig verfügbaren Header.
 modMenu();
 
 setInterval(
