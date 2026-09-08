@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.122
+// @version 1.9.6.123
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -22,7 +22,7 @@
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
 // ############################################################################
 // Versionsnummer des Tools
-const myVersion = '1.9.6.122';
+const myVersion = '1.9.6.123';
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
 // Alle lokalen Speicher-Schlüssel müssen diesen Prefix verwenden.
@@ -407,62 +407,6 @@ readStorageValue(
 let QMD_modChannelStore =
 readStorageList('myModChannels');
 // ############################################################################
-// ##### CORS-KONFIGURATION FÜR DEN IMPORT VON GITHUB-LISTEN #################
-// ############################################################################
-// const QMD_corsDisable = {
-// id: 1,
-// enabled: true,
-// name: 'Allow All',
-// match: '<all_urls>',
-// action: 'allow',
-// responseHeaders: [
-// {
-// name: 'Access-Control-Allow-Origin',
-// value: '*'
-// }
-// ]
-// };
-// ############################################################################
-// ##### CORS-KONFIGURATION SPEICHERN ########################################
-// ############################################################################
-// if (typeof GM_setValue === 'function') {
-// GM_setValue(
-// storageKey('corsDisable'),
-// JSON.stringify(QMD_corsDisable)
-// );
-// } else {
-// writeStorageValue(
-// 'corsDisable',
-// QMD_corsDisable
-// );
-// }
-// ############################################################################
-// ##### EXTERNE BIBLIOTHEKEN LADEN ###########################################
-// ############################################################################
-// function loadExternalLibraries() {
-// if (!window.jQuery) {
-// const jqueryScript = document.createElement('script');
-//
-// jqueryScript.src =
-// 'https://code.jquery.com/jquery-3.6.0.min.js';
-//
-// jqueryScript.async = true;
-// document.head.appendChild(jqueryScript);
-// }
-//
-// if (!window.jQuery || !window.jQuery.ui) {
-// const jqueryUIScript = document.createElement('script');
-//
-// jqueryUIScript.src =
-// 'https://code.jquery.com/ui/1.13.0/jquery-ui.min.js';
-//
-// jqueryUIScript.async = true;
-// document.head.appendChild(jqueryUIScript);
-// }
-// }
-// loadExternalLibraries();
-
-// ############################################################################
 // ##### HTML-HILFSFUNKTIONEN FÜR DIE LISTENBUTTONS ##########################
 // ############################################################################
 // Erzeugt einen einzelnen Listenbutton aus der zentralen Konfiguration.
@@ -524,7 +468,7 @@ z-index: 99999999;
 position: absolute;
 top: 250px;
 left: 350px;
-min-width: 525px;
+min-width: 600px;
 padding: 5px;
 background-color: var(--color-background-base);
 color: var(--color-text-base);
@@ -1332,12 +1276,6 @@ url,
 );
 }
 
-// function qmd() {
-// openExternal(
-// 'https://github.com/QueerModsDACH/'
-// );
-// }
-
 // ############################################################################
 // ##### BUTTON-EVENTS EINRICHTEN ############################################
 // ############################################################################
@@ -2047,8 +1985,8 @@ class="toggleImport"
 src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
 title="Start Magic Cleaning Tool"
 alt="Magic Cleaning Tool starten"
-width="480"
-style="cursor: pointer; max-height: 240px; min-height: 240px"
+width="580"
+style="cursor: pointer; max-height: 270px; min-height: 270px"
 >
 </div>
 `;
