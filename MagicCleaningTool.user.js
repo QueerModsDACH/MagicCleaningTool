@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.123
+// @version 1.9.6.126
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -22,7 +22,7 @@
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
 // ############################################################################
 // Versionsnummer des Tools
-const myVersion = '1.9.6.123';
+const myVersion = '1.9.6.126';
 // Log-Präfix für die Browser-Konsole
 const LOGPREFIX = '[QMD_MCT_1]';
 // Alle lokalen Speicher-Schlüssel müssen diesen Prefix verwenden.
@@ -36,8 +36,6 @@ const defaultBanReason = 'Ban by QMD list';
 const urlBannlisten =
 'https://github.com/QueerModsDACH/Listen';
 // URL zu Whitelisten
-// const WHITELIST_URL =
-// 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_bots.txt';
 const WHITELISTED_BOTS_URL =
 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_bots.txt';
 const WHITELISTED_USER_URL =
@@ -60,7 +58,7 @@ const Button_01_AltText = 'Importiert die 01-Liste';
 const Button_01_FileName = 'suspect.txt';
 const Button_01_URL = `${Listen_rawURL}${Button_01_FileName}`;
 const Button_01_BanReason = 'suspect (QMD-List)';
-const Button_01_UseUnban = false;
+const Button_01_Action = 'ban';
 // Button 02
 const Button_02_ListSaveSuffix = '_List02';
 const Button_02_IdClass = 'Button_02';
@@ -69,7 +67,7 @@ const Button_02_AltText = 'Importiert die 02-Liste';
 const Button_02_FileName = 'hate_troll_list_2.txt';
 const Button_02_URL = `${Listen_rawURL}${Button_02_FileName}`;
 const Button_02_BanReason = defaultBanReason;
-const Button_02_UseUnban = false;
+const Button_02_Action = 'ban';
 // Button 03
 const Button_03_ListSaveSuffix = '_List03';
 const Button_03_IdClass = 'Button_03';
@@ -78,7 +76,7 @@ const Button_03_AltText = 'Importiert die 03-Liste';
 const Button_03_FileName = 'hate_troll_list_3.txt';
 const Button_03_URL = `${Listen_rawURL}${Button_03_FileName}`;
 const Button_03_BanReason = defaultBanReason;
-const Button_03_UseUnban = false;
+const Button_03_Action = 'ban';
 // Button 04
 const Button_04_ListSaveSuffix = '_List04';
 const Button_04_IdClass = 'Button_04';
@@ -87,7 +85,7 @@ const Button_04_AltText = 'Importiert die 04-Liste';
 const Button_04_FileName = 'security_ban_list.txt';
 const Button_04_URL = `${Listen_rawURL}${Button_04_FileName}`;
 const Button_04_BanReason = defaultBanReason;
-const Button_04_UseUnban = false;
+const Button_04_Action = 'ban';
 // Button 05
 const Button_05_ListSaveSuffix = '_List05';
 const Button_05_IdClass = 'Button_05';
@@ -96,7 +94,7 @@ const Button_05_AltText = 'Importiert die 05-Liste';
 const Button_05_FileName = 'viewer_bot_list.txt';
 const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
 const Button_05_BanReason = defaultBanReason;
-const Button_05_UseUnban = false;
+const Button_05_Action = 'ban';
 // Button 06
 const Button_06_ListSaveSuffix = '_List06';
 const Button_06_IdClass = 'Button_06';
@@ -105,7 +103,7 @@ const Button_06_AltText = 'Importiert die 06-Liste';
 const Button_06_FileName = 'porn_bot_acc_list.txt';
 const Button_06_URL = `${Listen_rawURL}${Button_06_FileName}`;
 const Button_06_BanReason = defaultBanReason;
-const Button_06_UseUnban = false;
+const Button_06_Action = 'ban';
 // Button 07
 const Button_07_ListSaveSuffix = '_List07';
 const Button_07_IdClass = 'Button_07';
@@ -114,7 +112,7 @@ const Button_07_AltText = 'Importiert die 07-Liste';
 const Button_07_FileName = 'mad_tos_list.txt';
 const Button_07_URL = `${Listen_rawURL}${Button_07_FileName}`;
 const Button_07_BanReason = defaultBanReason;
-const Button_07_UseUnban = false;
+const Button_07_Action = 'ban';
 // Button 08
 const Button_08_ListSaveSuffix = '_List08';
 const Button_08_IdClass = 'Button_08';
@@ -123,7 +121,7 @@ const Button_08_AltText = 'Importiert die 08-Liste';
 const Button_08_FileName = 'follower_bot_list.txt';
 const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
 const Button_08_BanReason = defaultBanReason;
-const Button_08_UseUnban = false;
+const Button_08_Action = 'ban';
 // Button 09
 const Button_09_ListSaveSuffix = '_List09';
 const Button_09_IdClass = 'Button_09';
@@ -132,7 +130,7 @@ const Button_09_AltText = 'Importiert die 09-Liste';
 const Button_09_FileName = 'seller_advertising_list.txt';
 const Button_09_URL = `${Listen_rawURL}${Button_09_FileName}`;
 const Button_09_BanReason = defaultBanReason;
-const Button_09_UseUnban = false;
+const Button_09_Action = 'ban';
 // Button 10
 const Button_10_ListSaveSuffix = '_List10';
 const Button_10_IdClass = 'Button_10';
@@ -141,7 +139,7 @@ const Button_10_AltText = 'Importiert die 10-Liste';
 const Button_10_FileName = 'spam_bot_list.txt';
 const Button_10_URL = `${Listen_rawURL}${Button_10_FileName}`;
 const Button_10_BanReason = defaultBanReason;
-const Button_10_UseUnban = false;
+const Button_10_Action = 'ban';
 // Button 11
 const Button_11_ListSaveSuffix = '_List11';
 const Button_11_IdClass = 'Button_11';
@@ -150,7 +148,7 @@ const Button_11_AltText = 'Importiert die 11-Liste';
 const Button_11_FileName = 'list_11.txt';
 const Button_11_URL = `${Listen_rawURL}${Button_11_FileName}`;
 const Button_11_BanReason = defaultBanReason;
-const Button_11_UseUnban = false;
+const Button_11_Action = 'ban';
 // Button 12
 const Button_12_ListSaveSuffix = '_List12';
 const Button_12_IdClass = 'Button_12';
@@ -159,7 +157,7 @@ const Button_12_AltText = 'Platzhalter für die 12-Liste';
 const Button_12_FileName = 'list_12.txt';
 const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
 const Button_12_BanReason = defaultBanReason;
-const Button_12_UseUnban = false;
+const Button_12_Action = 'ban';
 // Button 13
 const Button_13_ListSaveSuffix = '_List13';
 const Button_13_IdClass = 'Button_13';
@@ -168,7 +166,7 @@ const Button_13_AltText = 'Platzhalter für die 13-Liste';
 const Button_13_FileName = 'list_13.txt';
 const Button_13_URL = `${Listen_rawURL}${Button_13_FileName}`;
 const Button_13_BanReason = defaultBanReason;
-const Button_13_UseUnban = false;
+const Button_13_Action = 'ban';
 // Button 14
 const Button_14_ListSaveSuffix = '_WHITELISTED_user';
 const Button_14_IdClass = 'Button_14';
@@ -177,7 +175,7 @@ const Button_14_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
 const Button_14_FileName = 'WHITELISTED_user.txt';
 const Button_14_URL = `${Listen_rawURL}${Button_14_FileName}`;
 const Button_14_BanReason = defaultBanReason;
-const Button_14_UseUnban = true;
+const Button_14_Action = 'unban';
 // Button 15
 const Button_15_ListSaveSuffix = '_WHITELISTED_bots';
 const Button_15_IdClass = 'Button_15';
@@ -186,73 +184,75 @@ const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
 const Button_15_FileName = 'WHITELISTED_bots.txt';
 const Button_15_URL = `${Listen_rawURL}${Button_15_FileName}`;
 const Button_15_BanReason = defaultBanReason;
-const Button_15_UseUnban = true;
+const Button_15_Action = 'unban';
 // -----------------------------------------------------------------------------
 // Zentrale Zusammenfassung aller Listenbuttons.
 const LIST_BUTTONS = [
 { number: '01', saveSuffix: Button_01_ListSaveSuffix, id: Button_01_IdClass, className: Button_01_IdClass, text: Button_01_Text, altText: Button_01_AltText,
-fileName: Button_01_FileName, url: Button_01_URL, banReason: Button_01_BanReason, useUnban: Button_01_UseUnban, placeholder: false },
+fileName: Button_01_FileName, url: Button_01_URL, banReason: Button_01_BanReason, action: Button_01_Action, placeholder: false },
 { number: '02', saveSuffix: Button_02_ListSaveSuffix, id: Button_02_IdClass, className: Button_02_IdClass, text: Button_02_Text, altText: Button_02_AltText,
-fileName: Button_02_FileName, url: Button_02_URL, banReason: Button_02_BanReason, useUnban: Button_02_UseUnban, placeholder: false },
+fileName: Button_02_FileName, url: Button_02_URL, banReason: Button_02_BanReason, action: Button_02_Action, placeholder: false },
 { number: '03', saveSuffix: Button_03_ListSaveSuffix, id: Button_03_IdClass, className: Button_03_IdClass, text: Button_03_Text, altText: Button_03_AltText,
-fileName: Button_03_FileName, url: Button_03_URL, banReason: Button_03_BanReason, useUnban: Button_03_UseUnban, placeholder: true },
+fileName: Button_03_FileName, url: Button_03_URL, banReason: Button_03_BanReason, action: Button_03_Action, placeholder: true },
 { number: '04', saveSuffix: Button_04_ListSaveSuffix, id: Button_04_IdClass, className: Button_04_IdClass, text: Button_04_Text, altText: Button_04_AltText,
-fileName: Button_04_FileName, url: Button_04_URL, banReason: Button_04_BanReason, useUnban: Button_04_UseUnban, placeholder: true },
+fileName: Button_04_FileName, url: Button_04_URL, banReason: Button_04_BanReason, action: Button_04_Action, placeholder: true },
 { number: '05', saveSuffix: Button_05_ListSaveSuffix, id: Button_05_IdClass, className: Button_05_IdClass, text: Button_05_Text, altText: Button_05_AltText,
-fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, useUnban: Button_05_UseUnban, placeholder: true },
+fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, action: Button_05_Action, placeholder: true },
 { number: '06', saveSuffix: Button_06_ListSaveSuffix, id: Button_06_IdClass, className: Button_06_IdClass, text: Button_06_Text, altText: Button_06_AltText,
-fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, useUnban: Button_06_UseUnban, placeholder: true },
+fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, action: Button_06_Action, placeholder: true },
 { number: '07', saveSuffix: Button_07_ListSaveSuffix, id: Button_07_IdClass, className: Button_07_IdClass, text: Button_07_Text, altText: Button_07_AltText,
-fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, useUnban: Button_07_UseUnban, placeholder: true },
+fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, action: Button_07_Action, placeholder: true },
 { number: '08', saveSuffix: Button_08_ListSaveSuffix, id: Button_08_IdClass, className: Button_08_IdClass, text: Button_08_Text, altText: Button_08_AltText,
-fileName: Button_08_FileName, url: Button_08_URL, banReason: Button_08_BanReason, useUnban: Button_08_UseUnban, placeholder: true },
+fileName: Button_08_FileName, url: Button_08_URL, banReason: Button_08_BanReason, action: Button_08_Action, placeholder: true },
 { number: '09', saveSuffix: Button_09_ListSaveSuffix, id: Button_09_IdClass, className: Button_09_IdClass, text: Button_09_Text, altText: Button_09_AltText,
-fileName: Button_09_FileName, url: Button_09_URL, banReason: Button_09_BanReason, useUnban: Button_09_UseUnban, placeholder: true },
+fileName: Button_09_FileName, url: Button_09_URL, banReason: Button_09_BanReason, action: Button_09_Action, placeholder: true },
 { number: '10', saveSuffix: Button_10_ListSaveSuffix, id: Button_10_IdClass, className: Button_10_IdClass, text: Button_10_Text, altText: Button_10_AltText,
-fileName: Button_10_FileName, url: Button_10_URL, banReason: Button_10_BanReason, useUnban: Button_10_UseUnban, placeholder: true },
+fileName: Button_10_FileName, url: Button_10_URL, banReason: Button_10_BanReason, action: Button_10_Action, placeholder: true },
 { number: '11', saveSuffix: Button_11_ListSaveSuffix, id: Button_11_IdClass, className: Button_11_IdClass, text: Button_11_Text, altText: Button_11_AltText,
-fileName: Button_11_FileName, url: Button_11_URL, banReason: Button_11_BanReason, useUnban: Button_11_UseUnban, placeholder: true },
+fileName: Button_11_FileName, url: Button_11_URL, banReason: Button_11_BanReason, action: Button_11_Action, placeholder: true },
 { number: '12', saveSuffix: Button_12_ListSaveSuffix, id: Button_12_IdClass, className: Button_12_IdClass, text: Button_12_Text, altText: Button_12_AltText,
-fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, useUnban: Button_12_UseUnban, placeholder: true },
+fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, action: Button_12_Action, placeholder: true },
 { number: '13', saveSuffix: Button_13_ListSaveSuffix, id: Button_13_IdClass, className: Button_13_IdClass, text: Button_13_Text, altText: Button_13_AltText,
-fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, useUnban: Button_13_UseUnban, placeholder: true },
+fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, action: Button_13_Action, placeholder: true },
 { number: '14', saveSuffix: Button_14_ListSaveSuffix, id: Button_14_IdClass, className: Button_14_IdClass, text: Button_14_Text, altText: Button_14_AltText,
-fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, useUnban: Button_14_UseUnban, placeholder: false },
+fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, action: Button_14_Action, placeholder: false },
 { number: '15', saveSuffix: Button_15_ListSaveSuffix, id: Button_15_IdClass, className: Button_15_IdClass, text: Button_15_Text, altText: Button_15_AltText,
-fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, useUnban: Button_15_UseUnban, placeholder: false }
+fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, action: Button_15_Action, placeholder: false }
 ];
 // -----------------------------------------------------------------------------
 // Allgemeiner Status der Benutzeroberfläche
 let isPaused = false;
 // Interne Listen während der Laufzeit
 const queueList = new Set();
+// Aktion der aktuell geladenen Liste. Mögliche Werte: 'ban', 'unban' oder null bei manueller Eingabe.
+let activeListAction = null;
 // Hilfsfunktion zum Hinzufügen der Listenzuordnung
 const queueListSources = new Map();
 
 // Das ist wichtig, wenn derselbe Name in verschidenen Listen vorkommt
 function addUsersToQueue(users, listSuffix) {
-for (const user of users) {
-const normalizedUser = user.trim();
+    for (const user of users) {
+        const normalizedUser = normalizeUser(user);
 
-if (!normalizedUser) {
-continue;
-}
+        if (!normalizedUser) {
+            continue;
+        }
 
-queueList.add(normalizedUser);
+        queueList.add(normalizedUser);
 
-if (listSuffix) {
-if (!queueListSources.has(normalizedUser)) {
-queueListSources.set(
-normalizedUser,
-new Set()
-);
-}
+        if (listSuffix) {
+            if (!queueListSources.has(normalizedUser)) {
+                queueListSources.set(
+                    normalizedUser,
+                    new Set()
+                );
+            }
 
-queueListSources
-.get(normalizedUser)
-.add(listSuffix);
-}
-}
+            queueListSources
+                .get(normalizedUser)
+                .add(listSuffix);
+        }
+    }
 }
 
 const ignoredList = new Set();
@@ -352,6 +352,29 @@ storageKey(key),
 JSON.stringify(value)
 );
 }
+
+// Einheitliche Normalisierung aller Benutzernamen.
+function normalizeUser(user) {
+    return String(user ?? '')
+        .trim()
+        .toLowerCase();
+}
+
+// Normalisiert und bereinigt eine gespeicherte Benutzerliste.
+function normalizeUserList(list) {
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    return [
+        ...new Set(
+            list
+                .map(normalizeUser)
+                .filter(Boolean)
+        )
+    ];
+}
+
 // ############################################################################
 // ##### AKTUELLEN KANAL AUS DER URL ERMITTELN ###############################
 // ############################################################################
@@ -392,17 +415,31 @@ activeChannel
 const QMD_LocalStorageBanList =
 storageKey(`${activeChannel}_banlist`);
 // Gespeicherte Bann- und Unbanlisten laden.
-let QMD_bannedUsersStore =
-readStorageValue(
-`${activeChannel}_banlist`,
-[]
+let QMD_bannedUsersStore = normalizeUserList(
+    readStorageValue(
+        `${activeChannel}_banlist`,
+        []
+    )
 );
 
-let QMD_unbannedUsersStore =
-readStorageValue(
-`${activeChannel}_unbanlist`,
-[]
+let QMD_unbannedUsersStore = normalizeUserList(
+    readStorageValue(
+        `${activeChannel}_unbanlist`,
+        []
+    )
 );
+
+// Bereits vorhandene localStorage-Daten einmalig in normalisierter Form zurückspeichern.
+writeStorageValue(
+    `${activeChannel}_banlist`,
+    QMD_bannedUsersStore
+);
+
+writeStorageValue(
+    `${activeChannel}_unbanlist`,
+    QMD_unbannedUsersStore
+);
+
 // Gespeicherte Mod-Kanäle laden.
 let QMD_modChannelStore =
 readStorageList('myModChannels');
@@ -527,8 +564,9 @@ font-weight: var(--font-weight-semibold);
 text-align: center;
 }
 .magicMorningStar button:disabled {
-opacity: 0.45;
-cursor: not-allowed;
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(70%);
 }
 .magicMorningStar button.ban {
 min-width: 60px;
@@ -1012,47 +1050,50 @@ false
 // ##### BENUTZERSTATUS UND LISTENAKTIONEN ####################################
 // ############################################################################
 function userAlreadyBanned(
-user,
-buttonId,
-listSuffix
+    user,
+    buttonId,
+    listSuffix
 ) {
-if (!QMD_bannedUsersStore.includes(user)) {
-addUsersToQueue(
-[user],
-listSuffix
-);
-} else {
-const button = d.querySelector(`#${buttonId}`);
+    const normalizedUser = normalizeUser(user);
 
-if (button) {
-button.innerHTML = 'already banned';
+    if (!QMD_bannedUsersStore.includes(normalizedUser)) {
+        addUsersToQueue(
+            [normalizedUser],
+            listSuffix
+        );
+    } else {
+        const button = d.querySelector(`#${buttonId}`);
+
+        if (button) {
+            button.innerHTML = 'already banned';
+        }
+
+        console.log(
+            LOGPREFIX,
+            `${normalizedUser} already banned in ${activeChannel}`
+        );
+    }
 }
-
-console.log(
-LOGPREFIX,
-`${user} already banned in ${activeChannel}`
-);
-}
-}
-
-
 
 function userAlreadyUnBanned(user, buttonId) {
-if (!QMD_unbannedUsersStore.includes(user)) {
-queueList.add(user);
-} else {
-const button = d.querySelector(`#${buttonId}`);
+    const normalizedUser = normalizeUser(user);
 
-if (button) {
-button.innerHTML = 'already unbanned';
+    if (!QMD_unbannedUsersStore.includes(normalizedUser)) {
+        queueList.add(normalizedUser);
+    } else {
+        const button = d.querySelector(`#${buttonId}`);
+
+        if (button) {
+            button.innerHTML = 'already unbanned';
+        }
+
+        console.log(
+            LOGPREFIX,
+            `${normalizedUser} already unbanned in ${activeChannel}`
+        );
+    }
 }
 
-console.log(
-LOGPREFIX,
-`${user} already unbanned in ${activeChannel}`
-);
-}
-}
 // ############################################################################
 // ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #############################
 // ############################################################################
@@ -1103,11 +1144,12 @@ textField.focus();
 }
 
 function toggleBack() {
-queueList.clear();
-queueListSources.clear();
+    queueList.clear();
+    queueListSources.clear();
 
-d.querySelector('#textfield').value = '';
+    activeListAction = null;
 
+    d.querySelector('#textfield').value = '';
 
 const body = d.querySelector('.body');
 const importDiv = d.querySelector('.import');
@@ -1123,11 +1165,13 @@ body.style.display = 'none';
 d.querySelector('.import textarea').focus();
 }
 
-d.querySelector('#replaceFooter').innerHTML =
-'Alle Bannlisten anzeigen';
+    d.querySelector('#replaceFooter').innerHTML =
+        'Alle Bannlisten anzeigen';
 
-d.querySelector('#replaceFooter').href =
-urlBannlisten;
+    d.querySelector('#replaceFooter').href =
+        urlBannlisten;
+
+    renderList();
 }
 
 function togglePause() {
@@ -1376,20 +1420,25 @@ Array.isArray(value)
 }
 
 function importList() {
-const importTextarea =
-d.querySelector('.import textarea');
+    activeListAction = null;
 
-const lines =
-importTextarea.value
-.split(/\n/)
-.map((line) => line.trim())
-.filter(Boolean);
+    const importTextarea =
+        d.querySelector('.import textarea');
+
+    const lines =
+        importTextarea.value
+            .split(/\n/)
+            .map(normalizeUser)
+            .filter(Boolean);
 
 for (const line of lines) {
-if (/^[\w_]+$/.test(line)) {
-queueList.add(line);
+    const normalizedUser = normalizeUser(line);
+
+    if (/^[\w_]+$/.test(normalizedUser)) {
+        addUsersToQueue([normalizedUser]);
+    }
 }
-}
+
 
 importTextarea.value = '';
 
@@ -1424,113 +1473,127 @@ return;
 }
 
 importMDGGeneric(
-listConfig.url,
-listConfig.id,
-listConfig.text,
-`Geladene Liste '${listConfig.fileName}' anzeigen`,
-listConfig.url,
-listConfig.useUnban,
-listConfig.banReason,
-listConfig.saveSuffix
+    listConfig.url,
+    listConfig.id,
+    listConfig.text,
+    `Geladene Liste '${listConfig.fileName}' anzeigen`,
+    listConfig.url,
+    listConfig.action,
+    listConfig.banReason,
+    listConfig.saveSuffix
 );
 }
 
 // Allgemeine Importfunktion für externe Listen.
 function importMDGGeneric(
-url,
-buttonId,
-defaultButtonText,
-footerText,
-footerHref,
-useUnban = false,
-listBanReason = defaultBanReason,
-listSuffix
+    url,
+    buttonId,
+    defaultButtonText,
+    footerText,
+    footerHref,
+    action = 'ban',
+    listBanReason = defaultBanReason,
+    listSuffix
 ) {
-queueList.clear();
-queueListSources.clear();
+    const normalizedAction =
+        action === 'unban'
+            ? 'unban'
+            : 'ban';
 
-const usersToProcess = [];
+    activeListAction = normalizedAction;
 
-const banReasonInput = d.querySelector('#banReason');
+    queueList.clear();
+    queueListSources.clear();
 
-if (
-!useUnban &&
-banReasonInput &&
-banReasonInput.value.trim() === ''
-) {
-banReasonInput.value = listBanReason;
-}
+    updateBulkActionButtons();
 
-fetch(url)
-.then((response) => {
-if (!response.ok) {
-throw new Error(
-`HTTP-Fehler ${response.status}`
-);
-}
+    const usersToProcess = [];
 
-return response.text();
-})
-.then((data) => {
-usersToProcess.push(
-...data
-.split('\n')
-.map((name) =>
-name.replace(/\r/g, '').trim()
-)
-.filter(Boolean)
-);
+    const banReasonInput =
+        d.querySelector('#banReason');
 
+    if (
+        normalizedAction === 'ban' &&
+        banReasonInput &&
+        banReasonInput.value.trim() === ''
+    ) {
+        banReasonInput.value = listBanReason;
+    }
 
-usersToProcess.forEach((name) => {
-if (useUnban) {
-userAlreadyUnBanned(name, buttonId);
-} else {
-userAlreadyBanned(
-name,
-buttonId,
-listSuffix
-);
-}
-});
+    fetch(url)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP-Fehler ${response.status}`
+                );
+            }
 
+            return response.text();
+        })
+        .then((data) => {
+            usersToProcess.push(
+                ...data
+                    .split('\n')
+                    .map(normalizeUser)
+                    .filter(Boolean)
+            );
 
+            usersToProcess.forEach((name) => {
+                if (normalizedAction === 'unban') {
+                    userAlreadyUnBanned(
+                        name,
+                        buttonId
+                    );
+                } else {
+                    userAlreadyBanned(
+                        name,
+                        buttonId,
+                        listSuffix
+                    );
+                }
+            });
 
-const textField = d.querySelector('#textfield');
+            const textField =
+                d.querySelector('#textfield');
 
-if (textField) {
-textField.value = '';
-}
+            if (textField) {
+                textField.value = '';
+            }
 
-insertText(Array.from(queueList));
+            insertText(
+                Array.from(queueList)
+            );
 
-if (queueList.size !== 0) {
-toggleImport();
-renderList();
-}
-})
-.catch((error) => {
-console.error(
-LOGPREFIX,
-`Liste konnte nicht geladen werden: ${url}`,
-error
-);
-});
+            if (queueList.size !== 0) {
+                toggleImport();
+                renderList();
+            }
+        })
+        .catch((error) => {
+            console.error(
+                LOGPREFIX,
+                `Liste konnte nicht geladen werden: ${url}`,
+                error
+            );
+        });
 
-const footer = d.querySelector('#replaceFooter');
+    const footer =
+        d.querySelector('#replaceFooter');
 
-if (footer) {
-footer.innerHTML = footerText;
-footer.href = footerHref;
-}
+    if (footer) {
+        footer.innerHTML = footerText;
+        footer.href = footerHref;
+    }
 
-setTimeout(() => {
-const button = d.querySelector(`#${buttonId}`);
+    setTimeout(() => {
+        const button =
+            d.querySelector(`#${buttonId}`);
 
-if (button) {
-button.innerHTML = defaultButtonText;
-}
-}, 5000);
+        if (button) {
+            button.innerHTML =
+                defaultButtonText;
+        }
+    }, 5000);
 }
 
 // ############################################################################
@@ -1542,15 +1605,15 @@ return whitelistPromise;
 }
 
 const parseWhitelist = (data) =>
-data
-.split(/\r?\n/)
-.map((line) => line.trim().toLowerCase())
-.filter(
-(line) =>
-line &&
-!line.startsWith('#') &&
-/^[\w_]+$/.test(line)
-);
+    data
+        .split(/\r?\n/)
+        .map(normalizeUser)
+        .filter(
+            (line) =>
+                line &&
+                !line.startsWith('#') &&
+                /^[\w_]+$/.test(line)
+        );
 
 const fetchWhitelist = async (url) => {
 const response = await fetch(url);
@@ -1602,14 +1665,10 @@ throw error;
 return whitelistPromise;
 }
 
-
-
-
-
 async function isUserWhitelisted(user) {
 const whitelist = await loadWhitelist();
 const normalizedUser =
-String(user).trim().toLowerCase();
+    normalizeUser(user);
 
 return whitelist.has(normalizedUser);
 }
@@ -1630,42 +1689,60 @@ ignoreItem(user);
 }
 
 async function banAll() {
-console.log(
-LOGPREFIX,
-'Banning all...',
-queueList
-);
+    if (activeListAction === 'unban') {
+        console.warn(
+            LOGPREFIX,
+            'Ban All wurde für eine Unban-Liste blockiert.'
+        );
 
-for (const user of [...queueList]) {
-while (isPaused) {
-await delay(DELAY_PAUSE_CHECK);
+        return;
+    }
+
+    console.log(
+        LOGPREFIX,
+        'Banning all...',
+        queueList
+    );
+
+    for (const user of [...queueList]) {
+        while (isPaused) {
+            await delay(DELAY_PAUSE_CHECK);
+        }
+
+        const wasBanned =
+            await banItem(user);
+
+        if (wasBanned) {
+            await delay(DELAY_BAN_ACTION);
+        }
+    }
 }
-
-const wasBanned = await banItem(user);
-
-if (wasBanned) {
-await delay(DELAY_BAN_ACTION);
-}
-}
-}
-
-
 
 async function unbanAll() {
-console.log(
-LOGPREFIX,
-'Unbanning all...',
-queueList
-);
+    if (activeListAction === 'ban') {
+        console.warn(
+            LOGPREFIX,
+            'Unban All wurde für eine Bannliste blockiert.'
+        );
 
-for (const user of [...queueList]) {
-while (isPaused) {
-await delay(DELAY_PAUSE_CHECK);
-}
+        return;
+    }
 
-unbanItem(user);
-await delay(DELAY_UNBAN_ACTION);
-}
+    console.log(
+        LOGPREFIX,
+        'Unbanning all...',
+        queueList
+    );
+
+    for (const user of [...queueList]) {
+        while (isPaused) {
+            await delay(DELAY_PAUSE_CHECK);
+        }
+
+        unbanItem(user);
+
+        await delay(DELAY_UNBAN_ACTION);
+    }
 }
 
 function accountage(user) {
@@ -1692,36 +1769,39 @@ renderList();
 }
 
 function unbanItem(user) {
-console.log(
-LOGPREFIX,
-'Unban user:',
-user
-);
+    const normalizedUser = normalizeUser(user);
 
-queueList.delete(user);
+    console.log(
+        LOGPREFIX,
+        'Unban user:',
+        normalizedUser
+    );
 
-if (!QMD_unbannedUsersStore.includes(user)) {
-QMD_unbannedUsersStore.push(user);
-}
+    queueList.delete(normalizedUser);
 
-QMD_bannedUsersStore =
-QMD_bannedUsersStore.filter(
-(storedUser) => storedUser !== user
-);
+    if (!QMD_unbannedUsersStore.includes(normalizedUser)) {
+        QMD_unbannedUsersStore.push(normalizedUser);
+    }
 
-sendMessage(`/unban ${user}`);
+    QMD_bannedUsersStore =
+        QMD_bannedUsersStore.filter(
+            (storedUser) =>
+                storedUser !== normalizedUser
+        );
 
-writeStorageValue(
-`${activeChannel}_unbanlist`,
-QMD_unbannedUsersStore
-);
+    sendMessage(`/unban ${normalizedUser}`);
 
-writeStorageValue(
-`${activeChannel}_banlist`,
-QMD_bannedUsersStore
-);
+    writeStorageValue(
+        `${activeChannel}_unbanlist`,
+        QMD_unbannedUsersStore
+    );
 
-renderList();
+    writeStorageValue(
+        `${activeChannel}_banlist`,
+        QMD_bannedUsersStore
+    );
+
+    renderList();
 }
 
 function removeModChannel(user) {
@@ -1752,80 +1832,84 @@ window.refreshQMDModMenu();
 renderList();
 }
 
-// #####
+// ##########
 async function banItem(user) {
-try {
-const isWhitelisted =
-await isUserWhitelisted(user);
+    const normalizedUser = normalizeUser(user);
 
-if (isWhitelisted) {
-console.log(
-LOGPREFIX,
-`${user} steht auf der Whitelist und wird nicht gebannt.`
-);
+    try {
+        const isWhitelisted =
+            await isUserWhitelisted(normalizedUser);
 
-queueList.delete(user);
-queueListSources.delete(user);
-renderList();
+        if (isWhitelisted) {
+            console.log(
+                LOGPREFIX,
+                `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`
+            );
 
-return false;
-}
-} catch (error) {
-console.error(
-LOGPREFIX,
-`Ban von ${user} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
-error
-);
+            queueList.delete(normalizedUser);
+            queueListSources.delete(normalizedUser);
+            renderList();
 
-return false;
-}
+            return false;
+        }
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
+            error
+        );
 
-const reason =
-d.querySelector('#banReason').value.trim() ||
-defaultBanReason;
+        return false;
+    }
 
-const listSuffixes =
-queueListSources.get(user) || new Set();
+    const reason =
+        d.querySelector('#banReason').value.trim() ||
+        defaultBanReason;
 
-queueList.delete(user);
-queueListSources.delete(user);
+    const listSuffixes =
+        queueListSources.get(normalizedUser) ||
+        new Set();
 
-if (!QMD_bannedUsersStore.includes(user)) {
-QMD_bannedUsersStore.push(user);
-}
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
 
-sendMessage(`/ban ${user} ${reason}`);
+    if (!QMD_bannedUsersStore.includes(normalizedUser)) {
+        QMD_bannedUsersStore.push(normalizedUser);
+    }
 
-// Gesamtliste des Kanals speichern.
-writeStorageValue(
-`${activeChannel}_banlist`,
-QMD_bannedUsersStore
-);
+    sendMessage(
+        `/ban ${normalizedUser} ${reason}`
+    );
 
-// Zusätzlich die jeweilige(n) Listen speichern.
-for (const listSuffix of listSuffixes) {
-const listStorageKey =
-`${activeChannel}_banlist${listSuffix}`;
+    writeStorageValue(
+        `${activeChannel}_banlist`,
+        QMD_bannedUsersStore
+    );
 
-const listBannedUsers =
-readStorageValue(
-listStorageKey,
-[]
-);
+    for (const listSuffix of listSuffixes) {
+        const listStorageKey =
+            `${activeChannel}_banlist${listSuffix}`;
 
-if (!listBannedUsers.includes(user)) {
-listBannedUsers.push(user);
-}
+        const listBannedUsers =
+            normalizeUserList(
+                readStorageValue(
+                    listStorageKey,
+                    []
+                )
+            );
 
-writeStorageValue(
-listStorageKey,
-listBannedUsers
-);
-}
+        if (!listBannedUsers.includes(normalizedUser)) {
+            listBannedUsers.push(normalizedUser);
+        }
 
-renderList();
+        writeStorageValue(
+            listStorageKey,
+            listBannedUsers
+        );
+    }
 
-return true;
+    renderList();
+    return true;
 }
 
 // #####
@@ -1908,26 +1992,75 @@ which: 13
 })
 );
 }
+
+// Button 'ban' / 'unban' - aktivieren / deaktivieren
+function updateBulkActionButtons() {
+    const banAllButton =
+        d.querySelector('.banAll');
+
+    const unbanAllButton =
+        d.querySelector('.unbanAll');
+
+    const hasQueueItems =
+        queueList.size > 0;
+
+    if (banAllButton) {
+        const shouldDisable =
+            !hasQueueItems ||
+            activeListAction === 'unban';
+
+        banAllButton.disabled = shouldDisable;
+        banAllButton.setAttribute(
+            'aria-disabled',
+            String(shouldDisable)
+        );
+
+        banAllButton.title =
+            activeListAction === 'unban'
+                ? 'Für eine Unban-Liste deaktiviert'
+                : 'Alle auf der Liste bannen';
+    }
+
+    if (unbanAllButton) {
+        const shouldDisable =
+            !hasQueueItems ||
+            activeListAction === 'ban';
+
+        unbanAllButton.disabled = shouldDisable;
+        unbanAllButton.setAttribute(
+            'aria-disabled',
+            String(shouldDisable)
+        );
+
+        unbanAllButton.title =
+            activeListAction === 'ban'
+                ? 'Für eine Bannliste deaktiviert'
+                : 'Alle auf der Liste entbannen';
+    }
+}
+
 // ############################################################################
 // ##### LISTENANZEIGE UND RENDERING #########################################
 // ############################################################################
 function renderList() {
-const buttonsToToggle = [
-'.ignoreAll',
-'.banAll',
-'.back',
-'.pause',
-'.unbanAll'
-];
+    const buttonsToToggle = [
+        '.ignoreAll',
+        '.banAll',
+        '.back',
+        '.pause',
+        '.unbanAll'
+    ];
 
-buttonsToToggle.forEach((selector) => {
-const button = d.querySelector(selector);
+    buttonsToToggle.forEach((selector) => {
+        const button = d.querySelector(selector);
 
-if (button) {
-button.style.display =
-queueList.size ? '' : 'none';
-}
-});
+        if (button) {
+            button.style.display =
+                queueList.size ? '' : 'none';
+        }
+    });
+
+    updateBulkActionButtons();
 
 const renderItem = (item) => `
 <li>
