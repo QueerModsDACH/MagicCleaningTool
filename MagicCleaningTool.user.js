@@ -2,71 +2,51 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.126
+// @version 1.9.6.139f
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
 // @homepageURL https://github.com/QueerModsDACH/MagicCleaningTool
 // @supportURL https://github.com/QueerModsDACH/MagicCleaningTool/issues
-// @grant GM_setValue
-// @grant GM_getValue
-// @grant GM_xmlhttpRequest
-// @grant GM_addStyle
 // @license MIT
 // ==/UserScript==
 /* jshint esversion: 8 */
-
 (function () {
 'use strict';
 // ############################################################################
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-// ############################################################################
-// Versionsnummer des Tools
-const myVersion = '1.9.6.126';
-// Log-Präfix für die Browser-Konsole
-const LOGPREFIX = '[QMD_MCT_1]';
-// Alle lokalen Speicher-Schlüssel müssen diesen Prefix verwenden.
+const myVersion = '1.9.6.139f';
+const LOGPREFIX = '[QMD_MCT]▶ ';
 const BROWSER_STORAGE_PREFIX = '_QMD_';
-// Speicher-Schlüssel für die Sichtbarkeit des Mod-Menüs
-const MOD_MENU_VISIBILITY_STORAGE_KEY =
-'visibility_of_mod_menu';
-// Fallback
+const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
 const defaultBanReason = 'Ban by QMD list';
-// URL zur Quelle der Bannlisten
-const urlBannlisten =
-'https://github.com/QueerModsDACH/Listen';
-// URL zu Whitelisten
-const WHITELISTED_BOTS_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_bots.txt';
-const WHITELISTED_USER_URL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_user.txt';
+const urlBannlisten = 'https://github.com/QueerModsDACH/Listen';
+const WHITELISTED_BOTS_URL = 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_bots.txt';
+const WHITELISTED_USER_URL = 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_user.txt';
 let whitelistPromise = null;
 let whitelistUsers = new Set();
-
 // ############################################################################
 // ##### ZENTRALE KONFIGURATION DER LISTENBUTTONS #############################
-// ############################################################################
 // Jede Liste besitzt eigene zentrale Variablen:
-const Listen_rawURL =
-'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/';
+const Listen_rawURL = 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/';
 // -----------------------------------------------------------------------------
 // Button 01
 const Button_01_ListSaveSuffix = '_Suspect_List';
 const Button_01_IdClass = 'Button_01';
 const Button_01_Text = 'suspect';
-const Button_01_AltText = 'Importiert die 01-Liste';
+const Button_01_AltText = 'Importiert die Suspect-Liste';
 const Button_01_FileName = 'suspect.txt';
 const Button_01_URL = `${Listen_rawURL}${Button_01_FileName}`;
 const Button_01_BanReason = 'suspect (QMD-List)';
 const Button_01_Action = 'ban';
 // Button 02
-const Button_02_ListSaveSuffix = '_List02';
+const Button_02_ListSaveSuffix = '_hostile_Troll_List';
 const Button_02_IdClass = 'Button_02';
-const Button_02_Text = 'Liste_02';
-const Button_02_AltText = 'Importiert die 02-Liste';
-const Button_02_FileName = 'hate_troll_list_2.txt';
+const Button_02_Text = 'hostile Troll';
+const Button_02_AltText = 'Importiert die hostile-Trol-Liste';
+const Button_02_FileName = 'hostile_troll.txt';
 const Button_02_URL = `${Listen_rawURL}${Button_02_FileName}`;
-const Button_02_BanReason = defaultBanReason;
+const Button_02_BanReason = 'hostile Troll (QMD-List)';
 const Button_02_Action = 'ban';
 // Button 03
 const Button_03_ListSaveSuffix = '_List03';
@@ -174,7 +154,7 @@ const Button_14_Text = 'UNBAN Whitelisted User';
 const Button_14_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
 const Button_14_FileName = 'WHITELISTED_user.txt';
 const Button_14_URL = `${Listen_rawURL}${Button_14_FileName}`;
-const Button_14_BanReason = defaultBanReason;
+const Button_14_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
 const Button_14_Action = 'unban';
 // Button 15
 const Button_15_ListSaveSuffix = '_WHITELISTED_bots';
@@ -183,7 +163,7 @@ const Button_15_Text = 'UNBAN Whitelisted Bots';
 const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
 const Button_15_FileName = 'WHITELISTED_bots.txt';
 const Button_15_URL = `${Listen_rawURL}${Button_15_FileName}`;
-const Button_15_BanReason = defaultBanReason;
+const Button_15_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
 const Button_15_Action = 'unban';
 // -----------------------------------------------------------------------------
 // Zentrale Zusammenfassung aller Listenbuttons.
@@ -220,26 +200,22 @@ fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason
 fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, action: Button_15_Action, placeholder: false }
 ];
 // -----------------------------------------------------------------------------
-// Allgemeiner Status der Benutzeroberfläche
 let isPaused = false;
-// Interne Listen während der Laufzeit
 const queueList = new Set();
-// Aktion der aktuell geladenen Liste. Mögliche Werte: 'ban', 'unban' oder null bei manueller Eingabe.
 let activeListAction = null;
-// Hilfsfunktion zum Hinzufügen der Listenzuordnung
 const queueListSources = new Map();
-
 // Das ist wichtig, wenn derselbe Name in verschidenen Listen vorkommt
-function addUsersToQueue(users, listSuffix) {
+function addUsersToQueue(users, listSuffix = null) {
     for (const user of users) {
         const normalizedUser = normalizeUser(user);
-
-        if (!normalizedUser) {
+        if (!isValidUsername(normalizedUser)) {
+            console.warn(
+                LOGPREFIX,
+                `Ungültiger Benutzername wurde ignoriert: ${normalizedUser}`
+            );
             continue;
         }
-
         queueList.add(normalizedUser);
-
         if (listSuffix) {
             if (!queueListSources.has(normalizedUser)) {
                 queueListSources.set(
@@ -247,41 +223,52 @@ function addUsersToQueue(users, listSuffix) {
                     new Set()
                 );
             }
-
             queueListSources
                 .get(normalizedUser)
                 .add(listSuffix);
         }
     }
+    renderList();
 }
-
 const ignoredList = new Set();
 const bannedList = new Set();
-// Aktuell aktive Twitch-Seite beziehungsweise Kanal
-let activeChannel = getActiveChannel();
+// Aktuell moderierbarer Twitch-Kanal. Der Wert wird nach der Definition der Moderationsprüfung gesetzt.
+let activeChannel = '';
 // Bilder für die Benutzeroberfläche
-const activateImage =
-'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
-const modMenuOnImage =
-'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_on.png';
-const modMenuOffImage =
-'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_off.png';
-// Alternative Theme-Farbe
+const activateImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
+const modMenuOnImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_on.png';
+const modMenuOffImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_off.png';
 const themeNormal = '#9146FF';
 const themeTextColor = themeNormal;
-// Text für die Versionsprüfung
 const updateText = 'die Version ist aktuell ツ';
 // Der gespeicherte Sichtbarkeitszustand wird standardmäßig auf "sichtbar" gesetzt.
 let isModMenuVisible = readStorageValue(
-MOD_MENU_VISIBILITY_STORAGE_KEY,
-true
+    MOD_MENU_VISIBILITY_STORAGE_KEY,
+    true
 );
 // ############################################################################
 // ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN ####################################
-// ############################################################################
-// Allgemeine Delay-Funktion
 const delay = (time) =>
-new Promise((resolve) => setTimeout(resolve, time));
+    new Promise((resolve) => setTimeout(resolve, time));
+async function fetchWithTimeout(
+    url,
+    options = {},
+    timeout = 10000
+) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+        () => controller.abort(),
+        timeout
+    );
+    try {
+        return await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+    } finally {
+        window.clearTimeout(timeoutId);
+    }
+}
 // Zentrale Delay-Werte in Millisekunden
 // Hinweis: Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen dadurch möglicherweise zu schnell hintereinander ausgeführt werden und ein Shadow-Ban-Risiko entstehen kann.
 const DELAY_BAN_ACTION = 130;
@@ -289,773 +276,780 @@ const DELAY_UNBAN_ACTION = 130;
 const DELAY_PAUSE_CHECK = 1000;
 // ############################################################################
 // ##### LOCALSTORAGE-HILFSFUNKTIONEN #########################################
-// ############################################################################
-// Erstellt einen lokalen Speicher-Schlüssel mit dem zentralen Prefix.
 function storageKey(key) {
-return `${BROWSER_STORAGE_PREFIX}${key}`;
+    return `${BROWSER_STORAGE_PREFIX}${key}`;
 }
-// Liest eine JSON-Liste sicher aus dem localStorage.
 function readStorageList(key) {
-try {
-const value = localStorage.getItem(storageKey(key));
-
-if (!value) {
-return [];
+    try {
+        const value = localStorage.getItem(storageKey(key));
+        if (!value) {
+            return [];
+        }
+        const parsedValue = JSON.parse(value);
+        return Array.isArray(parsedValue)
+            ? parsedValue
+            : [];
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ungültige Daten im Speicher-Schlüssel "${storageKey(key)}":`,
+            error
+        );
+        return [];
+    }
 }
-
-const parsedValue = JSON.parse(value);
-
-return Array.isArray(parsedValue)
-? parsedValue
-: [];
-} catch (error) {
-console.error(
-LOGPREFIX,
-`Ungültige Daten im Speicher-Schlüssel "${storageKey(key)}":`,
-error
-);
-
-return [];
-}
-}
-// Speichert eine JSON-Liste mit dem zentralen Prefix.
 function writeStorageList(key, list) {
-localStorage.setItem(
-storageKey(key),
-JSON.stringify(list)
-);
+    try {
+        localStorage.setItem(
+            storageKey(key),
+            JSON.stringify(list)
+        );
+        return true;
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Konnte Liste "${storageKey(key)}" nicht speichern:`,
+            error
+        );
+        return false;
+    }
 }
-// Liest einen einzelnen JSON-Wert sicher aus dem localStorage.
 function readStorageValue(key, fallback = null) {
-try {
-const value = localStorage.getItem(storageKey(key));
-
-if (value === null) {
-return fallback;
+    try {
+        const value = localStorage.getItem(storageKey(key));
+        if (value === null) {
+            return fallback;
+        }
+        return JSON.parse(value);
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ungültiger Speicherwert für "${storageKey(key)}":`,
+            error
+        );
+        return fallback;
+    }
 }
-
-return JSON.parse(value);
-} catch (error) {
-console.error(
-LOGPREFIX,
-`Ungültiger Speicherwert für "${storageKey(key)}":`,
-error
-);
-
-return fallback;
-}
-}
-// Speichert einen einzelnen JSON-Wert mit dem zentralen Prefix.
 function writeStorageValue(key, value) {
-localStorage.setItem(
-storageKey(key),
-JSON.stringify(value)
-);
+    try {
+        localStorage.setItem(
+            storageKey(key),
+            JSON.stringify(value)
+        );
+        return true;
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Konnte Speicherwert "${storageKey(key)}" nicht speichern:`,
+            error
+        );
+        return false;
+    }
 }
-
 // Einheitliche Normalisierung aller Benutzernamen.
 function normalizeUser(user) {
     return String(user ?? '')
         .trim()
         .toLowerCase();
 }
-
+function isValidUsername(user) {
+    const normalizedUser = normalizeUser(user);
+    return /^[a-z0-9_]{1,25}$/.test(normalizedUser);
+}
+function parseUserList(value) {
+    const lines = Array.isArray(value)
+        ? value
+        : String(value ?? '').split(/\r?\n/);
+    return [
+        ...new Set(
+            lines
+                .map(normalizeUser)
+                .filter(isValidUsername)
+        )
+    ];
+}
 // Normalisiert und bereinigt eine gespeicherte Benutzerliste.
 function normalizeUserList(list) {
     if (!Array.isArray(list)) {
         return [];
     }
-
     return [
         ...new Set(
             list
                 .map(normalizeUser)
-                .filter(Boolean)
+                .filter(isValidUsername)
         )
     ];
 }
-
 // ############################################################################
 // ##### AKTUELLEN KANAL AUS DER URL ERMITTELN ###############################
-// ############################################################################
 function getActiveChannel() {
-const pathname = window.location.pathname
-.replace(/^\/+|\/+$/g, '');
-
-const pathParts = pathname
-.split('/')
-.filter(Boolean);
-
-if (pathParts.length === 0) {
-return '';
+    const pathParts = window.location.pathname
+        .split('/')
+        .map((part) => part.trim())
+        .filter(Boolean);
+    if (pathParts.length === 0) {
+        return '';
+    }
+    const firstPart = pathParts[0].toLowerCase();
+    // Nur echte Kanal- beziehungsweise Moderator-URLs akzeptieren.
+    if (firstPart === 'moderator') {
+        return (pathParts[1] || '').toLowerCase();
+    }
+    if (firstPart === 'home') {
+        return '';
+    }
+    // Bekannte Twitch-Systemseiten sind keine Kanäle.
+    const nonChannelRoutes = new Set([
+        'about', 'clip', 'directory', 'downloads', 'friends', 'following', 'inventory', 'jobs', 'login', 'logout',
+        'notifications', 'p', 'search', 'settings', 'subscriptions', 'turbo', 'user', 'users', 'videos', 'wallet', 'whispers'
+    ]);
+    if (nonChannelRoutes.has(firstPart)) {
+        return '';
+    }
+    // Bei einer normalen Twitch-Kanal-URL ist der erste Pfadteil der Kanal.
+    return firstPart;
 }
-
-if (pathParts[0].toLowerCase() === 'home') {
-return pathParts[1] || '';
+// Moderationskontext eindeutig erkennen
+function getModeratedChannel() {
+    const activeChannelOnPage = getActiveChannel();
+    const moderatorChannel = getChannelFromModeratorUrl();
+    const chatButton = document.querySelector(
+        '[data-a-target="chat-send-button"]'
+    );
+    // Der Moderator-View ist die zuverlässigste Erkennung.
+    if (
+        moderatorChannel &&
+        chatButton
+    ) {
+        return moderatorChannel;
+    }
+    // Auf einer normalen Kanal-Seite darf nur dann moderiert werden, wenn Twitch dort ausdrücklich einen passenden Mod-View-Link anbietet.
+    const modViewChannel = getChannelFromModViewLink();
+    if (
+        activeChannelOnPage &&
+        modViewChannel &&
+        modViewChannel === activeChannelOnPage &&
+        chatButton
+    ) {
+        return activeChannelOnPage;
+    }
+    return '';
 }
-
-if (pathParts[0].toLowerCase() === 'moderator') {
-return pathParts[1] || '';
+function isCurrentChannelModerated() {
+    const moderatedChannel = getModeratedChannel();
+    return Boolean(
+        moderatedChannel &&
+        moderatedChannel === activeChannel
+    );
 }
-
-return pathParts[pathParts.length - 1] || '';
-}
-
-activeChannel = activeChannel.toLowerCase();
-
+activeChannel = getModeratedChannel();
 console.log(
-LOGPREFIX,
-'Aktiver Kanal:',
-activeChannel
+    LOGPREFIX,
+    'Aktiv moderierbarer Kanal:',
+    activeChannel || '(kein moderierbarer Kanal)'
 );
 // ############################################################################
 // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
-// ############################################################################
-// Für jeden Twitch-Kanal werden eigene Listen verwendet.
-const QMD_LocalStorageBanList =
-storageKey(`${activeChannel}_banlist`);
-// Gespeicherte Bann- und Unbanlisten laden.
-let QMD_bannedUsersStore = normalizeUserList(
-    readStorageValue(
+let QMD_bannedUsersStore = [];
+let QMD_unbannedUsersStore = [];
+// Informationen zur aktuell geladenen externen Liste.
+let activeListInfo = null;
+// Dauer der zuletzt erfolgreich ausgeführten Ban-/Unban-Aktionen. Die letzten zehn Werte werden für die dynamische Schätzung verwendet.
+const ACTION_DURATION_SAMPLE_SIZE = 10;
+let actionDurationSamples = [];
+// Bann- und Unbanlisten ausschließlich für einen tatsächlich moderierbaren Kanal laden. Auf normalen Kanal-Seiten werden keine Kanal-Keys angelegt.
+if (activeChannel) {
+    QMD_bannedUsersStore = normalizeUserList(
+        readStorageValue(
+            `${activeChannel}_banlist`,
+            []
+        )
+    );
+    QMD_unbannedUsersStore = normalizeUserList(
+        readStorageValue(
+            `${activeChannel}_unbanlist`,
+            []
+        )
+    );
+    // Nur bereits vorhandene beziehungsweise ausdrücklich benötigte Kanal-Keys normalisieren und zurückspeichern.
+    writeStorageValue(
         `${activeChannel}_banlist`,
-        []
-    )
-);
-
-let QMD_unbannedUsersStore = normalizeUserList(
-    readStorageValue(
+        QMD_bannedUsersStore
+    );
+    writeStorageValue(
         `${activeChannel}_unbanlist`,
-        []
-    )
-);
-
-// Bereits vorhandene localStorage-Daten einmalig in normalisierter Form zurückspeichern.
-writeStorageValue(
-    `${activeChannel}_banlist`,
-    QMD_bannedUsersStore
-);
-
-writeStorageValue(
-    `${activeChannel}_unbanlist`,
-    QMD_unbannedUsersStore
-);
-
+        QMD_unbannedUsersStore
+    );
+}
 // Gespeicherte Mod-Kanäle laden.
 let QMD_modChannelStore =
-readStorageList('myModChannels');
+    readStorageList('myModChannels');
 // ############################################################################
 // ##### HTML-HILFSFUNKTIONEN FÜR DIE LISTENBUTTONS ##########################
-// ############################################################################
 // Erzeugt einen einzelnen Listenbutton aus der zentralen Konfiguration.
 function createListButtonHtml(listConfig, width = '32%') {
-const disabledAttributes = listConfig.placeholder
-? 'disabled aria-disabled="true"'
-: '';
+    const disabledAttributes = listConfig.placeholder
+        ? 'disabled aria-disabled="true"'
+        : '';
 
-const title = listConfig.placeholder
-? `${listConfig.altText} – noch nicht verfügbar`
-: listConfig.altText;
-
-return `
+    const title = listConfig.placeholder
+        ? `${listConfig.altText} – noch nicht verfügbar`
+        : listConfig.altText;
+    return `
 <button
-id="${listConfig.id}"
-class="${listConfig.className}"
-type="button"
-style="width: ${width};"
-title="${title}"
-aria-label="${title}"
-data-list-number="${listConfig.number}"
-${disabledAttributes}
+    id="${listConfig.id}"
+    class="${listConfig.className}"
+    type="button"
+    style="width: ${width};"
+    title="${title}"
+    aria-label="${title}"
+    data-list-number="${listConfig.number}"
+    ${disabledAttributes}
 >
-${listConfig.text}
+    ${listConfig.text}
 </button>
 `;
 }
 // Erzeugt alle 15 Listenbuttons.
 function createAllListButtonsHtml() {
-const rows = [];
+    const rows = [];
 
-for (let index = 0; index < LIST_BUTTONS.length; index += 3) {
-const first = LIST_BUTTONS[index];
-const second = LIST_BUTTONS[index + 1];
-const third = LIST_BUTTONS[index + 2];
-
-rows.push(`
+    for (let index = 0; index < LIST_BUTTONS.length; index += 3) {
+        const first = LIST_BUTTONS[index];
+        const second = LIST_BUTTONS[index + 1];
+        const third = LIST_BUTTONS[index + 2];
+        rows.push(`
 <div class="list-button-row" style="text-align: center;">
-${createListButtonHtml(first, '32%')}
-${second ? createListButtonHtml(second, '33%') : ''}
-${third ? createListButtonHtml(third, '32%') : ''}
+    ${createListButtonHtml(first, '32%')}
+    ${second ? createListButtonHtml(second, '33%') : ''}
+    ${third ? createListButtonHtml(third, '32%') : ''}
 </div>
 `);
+    }
+    return rows.join('');
 }
-
-return rows.join('');
-}
-
 const listButtonsHtml = createAllListButtonsHtml();
 // ############################################################################
 // ##### HTML-STRUKTUR UND STYLES DES MOD-TOOLS ##############################
-// ############################################################################
 const html = /* html */ `
-<div id="magicMorningStar" class="magicMorningStar">
-
-<style>
-.magicMorningStar {
-z-index: 99999999;
-position: absolute;
-top: 250px;
-left: 350px;
-min-width: 600px;
-padding: 5px;
-background-color: var(--color-background-base);
-color: var(--color-text-base);
-border: var(--border-width-default) solid var(--color-border-base);
-box-shadow: var(--shadow-elevation-2);
-cursor: move;
-}
-.magicMorningStar .handle {
-cursor: move;
-user-select: none;
-}
-.magicMorningStar .svg {
-color: "${themeTextColor}";
-}
-.magicMorningStar h6 {
-color: var(--color-hinted-grey-7);
-}
-.magicMorningStar h6 button {
-height: auto;
-background: none;
-}
-.magicMorningStar .header {
-display: flex;
-align-items: center;
-}
-.magicMorningStar .logo {
-min-height: 30px;
-line-height: 30px;
-font-weight: var(--font-weight-semibold);
---color: var(--color-text-link);
-}
-.magicMorningStar .list {
-min-height: 8em;
-max-height: 350px;
-padding: 8px;
-overflow-y: auto;
-}
-.magicMorningStar .list span {
-font-weight: var(--font-weight-semibold);
-}
-.magicMorningStar .empty {
-padding: 2em;
-text-align: center;
-opacity: 0.85;
-}
-.magicMorningStar button {
-min-width: 30px;
-height: var(--button-size-default);
-margin: 1px;
-padding: 0 0.5em;
-border-radius: var(--border-radius-medium);
-background-color: var(--color-background-button-secondary-default);
-color: var(--color-text-button-secondary);
-font-size: var(--button-text-default);
-font-weight: var(--font-weight-semibold);
-text-align: center;
-}
-.magicMorningStar button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    filter: grayscale(70%);
-}
-.magicMorningStar button.ban {
-min-width: 60px;
-background: #f44336;
-color: var(--color-text-button-primary);
-}
-.magicMorningStar button.banAll {
-min-width: 40px;
-background: #f44336;
-color: var(--color-text-button-primary);
-}
-.magicMorningStar button.unban {
-min-width: 60px;
-background: #34ae0c;
-color: var(--color-text-button-primary);
-}
-.magicMorningStar button.unbanAll {
-min-width: 40px;
-background: #34ae0c;
-color: var(--color-text-button-primary);
-}
-.magicMorningStar .import {
-min-height: 20px;
-padding: 3px;
-background: var(--color-background-body);
-border: var(--border-width-default) solid var(--color-border-base);
-}
-.magicMorningStar textarea {
-width: 100%;
-min-height: 8em;
-padding: 0.5em;
-background: var(--color-background-base);
-color: var(--color-text-base);
-font-size: 10pt;
-}
-.magicMorningStar .footer {
-font-size: 7pt;
-text-align: center;
-}
-.magicMorningStar .list-button-row {
-display: flex;
-justify-content: center;
-align-items: center;
-}
-.magicMorningStar .list-button-row button {
-overflow: hidden;
-text-overflow: ellipsis;
-white-space: nowrap;
-}
-</style>
-
-<div class="header">
-<span class="handle"></span>
-
-<!-- Umschalter für die Sichtbarkeit des Mod-Menüs -->
-<button
-class="modMenuToggle"
-type="button"
-title="Mod-Menü ein- oder ausblenden"
-aria-label="Mod-Menü ein- oder ausblenden"
-style="display: inline-flex;"
->
-<img
-class="modMenuToggleImage"
-src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
-title="Mod-Menü ein- oder ausblenden"
-alt="Mod-Menü"
-width="32"
-height="32"
->
-</button>
-
-<span style="flex-grow: 1;"></span>
-
-<!-- Repository-Link und Tool-Titel -->
-<h5 id="header" class="logo">
-<a
-href="https://github.com/QueerModsDACH/MagicCleaningTool"
-target="_blank"
-rel="noopener noreferrer"
-style="color: ${themeTextColor};"
-title="Zum QueerModsDACH Repository"
->
-Magic Cleaning Tool&nbsp;&nbsp;
-<img
-src="${activateImage}"
-alt="Repository öffnen"
-width="18"
-height="18"
-style="vertical-align: middle;"
->
-&nbsp;&nbsp;for a little better World
-</a>
-</h5>
-
-<span style="flex-grow: 1;"></span>
-
-<!-- Fenster schließen beziehungsweise minimieren -->
-<button
-class="closeBtn"
-type="button"
-title="Tool minimieren"
-aria-label="Tool minimieren"
->
-<img
-src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png"
-alt="Tool minimieren"
-width="18"
-height="18"
->
-</button>
-</div>
-
-<!-- Importbereich -->
-<div id="import" class="import" style="display: none;">
-
-<textarea
-id="textfield"
-placeholder="Ein Benutzername pro Zeile"
-></textarea>
-
-<div style="text-align: right;">
-<input
-type="text"
-id="banReason"
-style="width: 66%;"
-placeholder="Hier optional einen eigenen Ban-Grund angeben"
->
-
-<button
-class="importBtn"
-type="button"
-title="Benutzer zur Liste hinzufügen"
-style="width: 32%;"
->
-Hinzufügen
-</button>
-</div>
-
-<!-- Zentral erzeugte Listenbuttons 01 bis 15 -->
-${listButtonsHtml}
-
-</div>
-
-<!-- Hauptbereich und Benutzerliste -->
-<div class="body">
-
-<div class="list"></div>
-
-<div style="display: flex; margin: 5px;">
-<span style="flex-grow: 2;"></span>
-
-<div id="buttons" class="buttons">
-
-<!-- Ansichten -->
-<button
-class="back"
-type="button"
-title="Zurück"
->
-⬅
-</button>
-
-<!-- Cache und externe Werkzeuge -->
-<button
-class="clearBannedUsers"
-type="button"
-title="Gespeicherte gebannte Benutzer löschen"
->
-ban-cache leeren
-</button>
-
-<button
-class="MooBot"
-type="button"
-title="Öffnet Moobot"
->
-<img
-src="https://moo.bot/favicon.ico"
-height="17"
-alt="Moobot"
->
-</button>
-
-<button
-class="NightBot"
-type="button"
-title="Öffnet Nightbot"
->
-<img
-src="https://logodix.com/logo/1909538.png"
-height="17"
-alt="Nightbot"
->
-</button>
-
-<button
-class="comanderRoot"
-type="button"
-title="Öffnet CommanderRoot"
->
-🤖
-</button>
-
-<button
-class="sLabs"
-type="button"
-title="Öffnet Streamlabs"
->
-<img
-src="https://cdn.streamlabs.com/static/imgs/streamlabs-logos/app-icon/streamlabs-app-icon.png"
-height="17"
-alt="Streamlabs"
->
-</button>
-
-<button
-class="sElements"
-type="button"
-title="Öffnet StreamElements"
->
-<img
-src="https://avatars.githubusercontent.com/u/16977512?s=17&v=4"
-alt="StreamElements"
->
-</button>
-
-<!-- Kanalstatistiken und Moderationswerkzeuge -->
-<button
-class="chatstats"
-type="button"
-title="Öffnet SullyGnome-Kanalstatistiken"
->
-📈
-</button>
-
-<button
-class="modLogger"
-type="button"
-title="Öffnet ModLogger für den aktuellen Kanal"
->
-🗄
-</button>
-
-<button
-class="chatDeepStats"
-type="button"
-title="Öffnet ChatStats für den aktuellen Kanal"
->
-🩻
-</button>
-
-<!-- Listenaktionen -->
-<button
-class="pause"
-id="pause"
-type="button"
-title="Pause/Play"
->
-⏸
-</button>
-
-<button
-class="ignoreAll"
-type="button"
-title="Liste leeren"
->
-🗑
-</button>
-
-<button
-class="unbanAll"
-type="button"
-title="Alle auf der Liste entbannen"
->
-👹
-</button>
-
-<button
-class="banAll"
-type="button"
-title="Alle auf der Liste bannen"
->
-⚔
-</button>
-
-</div>
-</div>
-</div>
-
-<!-- Footer -->
-<div id="footer" class="footer">
-<a
-href="${urlBannlisten}"
-target="_blank"
-rel="noopener noreferrer"
-style="color: ${themeTextColor};"
-id="replaceFooter"
-title="Zur Liste"
->
-MagicCleaningTool Listen
-</a>
-
-&nbsp;-&nbsp;
-
-<a
-id="manoooo"
-href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
-title="Aktuelle Version installieren"
->
-${updateText}
-</a>
-
-&nbsp;-&nbsp;&nbsp;
-${myVersion}
-</div>
-
-</div>
+    <div id="magicMorningStar" class="magicMorningStar">
+        <style>
+            .magicMorningStar {
+                z-index: 99999999;
+                position: absolute;
+                top: 250px;
+                left: 350px;
+                min-width: 600px;
+                padding: 5px;
+                background-color: var(--color-background-base);
+                color: var(--color-text-base);
+                border: var(--border-width-default) solid var(--color-border-base);
+                box-shadow: var(--shadow-elevation-2);
+                cursor: move;
+            }
+            .magicMorningStar .handle {
+                cursor: move;
+                user-select: none;
+            }
+            .magicMorningStar .svg {
+                color: ${themeTextColor};
+            }
+            .magicMorningStar h6 {
+                color: var(--color-hinted-grey-7);
+            }
+            .magicMorningStar h6 button {
+                height: auto;
+                background: none;
+            }
+            .magicMorningStar .header {
+                display: flex;
+                align-items: center;
+            }
+            .magicMorningStar .logo {
+                min-height: 30px;
+                line-height: 30px;
+                font-weight: var(--font-weight-semibold);
+                --color: var(--color-text-link);
+            }
+            .magicMorningStar .list {
+                min-height: 8em;
+                max-height: 350px;
+                padding: 8px;
+                overflow-y: auto;
+            }
+            .magicMorningStar .list span {
+                font-weight: var(--font-weight-semibold);
+            }
+            .magicMorningStar .empty {
+                padding: 2em;
+                text-align: center;
+                opacity: 0.85;
+            }
+            .magicMorningStar button {
+                min-width: 30px;
+                height: var(--button-size-default);
+                margin: 1px;
+                padding: 0 0.5em;
+                border-radius: var(--border-radius-medium);
+                background-color: var(--color-background-button-secondary-default);
+                color: var(--color-text-button-secondary);
+                font-size: var(--button-text-default);
+                font-weight: var(--font-weight-semibold);
+                text-align: center;
+            }
+            .magicMorningStar button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+                filter: grayscale(70%);
+            }
+            .magicMorningStar button.ban {
+                min-width: 60px;
+                background: #f44336;
+                color: var(--color-text-button-primary);
+            }
+            .magicMorningStar button.banAll {
+                min-width: 40px;
+                background: #f44336;
+                color: var(--color-text-button-primary);
+            }
+            .magicMorningStar button.unban {
+                min-width: 60px;
+                background: #34ae0c;
+                color: var(--color-text-button-primary);
+            }
+            .magicMorningStar button.unbanAll {
+                min-width: 40px;
+                background: #34ae0c;
+                color: var(--color-text-button-primary);
+            }
+            .magicMorningStar .import {
+                min-height: 20px;
+                padding: 3px;
+                background: var(--color-background-body);
+                border: var(--border-width-default) solid var(--color-border-base);
+            }
+            .magicMorningStar textarea {
+                width: 100%;
+                min-height: 8em;
+                padding: 0.5em;
+                background: var(--color-background-base);
+                color: var(--color-text-base);
+                font-size: 10pt;
+            }
+            .magicMorningStar .footer {
+                font-size: 7pt;
+                text-align: center;
+            }
+            .magicMorningStar .list-status {
+                display: none;
+                width: 100%;
+                font-size: 9pt;
+                line-height: 1.4;
+                margin-top: 2px;
+                margin-bottom: 6px;
+                text-align: center;
+                white-space: pre-line;
+            }
+            .magicMorningStar .list-status.incomplete {
+                color: #ff9a9a;
+            }
+            .magicMorningStar .list-status.complete {
+                color: #9be7a1;
+            }
+            .magicMorningStar .list-status.paused {
+                color: #f4d35e;
+            }
+            .magicMorningStar .list-button-row {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .magicMorningStar .list-button-row button {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        </style>
+        <div class="header">
+            <span class="handle"></span>
+            <!-- Umschalter für die Sichtbarkeit des Mod-Menüs -->
+            <button
+                class="modMenuToggle"
+                type="button"
+                title="Mod-Menü ein- oder ausblenden"
+                aria-label="Mod-Menü ein- oder ausblenden"
+                style="display: inline-flex;"
+            >
+                <img
+                    class="modMenuToggleImage"
+                    src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
+                    title="Mod-Menü ein- oder ausblenden"
+                    alt="Mod-Menü"
+                    width="32"
+                    height="32"
+                >
+            </button>
+            <span style="flex-grow: 1;"></span>
+            <!-- Repository-Link und Tool-Titel -->
+            <h5 id="header" class="logo">
+                <a
+                    href="https://github.com/QueerModsDACH/MagicCleaningTool"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="color: ${themeTextColor};"
+                    title="Zum QueerModsDACH Repository"
+                >
+                    Magic Cleaning Tool&nbsp;&nbsp;
+                    <img
+                        src="${activateImage}"
+                        alt="Repository öffnen"
+                        width="18"
+                        height="18"
+                        style="vertical-align: middle;"
+                    >
+                    &nbsp;&nbsp;for a little better World
+                </a>
+            </h5>
+            <span style="flex-grow: 1;"></span>
+            <!-- Fenster schließen beziehungsweise minimieren -->
+            <button
+                class="closeBtn"
+                type="button"
+                title="Tool minimieren"
+                aria-label="Tool minimieren"
+            >
+                <img
+                    src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png"
+                    alt="Tool minimieren"
+                    width="18"
+                    height="18"
+                >
+            </button>
+        </div>
+        <!-- Importbereich -->
+        <div id="import" class="import" style="display: none;">
+            <textarea
+                id="textfield"
+                placeholder="Ein Benutzername pro Zeile"
+            ></textarea>
+            <div style="text-align: right;">
+                <input
+                    type="text"
+                    id="banReason"
+                    style="width: 66%;"
+                    placeholder="Hier optional einen eigenen Ban-Grund angeben"
+                >
+                <button
+                    class="importBtn"
+                    type="button"
+                    title="Benutzer zur Liste hinzufügen"
+                    style="width: 32%;"
+                >
+                    Hinzufügen
+                </button>
+            </div>
+            <!-- Zentral erzeugte Listenbuttons 01 bis 15 -->
+            ${listButtonsHtml}
+        </div>
+        <!-- Hauptbereich und Benutzerliste -->
+        <div class="body">
+            <div class="list"></div>
+            <div style="display: flex; margin: 5px;">
+                <span style="flex-grow: 2;"></span>
+                <div id="buttons" class="buttons">
+                    <!-- Ansichten -->
+                    <button
+                        class="back"
+                        type="button"
+                        title="Zurück"
+                    >
+                        ⬅
+                    </button>
+                    <!-- Cache und externe Werkzeuge -->
+                    <button
+                        class="clearBannedUsers"
+                        type="button"
+                        title="Gespeicherte gebannte Benutzer löschen"
+                    >
+                        ban-cache leeren
+                    </button>
+                    <button
+                        class="MooBot"
+                        type="button"
+                        title="Öffnet Moobot"
+                    >
+                        <img
+                            src="https://moo.bot/favicon.ico"
+                            height="17"
+                            alt="Moobot"
+                        >
+                    </button>
+                    <button
+                        class="NightBot"
+                        type="button"
+                        title="Öffnet Nightbot"
+                    >
+                        <img
+                            src="https://logodix.com/logo/1909538.png"
+                            height="17"
+                            alt="Nightbot"
+                        >
+                    </button>
+                    <button
+                        class="comanderRoot"
+                        type="button"
+                        title="Öffnet CommanderRoot"
+                    >
+                        🤖
+                    </button>
+                    <button
+                        class="sLabs"
+                        type="button"
+                        title="Öffnet Streamlabs"
+                    >
+                        <img
+                            src="https://cdn.streamlabs.com/static/imgs/streamlabs-logos/app-icon/streamlabs-app-icon.png"
+                            height="17"
+                            alt="Streamlabs"
+                        >
+                    </button>
+                    <button
+                        class="sElements"
+                        type="button"
+                        title="Öffnet StreamElements"
+                    >
+                        <img
+                            src="https://avatars.githubusercontent.com/u/16977512?s=17&v=4"
+                            alt="StreamElements"
+                        >
+                    </button>
+                    <!-- Kanalstatistiken und Moderationswerkzeuge -->
+                    <button
+                        class="chatstats"
+                        type="button"
+                        title="Öffnet SullyGnome-Kanalstatistiken"
+                    >
+                        📈
+                    </button>
+                    <button
+                        class="modLogger"
+                        type="button"
+                        title="Öffnet ModLogger für den aktuellen Kanal"
+                    >
+                        🗄
+                    </button>
+                    <button
+                        class="chatDeepStats"
+                        type="button"
+                        title="Öffnet ChatStats für den aktuellen Kanal"
+                    >
+                        🩻
+                    </button>
+                    <!-- Listenaktionen -->
+                    <button
+                        class="pause"
+                        id="pause"
+                        type="button"
+                        title="Pause/Play"
+                    >
+                        ⏸
+                    </button>
+                    <button
+                        class="ignoreAll"
+                        type="button"
+                        title="Liste leeren"
+                    >
+                        🗑
+                    </button>
+                    <button
+                        class="unbanAll"
+                        type="button"
+                        title="Alle auf der Liste entbannen"
+                    >
+                        👹
+                    </button>
+                    <button
+                        class="banAll"
+                        type="button"
+                        title="Alle auf der Liste bannen"
+                    >
+                        ⚔
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Status der aktuell geladenen Liste -->
+        <div id="listStatus" class="list-status" aria-live="polite"></div>
+        <!-- Footer -->
+        <div id="footer" class="footer">
+            <a
+                href="${urlBannlisten}"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="color: ${themeTextColor};"
+                id="replaceFooter"
+                title="Zur Liste"
+            >
+                MagicCleaningTool Listen
+            </a>
+            &nbsp;-&nbsp;
+            <a
+                id="manoooo"
+                href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
+                title="Aktuelle Version installieren"
+            >
+                ${updateText}
+            </a>
+            &nbsp;-&nbsp;&nbsp;
+            ${myVersion}
+        </div>
+    </div>
 `;
 // ############################################################################
 // ##### JAVASCRIPT: MODAL UND TOOL-CONTAINER ERSTELLEN #######################
-// ############################################################################
 const d = document.createElement('div');
 d.style.display = 'none';
 d.innerHTML = html;
-
-const textarea = d.querySelector('#textfield');
 // Fügt das Tool auch dann ein, wenn document-idle bereits nach DOMContentLoaded ausgeführt wurde.
 function appendToolToDocument() {
-if (!document.body.contains(d)) {
-document.body.appendChild(d);
+    if (!document.body.contains(d)) {
+        document.body.appendChild(d);
+    }
 }
-}
-
 if (document.body) {
-appendToolToDocument();
+    appendToolToDocument();
 } else {
-document.addEventListener(
-'DOMContentLoaded',
-appendToolToDocument,
-{ once: true }
-);
+    document.addEventListener(
+        'DOMContentLoaded',
+        appendToolToDocument,
+        { once: true }
+    );
 }
 // Aktivierungsbutton für das Twitch-Menü
 const activateBtn = document.createElement('button');
-
 activateBtn.innerHTML = `
-<img
-src="${activateImage}"
-alt="Aktivieren"
-width="25"
-height="25"
->
+    <img
+        src="${activateImage}"
+        alt="Aktivieren"
+        width="25"
+        height="25"
+    >
 `;
-
 activateBtn.style.cssText = `
-display: inline-flex;
-align-items: center;
-justify-content: center;
-user-select: none;
-height: var(--button-size-default);
-width: var(--button-size-default);
-border-radius: var(--border-radius-medium);
-background-color: var(--color-background-button-text-default);
-color: var(--color-fill-button-icon);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    height: var(--button-size-default);
+    width: var(--button-size-default);
+    border-radius: var(--border-radius-medium);
+    background-color: var(--color-background-button-text-default);
+    color: var(--color-fill-button-icon);
 `;
-
 activateBtn.id = 'morningStar';
 activateBtn.title = 'Magic Cleaning Tool';
-
 let enabled = false;
-let watchdogTimer = null;
 // ############################################################################
 // ##### HILFSFUNKTION FÜR DRAGGABLE ##########################################
-// ############################################################################
 function makeToolDraggable() {
-const tool = d.querySelector('.magicMorningStar');
-
-if (!tool) {
-return;
-}
-// Verhindert, dass der Drag-Handler mehrfach registriert wird.
-if (tool.dataset.qmdDraggable === 'true') {
-return;
-}
-
-tool.dataset.qmdDraggable = 'true';
-tool.style.touchAction = 'none';
-
-let isDragging = false;
-let startPointerX = 0;
-let startPointerY = 0;
-let startLeft = 0;
-let startTop = 0;
-// Elemente, bei denen ein normaler Klick weiterhin möglich sein muss.
-const isInteractiveElement = (target) => {
-return Boolean(
-target.closest(
-'button, a, input, textarea, select, option, img, .import, .list'
-)
-);
-};
-
-tool.addEventListener(
-'pointerdown',
-(event) => {
-if (event.button !== 0) {
-return;
-}
-
-if (isInteractiveElement(event.target)) {
-return;
-}
-
-const toolRect = tool.getBoundingClientRect();
-
-isDragging = true;
-startPointerX = event.clientX;
-startPointerY = event.clientY;
-startLeft = toolRect.left;
-startTop = toolRect.top;
-// Die Position wird auf die aktuelle Bildschirmposition umgestellt, damit beim ersten Verschieben kein Sprung entsteht.
-tool.style.left = `${startLeft}px`;
-tool.style.top = `${startTop}px`;
-tool.style.right = 'auto';
-tool.style.bottom = 'auto';
-
-tool.setPointerCapture(event.pointerId);
-event.preventDefault();
-},
-false
-);
-
-tool.addEventListener(
-'pointermove',
-(event) => {
-if (!isDragging) {
-return;
-}
-
-const newLeft =
-startLeft + (event.clientX - startPointerX);
-
-const newTop =
-startTop + (event.clientY - startPointerY);
-
-tool.style.left = `${newLeft}px`;
-tool.style.top = `${newTop}px`;
-},
-false
-);
-
-const stopDragging = (event) => {
-if (!isDragging) {
-return;
-}
-
-isDragging = false;
-
-if (
-event.pointerId !== undefined &&
-tool.hasPointerCapture(event.pointerId)
-) {
-tool.releasePointerCapture(event.pointerId);
-}
-};
-
-tool.addEventListener(
-'pointerup',
-stopDragging,
-false
-);
-
-tool.addEventListener(
-'pointercancel',
-stopDragging,
-false
-);
+    const tool = d.querySelector('.magicMorningStar');
+    if (!tool) {
+        return;
+    }
+    // Verhindert, dass der Drag-Handler mehrfach registriert wird.
+    if (tool.dataset.qmdDraggable === 'true') {
+        return;
+    }
+    tool.dataset.qmdDraggable = 'true';
+    tool.style.touchAction = 'none';
+    let isDragging = false;
+    let startPointerX = 0;
+    let startPointerY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+    // Elemente, bei denen ein normaler Klick weiterhin möglich sein muss.
+    const isInteractiveElement = (target) => {
+        return Boolean(
+            target.closest(
+                'button, a, input, textarea, select, option, img, .import, .list'
+            )
+        );
+    };
+    tool.addEventListener(
+        'pointerdown',
+        (event) => {
+            if (event.button !== 0) {
+                return;
+            }
+            if (isInteractiveElement(event.target)) {
+                return;
+            }
+            const toolRect = tool.getBoundingClientRect();
+            isDragging = true;
+            startPointerX = event.clientX;
+            startPointerY = event.clientY;
+            startLeft = toolRect.left;
+            startTop = toolRect.top;
+            // Die Position wird auf die aktuelle Bildschirmposition umgestellt, damit beim ersten Verschieben kein Sprung entsteht.
+            tool.style.left = `${startLeft}px`;
+            tool.style.top = `${startTop}px`;
+            tool.style.right = 'auto';
+            tool.style.bottom = 'auto';
+            tool.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        },
+        false
+    );
+    tool.addEventListener(
+        'pointermove',
+        (event) => {
+            if (!isDragging) {
+                return;
+            }
+            const newLeft =
+                startLeft + (event.clientX - startPointerX);
+            const newTop =
+                startTop + (event.clientY - startPointerY);
+            tool.style.left = `${newLeft}px`;
+            tool.style.top = `${newTop}px`;
+        },
+        false
+    );
+    const stopDragging = (event) => {
+        if (!isDragging) {
+            return;
+        }
+        isDragging = false;
+        if (
+            event.pointerId !== undefined &&
+            tool.hasPointerCapture(event.pointerId)
+        ) {
+            tool.releasePointerCapture(event.pointerId);
+        }
+    };
+    tool.addEventListener(
+        'pointerup',
+        stopDragging,
+        false
+    );
+    tool.addEventListener(
+        'pointercancel',
+        stopDragging,
+        false
+    );
 }
 // ############################################################################
 // ##### BENUTZERSTATUS UND LISTENAKTIONEN ####################################
-// ############################################################################
 function userAlreadyBanned(
     user,
     buttonId,
     listSuffix
 ) {
     const normalizedUser = normalizeUser(user);
-
+    if (!isValidUsername(normalizedUser)) {
+        return;
+    }
     if (!QMD_bannedUsersStore.includes(normalizedUser)) {
         addUsersToQueue(
             [normalizedUser],
@@ -1063,455 +1057,438 @@ function userAlreadyBanned(
         );
     } else {
         const button = d.querySelector(`#${buttonId}`);
-
         if (button) {
-            button.innerHTML = 'already banned';
+            button.textContent = 'already banned';
         }
-
         console.log(
             LOGPREFIX,
             `${normalizedUser} already banned in ${activeChannel}`
         );
     }
 }
-
 function userAlreadyUnBanned(user, buttonId) {
     const normalizedUser = normalizeUser(user);
-
+    if (!isValidUsername(normalizedUser)) {
+        return;
+    }
     if (!QMD_unbannedUsersStore.includes(normalizedUser)) {
         queueList.add(normalizedUser);
     } else {
         const button = d.querySelector(`#${buttonId}`);
-
         if (button) {
-            button.innerHTML = 'already unbanned';
+            button.textContent = 'already unbanned';
         }
-
         console.log(
             LOGPREFIX,
             `${normalizedUser} already unbanned in ${activeChannel}`
         );
     }
+    renderList();
 }
-
 // ############################################################################
 // ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #############################
-// ############################################################################
 function show() {
-console.log(LOGPREFIX, 'Show');
-
-appendToolToDocument();
-
-d.style.display = '';
-enabled = true;
-
-makeToolDraggable();
-renderList();
+    const moderatedChannel = getModeratedChannel();
+    if (!moderatedChannel) {
+        console.warn(
+            LOGPREFIX,
+            'Tool konnte nicht geöffnet werden: Kein moderierbarer Kanal aktiv.'
+        );
+        hide();
+        return;
+    }
+    activeChannel = moderatedChannel;
+    console.log(
+        LOGPREFIX,
+        `Tool für moderierten Kanal ${activeChannel} geöffnet.`
+    );
+    appendToolToDocument();
+    d.style.display = '';
+    enabled = true;
+    makeToolDraggable();
+    renderList();
 }
-
 function hide() {
-console.log(LOGPREFIX, 'Hide');
-
-d.style.display = 'none';
-enabled = false;
+    console.log(LOGPREFIX, 'Hide');
+    d.style.display = 'none';
+    enabled = false;
 }
-
 function toggle() {
-if (d.style.display !== 'none') {
-hide();
-} else {
-show();
+    if (d.style.display !== 'none') {
+        hide();
+    } else {
+        show();
+    }
+    checkVersion();
 }
-
-checkVersion();
-}
-
 function toggleImport() {
-const textField = d.querySelector('#textfield');
-const importDiv = d.querySelector('.import');
-const body = d.querySelector('.body');
-
-textField.value = '';
-
-if (importDiv.style.display !== 'none') {
-importDiv.style.display = 'none';
-body.style.display = '';
-} else {
-importDiv.style.display = '';
-body.style.display = 'none';
-textField.focus();
+    const textField = d.querySelector('#textfield');
+    const importDiv = d.querySelector('.import');
+    const body = d.querySelector('.body');
+    textField.value = '';
+    if (importDiv.style.display !== 'none') {
+        importDiv.style.display = 'none';
+        body.style.display = '';
+    } else {
+        importDiv.style.display = '';
+        body.style.display = 'none';
+        textField.focus();
+    }
 }
-}
-
 function toggleBack() {
     queueList.clear();
     queueListSources.clear();
-
     activeListAction = null;
-
+    activeListInfo = null;
+    actionDurationSamples = [];
+    updateListStatus();
     d.querySelector('#textfield').value = '';
-
-const body = d.querySelector('.body');
-const importDiv = d.querySelector('.import');
-
-insertText('');
-
-if (importDiv.style.display !== 'none') {
-importDiv.style.display = 'none';
-body.style.display = '';
-} else {
-importDiv.style.display = '';
-body.style.display = 'none';
-d.querySelector('.import textarea').focus();
-}
-
+    const body = d.querySelector('.body');
+    const importDiv = d.querySelector('.import');
+    insertText('');
+    if (importDiv.style.display !== 'none') {
+        importDiv.style.display = 'none';
+        body.style.display = '';
+    } else {
+        importDiv.style.display = '';
+        body.style.display = 'none';
+        d.querySelector('.import textarea').focus();
+    }
     d.querySelector('#replaceFooter').innerHTML =
         'Alle Bannlisten anzeigen';
-
     d.querySelector('#replaceFooter').href =
         urlBannlisten;
-
     renderList();
 }
-
 function togglePause() {
-const button = d.querySelector('#pause');
-
-if (!button) {
-return;
-}
-
-isPaused = !isPaused;
-
-if (isPaused) {
-button.value = 'play';
-button.textContent = '▶️';
-button.title = 'Fortsetzen';
-} else {
-button.value = 'pause';
-button.textContent = '⏸';
-button.title = 'Pausieren';
-}
+    const button = d.querySelector('#pause');
+    if (!button) {
+        return;
+    }
+    isPaused = !isPaused;
+    if (isPaused) {
+        button.value = 'play';
+        button.textContent = '▶️';
+        button.title = 'Fortsetzen';
+    } else {
+        button.value = 'pause';
+        button.textContent = '⏸';
+        button.title = 'Pausieren';
+    }
+    updateListStatus();
 }
 // ############################################################################
 // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
-// ############################################################################
 // Aktualisiert das Bild des Mod-Menü-Umschalters.
 function updateModMenuToggleImage() {
-const button = d.querySelector('.modMenuToggle');
-const image = d.querySelector('.modMenuToggleImage');
-
-if (!button || !image) {
-return;
-}
-
-image.src = isModMenuVisible
-? modMenuOnImage
-: modMenuOffImage;
-
-image.alt = isModMenuVisible
-? 'Mod-Menü eingeschaltet'
-: 'Mod-Menü ausgeschaltet';
-
-image.title = isModMenuVisible
-? 'Mod-Menü ausblenden'
-: 'Mod-Menü einblenden';
-
-button.title = image.title;
-
-button.setAttribute(
-'aria-label',
-image.title
-);
+    const button = d.querySelector('.modMenuToggle');
+    const image = d.querySelector('.modMenuToggleImage');
+    if (!button || !image) {
+        return;
+    }
+    image.src = isModMenuVisible
+        ? modMenuOnImage
+        : modMenuOffImage;
+    image.alt = isModMenuVisible
+        ? 'Mod-Menü eingeschaltet'
+        : 'Mod-Menü ausgeschaltet';
+    image.title = isModMenuVisible
+        ? 'Mod-Menü ausblenden'
+        : 'Mod-Menü einblenden';
+    button.title = image.title;
+    button.setAttribute(
+        'aria-label',
+        image.title
+    );
 }
 // Setzt die Sichtbarkeit des eigentlichen Mod-Menüs.
 function applyModMenuVisibility() {
-const state = window.__QMD_MOD_MENU_STATE__;
-
-if (!state) {
-return;
+    const state = window.__QMD_MOD_MENU_STATE__;
+    if (!state) {
+        return;
+    }
+    const displayValue = isModMenuVisible
+        ? ''
+        : 'none';
+    if (state.dropdownButton) {
+        state.dropdownButton.style.display = displayValue;
+    }
+    // Die Liste darf bei sichtbarem Mod-Menü nicht erneut ausgeblendet werden.
+    if (state.dropdownList && !isModMenuVisible) {
+        state.dropdownList.style.display = 'none';
+    }
+    updateModMenuToggleImage();
 }
-
-const displayValue = isModMenuVisible
-? ''
-: 'none';
-
-if (state.dropdownButton) {
-state.dropdownButton.style.display = displayValue;
-}
-// Die Liste darf bei sichtbarem Mod-Menü nicht erneut ausgeblendet werden.
-if (state.dropdownList && !isModMenuVisible) {
-state.dropdownList.style.display = 'none';
-}
-
-updateModMenuToggleImage();
-}
-
 // Schaltet das Mod-Menü ein beziehungsweise aus und speichert den neuen Zustand dauerhaft im Browser.
 function toggleModMenuVisibility() {
-isModMenuVisible = !isModMenuVisible;
-
-writeStorageValue(
-MOD_MENU_VISIBILITY_STORAGE_KEY,
-isModMenuVisible
-);
-
-applyModMenuVisibility();
-
-console.log(
-LOGPREFIX,
-`Mod-Menü ist jetzt ${
-isModMenuVisible ? 'sichtbar' : 'verborgen'
-}.`
-);
+    isModMenuVisible = !isModMenuVisible;
+    writeStorageValue(
+        MOD_MENU_VISIBILITY_STORAGE_KEY,
+        isModMenuVisible
+    );
+    applyModMenuVisibility();
+    console.log(
+        LOGPREFIX,
+        `Mod-Menü ist jetzt ${
+            isModMenuVisible ? 'sichtbar' : 'verborgen'
+        }.`
+    );
 }
 // ############################################################################
 // ##### VERSIONS- UND EXTERNE FUNKTIONEN #####################################
-// ############################################################################
-function checkVersion() {
-fetch(
-'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/MagicCleaningTool.user.js'
-)
-.then((response) => {
-if (!response.ok) {
-throw new Error(
-`HTTP-Fehler ${response.status}`
-);
+function parseVersion(version) {
+    return String(version)
+        .trim()
+        .split('.')
+        .map((part) => {
+            const number = Number.parseInt(part, 10);
+            return Number.isFinite(number) ? number : 0;
+        });
 }
-
-return response.text();
-})
-.then((versionText) => {
-const regex = /@version\s+(\d.*)/;
-const match = regex.exec(versionText);
-
-if (!match) {
-return;
+function compareVersions(firstVersion, secondVersion) {
+    const first = parseVersion(firstVersion);
+    const second = parseVersion(secondVersion);
+    const length = Math.max(first.length, second.length);
+    for (let index = 0; index < length; index += 1) {
+        const firstPart = first[index] ?? 0;
+        const secondPart = second[index] ?? 0;
+        if (firstPart > secondPart) {
+            return 1;
+        }
+        if (firstPart < secondPart) {
+            return -1;
+        }
+    }
+    return 0;
 }
-
-const newVersion = match[1];
-const versionElement = d.querySelector('#manoooo');
-
-if (!versionElement) {
-return;
+async function checkVersion() {
+    const versionElement = d.querySelector('#manoooo');
+    if (!versionElement) {
+        return;
+    }
+    try {
+        const response = await fetchWithTimeout(
+            'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/MagicCleaningTool.user.js',
+            {
+                cache: 'no-store'
+            }
+        );
+        if (!response.ok) {
+            throw new Error(`HTTP-Fehler ${response.status}`);
+        }
+        const versionText = await response.text();
+        const match = versionText.match(
+            /^[ \t]*\/\/[ \t]*@version[ \t]+([0-9]+(?:\.[0-9]+)*)[ \t]*$/m
+        );
+        if (!match) {
+            versionElement.textContent = updateText;
+            return;
+        }
+        const newVersion = match[1];
+        const versionComparison = compareVersions(
+            myVersion,
+            newVersion
+        );
+        if (versionComparison < 0) {
+            versionElement.textContent = `Update verfügbar: ${newVersion}`;
+        } else {
+            versionElement.textContent = updateText;
+        }
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            'Versionsprüfung fehlgeschlagen:',
+            error
+        );
+        versionElement.textContent = updateText;
+    }
 }
-
-if (myVersion < newVersion) {
-versionElement.innerHTML =
-'Update verfügbar 🚨';
-} else {
-versionElement.innerHTML = updateText;
-}
-})
-.catch((error) => {
-console.error(
-LOGPREFIX,
-'Versionsprüfung fehlgeschlagen:',
-error
-);
-});
-}
-
 function openExternal(url) {
-window.open(
-url,
-'_blank',
-'noopener,noreferrer'
-);
+    window.open(
+        url,
+        '_blank',
+        'noopener,noreferrer'
+    );
 }
-
 // ############################################################################
 // ##### BUTTON-EVENTS EINRICHTEN ############################################
-// ############################################################################
 function setupButtonEvents() {
-d.querySelector('.ignoreAll').onclick = ignoreAll;
-d.querySelector('.banAll').onclick = banAll;
-d.querySelector('.closeBtn').onclick = hide;
-d.querySelector('.unbanAll').onclick = unbanAll;
-d.querySelector('.back').onclick = toggleBack;
-d.querySelector('.pause').onclick = togglePause;
-d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
-// d.querySelector('.qmd')?.addEventListener( 'click', qmd );
-d.querySelector('.importBtn').onclick = importList;
-d.querySelector('.clearBannedUsers').onclick = clearBannedUsers;
-d.querySelector('.MooBot').onclick = () => openExternal('https://moo.bot/');
-d.querySelector('.NightBot').onclick = () => openExternal('https://nightbot.tv/dashboard');
-d.querySelector('.comanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
-d.querySelector('.sLabs').onclick = () => openExternal('https://streamlabs.com/dashboard');
-d.querySelector('.sElements').onclick = () => openExternal('https://streamelements.com/dashboard');
-d.querySelector('.chatstats').onclick = () => openExternal( `https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}` );
-d.querySelector('.modLogger').onclick = () => openExternal( `https://jvpeek.github.io/twitchmodlogger/?channel=${encodeURIComponent(activeChannel)}` );
-d.querySelector('.chatDeepStats').onclick = () => openExternal( `https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${encodeURIComponent(activeChannel)}` );
-// Alle Listenbuttons zentral verbinden.
-LIST_BUTTONS.forEach((listConfig) => {
-const button = d.querySelector(
-`#${listConfig.id}`
-);
-
-if (!button || listConfig.placeholder) {
-return;
+    d.querySelector('.ignoreAll').onclick = ignoreAll;
+    d.querySelector('.banAll').onclick = banAll;
+    d.querySelector('.closeBtn').onclick = hide;
+    d.querySelector('.unbanAll').onclick = unbanAll;
+    d.querySelector('.back').onclick = toggleBack;
+    d.querySelector('.pause').onclick = togglePause;
+    d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
+    d.querySelector('.importBtn').onclick = importList;
+    d.querySelector('.clearBannedUsers').onclick = clearBannedUsers;
+    d.querySelector('.MooBot').onclick = () =>
+        openExternal('https://moo.bot/');
+    d.querySelector('.NightBot').onclick = () =>
+        openExternal('https://nightbot.tv/dashboard');
+    d.querySelector('.comanderRoot').onclick = () =>
+        openExternal('https://twitch-tools.rootonline.de');
+    d.querySelector('.sLabs').onclick = () =>
+        openExternal('https://streamlabs.com/dashboard');
+    d.querySelector('.sElements').onclick = () =>
+        openExternal('https://streamelements.com/dashboard');
+    d.querySelector('.chatstats').onclick = () =>
+        openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
+    d.querySelector('.modLogger').onclick = () =>
+        openExternal(`https://jvpeek.github.io/twitchmodlogger/?channel=${encodeURIComponent(activeChannel)}`);
+    d.querySelector('.chatDeepStats').onclick = () =>
+        openExternal(`https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${encodeURIComponent(activeChannel)}`);
+    // Alle Listenbuttons zentral verbinden.
+    LIST_BUTTONS.forEach((listConfig) => {
+        const button = d.querySelector(
+            `#${listConfig.id}`
+        );
+        if (!button || listConfig.placeholder) {
+            return;
+        }
+        button.onclick = () =>
+            importListByNumber(listConfig.number);
+    });
+    // Der Aktivierungsbutton wird erst hier mit seiner Funktion verbunden, damit alle benötigten Funktionen bereits definiert sind.
+    activateBtn.onclick = toggle;
+    d.addEventListener('click', (event) => {
+        const target = event.target.closest(
+            'button, .toggleImport, .start'
+        );
+        if (!target) {
+            return;
+        }
+        if (target.matches('.ignore')) {
+            ignoreItem(target.dataset.user);
+        }
+        if (target.matches('.ban')) {
+            banItem(target.dataset.user);
+        }
+        if (target.matches('.unban')) {
+            unbanItem(target.dataset.user);
+        }
+        if (target.matches('.accountage')) {
+            accountage(target.dataset.user);
+        }
+        // Das Startbanner öffnet die Auswahl der Bannlisten.
+        if (target.matches('.toggleImport, .start')) {
+            toggleImport();
+        }
+        if (target.matches('.removeModChannel')) {
+            removeModChannel(target.dataset.user);
+        }
+        if (target.matches('.addModChannels')) {
+            addModChannel(target.dataset.user);
+        }
+    });
 }
-
-button.onclick = () =>
-importListByNumber(listConfig.number);
-});
-// Der Aktivierungsbutton wird erst hier mit seiner Funktion verbunden, damit alle benötigten Funktionen bereits definiert sind.
-activateBtn.onclick = toggle;
-
-d.addEventListener('click', (event) => {
-const target = event.target.closest(
-'button, .toggleImport, .start'
-);
-
-if (!target) {
-return;
-}
-
-if (target.matches('.ignore')) {
-ignoreItem(target.dataset.user);
-}
-
-if (target.matches('.ban')) {
-banItem(target.dataset.user);
-}
-
-if (target.matches('.unban')) {
-unbanItem(target.dataset.user);
-}
-
-if (target.matches('.accountage')) {
-accountage(target.dataset.user);
-}
-
-// Das Startbanner öffnet die Auswahl der Bannlisten.
-if (target.matches('.toggleImport, .start')) {
-toggleImport();
-}
-
-if (target.matches('.removeModChannel')) {
-removeModChannel(target.dataset.user);
-}
-
-if (target.matches('.addModChannels')) {
-addModChannel(target.dataset.user);
-}
-});
-}
-
 setupButtonEvents();
 // ############################################################################
 // ##### GESPEICHERTE BANNLISTE LÖSCHEN #######################################
-// ############################################################################
 function clearBannedUsers() {
-localStorage.removeItem(QMD_LocalStorageBanList);
-
-QMD_bannedUsersStore = [];
-
-renderList();
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Ban-Cache wurde blockiert: Kein moderierbarer Kanal aktiv.'
+        );
+        return;
+    }
+    QMD_bannedUsersStore = [];
+    writeStorageValue(
+        `${activeChannel}_banlist`,
+        []
+    );
+    updateListStatus();
+    renderList();
+    console.log(
+        LOGPREFIX,
+        `Ban-Cache für ${activeChannel} wurde geleert.`
+    );
 }
 // ############################################################################
 // ##### IMPORT UND EINGABEVERARBEITUNG #######################################
-// ############################################################################
 function insertText(value) {
-d.querySelector('#textfield').value =
-Array.isArray(value)
-? value.join('\n')
-: value;
+    d.querySelector('#textfield').value =
+        Array.isArray(value)
+            ? value.join('\n')
+            : value;
 }
-
 function importList() {
     activeListAction = null;
-
     const importTextarea =
         d.querySelector('.import textarea');
-
-    const lines =
-        importTextarea.value
-            .split(/\n/)
-            .map(normalizeUser)
-            .filter(Boolean);
-
-for (const line of lines) {
-    const normalizedUser = normalizeUser(line);
-
-    if (/^[\w_]+$/.test(normalizedUser)) {
-        addUsersToQueue([normalizedUser]);
+    if (!importTextarea) {
+        return;
     }
-}
-
-
-importTextarea.value = '';
-
-toggleImport();
-renderList();
+    const users = parseUserList(importTextarea.value);
+    for (const user of users) {
+        addUsersToQueue([user]);
+    }
+    importTextarea.value = '';
+    toggleImport();
+    renderList();
 }
 // Ermittelt eine Listen-Konfiguration anhand ihrer Nummer.
 function getListConfig(number) {
-return LIST_BUTTONS.find(
-(listConfig) =>
-listConfig.number === String(number).padStart(2, '0')
-);
+    return LIST_BUTTONS.find(
+        (listConfig) =>
+            listConfig.number === String(number).padStart(2, '0')
+    );
 }
 // Zentrale Importfunktion für alle 15 Listen.
 function importListByNumber(number) {
-const listConfig = getListConfig(number);
-
-if (!listConfig) {
-console.error(
-LOGPREFIX,
-`Keine Konfiguration für Liste ${number} gefunden.`
-);
-return;
+    const listConfig = getListConfig(number);
+    if (!listConfig) {
+        console.error(
+            LOGPREFIX,
+            `Keine Konfiguration für Liste ${number} gefunden.`
+        );
+        return;
+    }
+    if (listConfig.placeholder) {
+        console.warn(
+            LOGPREFIX,
+            `Liste ${listConfig.number} ist nur ein Platzhalter.`
+        );
+        return;
+    }
+    importMDGGeneric(listConfig);
 }
-
-if (listConfig.placeholder) {
-console.warn(
-LOGPREFIX,
-`Liste ${listConfig.number} ist nur ein Platzhalter.`
-);
-return;
-}
-
-importMDGGeneric(
-    listConfig.url,
-    listConfig.id,
-    listConfig.text,
-    `Geladene Liste '${listConfig.fileName}' anzeigen`,
-    listConfig.url,
-    listConfig.action,
-    listConfig.banReason,
-    listConfig.saveSuffix
-);
-}
-
 // Allgemeine Importfunktion für externe Listen.
-function importMDGGeneric(
-    url,
-    buttonId,
-    defaultButtonText,
-    footerText,
-    footerHref,
-    action = 'ban',
-    listBanReason = defaultBanReason,
-    listSuffix
-) {
+function importMDGGeneric(listConfig) {
+    const {
+        url,
+        id: buttonId,
+        text: defaultButtonText,
+        fileName,
+        action = 'ban',
+        banReason: listBanReason = defaultBanReason,
+        saveSuffix: listSuffix
+    } = listConfig;
+    const footerText =
+        `Geladene Liste '${fileName}' anzeigen`;
+    const footerHref = url;
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Listenimport blockiert: Kein moderierbarer Kanal aktiv.'
+        );
+        return;
+    }
     const normalizedAction =
         action === 'unban'
             ? 'unban'
             : 'ban';
-
     activeListAction = normalizedAction;
-
     queueList.clear();
     queueListSources.clear();
-
+    actionDurationSamples = [];
+    activeListInfo = null;
+    updateListStatus();
     updateBulkActionButtons();
-
     const usersToProcess = [];
-
     const banReasonInput =
         d.querySelector('#banReason');
-
     if (
         normalizedAction === 'ban' &&
         banReasonInput &&
@@ -1519,25 +1496,56 @@ function importMDGGeneric(
     ) {
         banReasonInput.value = listBanReason;
     }
-
-    fetch(url)
+    const sourceButton =
+        d.querySelector(`#${buttonId}`);
+    if (sourceButton) {
+        sourceButton.disabled = true;
+        sourceButton.setAttribute(
+            'aria-busy',
+            'true'
+        );
+        sourceButton.textContent = 'Lade …';
+    }
+    fetchWithTimeout(url)
         .then((response) => {
             if (!response.ok) {
                 throw new Error(
                     `HTTP-Fehler ${response.status}`
                 );
             }
-
             return response.text();
         })
         .then((data) => {
+            const parsedUsers = parseUserList(data);
+            activeListInfo = {
+            fileName,
+            action: normalizedAction,
+            channel: activeChannel,
+            banReason: listBanReason,
+            users: new Set(parsedUsers),
+            skippedUsers: new Set()
+            };
             usersToProcess.push(
-                ...data
-                    .split('\n')
-                    .map(normalizeUser)
-                    .filter(Boolean)
+            ...parsedUsers
             );
-
+            if (!isCurrentChannelModerated()) {
+                console.warn(
+                    LOGPREFIX,
+                    'Listenimport wegen eines Kanalwechsels verworfen.'
+                );
+                activeListAction = null;
+                usersToProcess.length = 0;
+                queueList.clear();
+                queueListSources.clear();
+                updateBulkActionButtons();
+                renderList();
+                if (sourceButton) {
+                    sourceButton.disabled = false;
+                    sourceButton.removeAttribute('aria-busy');
+                    sourceButton.textContent = defaultButtonText;
+                }
+                return;
+            }
             usersToProcess.forEach((name) => {
                 if (normalizedAction === 'unban') {
                     userAlreadyUnBanned(
@@ -1552,21 +1560,25 @@ function importMDGGeneric(
                     );
                 }
             });
-
             const textField =
                 d.querySelector('#textfield');
-
             if (textField) {
                 textField.value = '';
             }
-
             insertText(
                 Array.from(queueList)
             );
-
+            updateListStatus();
             if (queueList.size !== 0) {
                 toggleImport();
                 renderList();
+            } else {
+                renderList();
+            }
+            if (sourceButton) {
+                sourceButton.disabled = false;
+                sourceButton.removeAttribute('aria-busy');
+                sourceButton.textContent = defaultButtonText;
             }
         })
         .catch((error) => {
@@ -1575,281 +1587,356 @@ function importMDGGeneric(
                 `Liste konnte nicht geladen werden: ${url}`,
                 error
             );
+            activeListAction = null;
+            queueList.clear();
+            queueListSources.clear();
+            activeListInfo = null;
+            actionDurationSamples = [];
+            updateListStatus();
+            const textField =
+                d.querySelector('#textfield');
+            if (textField) {
+                textField.value = '';
+            }
+            updateBulkActionButtons();
+            renderList();
+            if (sourceButton) {
+                sourceButton.disabled = false;
+                sourceButton.removeAttribute('aria-busy');
+                sourceButton.textContent = defaultButtonText;
+            }
         });
-
     const footer =
         d.querySelector('#replaceFooter');
-
     if (footer) {
         footer.innerHTML = footerText;
         footer.href = footerHref;
     }
-
     setTimeout(() => {
         const button =
             d.querySelector(`#${buttonId}`);
-
         if (button) {
             button.innerHTML =
                 defaultButtonText;
         }
     }, 5000);
 }
-
 // ############################################################################
 // ##### WHITELIST LADEN UND PRÜFEN ###########################################
-// ############################################################################
 async function loadWhitelist() {
-if (whitelistPromise) {
-return whitelistPromise;
+    if (whitelistPromise) {
+        return whitelistPromise;
+    }
+    const parseWhitelist = (data) =>
+        data
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith('#'))
+            .map(normalizeUser)
+            .filter(isValidUsername);
+    const fetchWhitelist = async (url) => {
+        const response = await fetchWithTimeout(url);
+        if (!response.ok) {
+            throw new Error(
+                `HTTP-Fehler ${response.status} beim Laden von ${url}`
+            );
+        }
+        return response.text();
+    };
+    // beide Inhalte der Whitelist parallel laden
+    whitelistPromise = Promise.all([
+        fetchWhitelist(WHITELISTED_BOTS_URL),
+        fetchWhitelist(WHITELISTED_USER_URL)
+    ])
+        .then(([botsData, userData]) => {
+            const botWhitelist =
+                parseWhitelist(botsData);
+            const userWhitelist =
+                parseWhitelist(userData);
+            // beide Inhalte der Whitelist in einem gemeinsamen Set zusammenführen
+            whitelistUsers = new Set([
+                ...botWhitelist,
+                ...userWhitelist
+            ]);
+            console.log(
+                LOGPREFIX,
+                `${whitelistUsers.size} Benutzer aus beiden Whitelists geladen.`
+            );
+            return whitelistUsers;
+        })
+        .catch((error) => {
+            console.error(
+                LOGPREFIX,
+                'Whitelists konnten nicht geladen werden:',
+                error
+            );
+            // Beim nächsten Versuch erneut laden.
+            whitelistPromise = null;
+            throw error;
+        });
+    return whitelistPromise;
 }
-
-const parseWhitelist = (data) =>
-    data
-        .split(/\r?\n/)
-        .map(normalizeUser)
-        .filter(
-            (line) =>
-                line &&
-                !line.startsWith('#') &&
-                /^[\w_]+$/.test(line)
-        );
-
-const fetchWhitelist = async (url) => {
-const response = await fetch(url);
-
-if (!response.ok) {
-throw new Error(
-`HTTP-Fehler ${response.status} beim Laden von ${url}`
-);
-}
-
-return response.text();
-};
-// beide Inhalte der Whitelist parallel laden
-whitelistPromise = Promise.all([
-fetchWhitelist(WHITELISTED_BOTS_URL),
-fetchWhitelist(WHITELISTED_USER_URL)
-])
-.then(([botsData, userData]) => {
-const botWhitelist =
-parseWhitelist(botsData);
-
-const userWhitelist =
-parseWhitelist(userData);
-// beide Inhalte der Whitelist in einem gemeinsamen Set zusammenführen
-whitelistUsers = new Set([
-...botWhitelist,
-...userWhitelist
-]);
-
-console.log(
-LOGPREFIX,
-`${whitelistUsers.size} Benutzer aus beiden Whitelists geladen.`
-);
-
-return whitelistUsers;
-})
-.catch((error) => {
-console.error(
-LOGPREFIX,
-'Whitelists konnten nicht geladen werden:',
-error
-);
-
-// Beim nächsten Versuch erneut laden.
-whitelistPromise = null;
-throw error;
-});
-
-return whitelistPromise;
-}
-
 async function isUserWhitelisted(user) {
-const whitelist = await loadWhitelist();
-const normalizedUser =
-    normalizeUser(user);
-
-return whitelist.has(normalizedUser);
+    const whitelist = await loadWhitelist();
+    const normalizedUser =
+        normalizeUser(user);
+    return whitelist.has(normalizedUser);
 }
-
 // ############################################################################
 // ##### EINZEL- UND MASSENAKTIONEN ###########################################
-// ############################################################################
 function ignoreAll() {
-console.log(
-LOGPREFIX,
-'Ignoring all...',
-queueList
-);
-
-for (const user of [...queueList]) {
-ignoreItem(user);
+    console.log(
+        LOGPREFIX,
+        'Ignoring all...',
+        queueList
+    );
+    for (const user of [...queueList]) {
+        ignoreItem(user);
+    }
 }
-}
-
 async function banAll() {
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Ban All blockiert: Kein moderierbarer Kanal aktiv.'
+        );
+        return;
+    }
     if (activeListAction === 'unban') {
         console.warn(
             LOGPREFIX,
             'Ban All wurde für eine Unban-Liste blockiert.'
         );
-
         return;
     }
-
     console.log(
         LOGPREFIX,
         'Banning all...',
         queueList
     );
-
     for (const user of [...queueList]) {
         while (isPaused) {
             await delay(DELAY_PAUSE_CHECK);
         }
-
+        if (!isCurrentChannelModerated()) {
+            console.warn(
+                LOGPREFIX,
+                'Ban All wegen eines Kanalwechsels abgebrochen.'
+            );
+            break;
+        }
+        const actionStartedAt = performance.now();
         const wasBanned =
             await banItem(user);
-
         if (wasBanned) {
             await delay(DELAY_BAN_ACTION);
+        const actionDuration =
+            performance.now() - actionStartedAt;
+        addActionDurationSample(actionDuration);
+        updateListStatus();
         }
     }
 }
-
 async function unbanAll() {
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Unban All blockiert: Kein moderierbarer Kanal aktiv.'
+        );
+        return;
+    }
     if (activeListAction === 'ban') {
         console.warn(
             LOGPREFIX,
             'Unban All wurde für eine Bannliste blockiert.'
         );
-
         return;
     }
-
     console.log(
         LOGPREFIX,
         'Unbanning all...',
         queueList
     );
-
     for (const user of [...queueList]) {
         while (isPaused) {
             await delay(DELAY_PAUSE_CHECK);
         }
-
-        unbanItem(user);
-
-        await delay(DELAY_UNBAN_ACTION);
+        if (!isCurrentChannelModerated()) {
+            console.warn(
+                LOGPREFIX,
+                'Unban All wegen eines Kanalwechsels abgebrochen.'
+            );
+            break;
+        }
+        const actionStartedAt = performance.now();
+        const wasUnbanned =
+            unbanItem(user);
+        if (wasUnbanned) {
+            await delay(DELAY_UNBAN_ACTION);
+        const actionDuration =
+            performance.now() - actionStartedAt;
+        addActionDurationSample(actionDuration);
+        updateListStatus();
+        }
     }
 }
-
 function accountage(user) {
-console.log(
-LOGPREFIX,
-'send !accountage',
-user
-);
-
-sendMessage(`!accountage ${user}`);
+    console.log(
+        LOGPREFIX,
+        'send !accountage',
+        user
+    );
+    sendMessage(`!accountage ${user}`);
 }
-
 function ignoreItem(user) {
-console.log(
-LOGPREFIX,
-'Ignore user:',
-user
-);
-
-queueList.delete(user);
-ignoredList.add(user);
-
-renderList();
-}
-
-function unbanItem(user) {
     const normalizedUser = normalizeUser(user);
-
+    console.log(
+        LOGPREFIX,
+        'Ignore user:',
+        normalizedUser
+    );
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
+    ignoredList.add(normalizedUser);
+    if (
+        activeListInfo &&
+        activeListInfo.users.has(normalizedUser)
+    ) {
+        activeListInfo.skippedUsers.add(normalizedUser);
+    }
+    renderList();
+    }
+function unbanItem(user) {
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Unban blockiert: Der aktuelle Kanal ist nicht moderierbar.'
+        );
+        return false;
+    }
+    const actionChannel = activeChannel;
+    const normalizedUser = normalizeUser(user);
+    if (!isValidUsername(normalizedUser)) {
+        console.warn(
+            LOGPREFIX,
+            `Ungültiger Benutzername für Unban ignoriert: ${normalizedUser}`
+        );
+        return false;
+    }
     console.log(
         LOGPREFIX,
         'Unban user:',
         normalizedUser
     );
-
+    try {
+        sendMessage(`/unban ${normalizedUser}`);
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+            error
+        );
+        return false;
+    }
+    if (
+        !actionChannel ||
+        activeChannel !== actionChannel ||
+        getModeratedChannel() !== actionChannel
+    ) {
+        console.warn(
+            LOGPREFIX,
+            `Unban von ${normalizedUser} wurde wegen eines Kanalwechsels nicht gespeichert.`
+        );
+        return false;
+    }
     queueList.delete(normalizedUser);
-
     if (!QMD_unbannedUsersStore.includes(normalizedUser)) {
         QMD_unbannedUsersStore.push(normalizedUser);
     }
-
     QMD_bannedUsersStore =
         QMD_bannedUsersStore.filter(
             (storedUser) =>
                 storedUser !== normalizedUser
         );
-
-    sendMessage(`/unban ${normalizedUser}`);
-
     writeStorageValue(
-        `${activeChannel}_unbanlist`,
+        `${actionChannel}_unbanlist`,
         QMD_unbannedUsersStore
     );
-
     writeStorageValue(
-        `${activeChannel}_banlist`,
+        `${actionChannel}_banlist`,
         QMD_bannedUsersStore
     );
-
+    renderList();
+    return true;
+}
+function removeModChannel(user) {
+    const normalizedUser = normalizeUser(user);
+    if (!isValidUsername(normalizedUser)) {
+        console.warn(
+            LOGPREFIX,
+            `Ungültiger Mod-Kanal kann nicht entfernt werden: ${normalizedUser}`
+        );
+        return;
+    }
+    console.log(
+        LOGPREFIX,
+        'Remove User from ModChannels:',
+        normalizedUser
+    );
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
+    QMD_modChannelStore =
+        QMD_modChannelStore.filter(
+            (channel) => channel !== normalizedUser
+        );
+    writeStorageList(
+        'myModChannels',
+        QMD_modChannelStore
+    );
+    if (
+        typeof window.refreshQMDModMenu === 'function'
+    ) {
+        window.refreshQMDModMenu();
+    }
     renderList();
 }
-
-function removeModChannel(user) {
-console.log(
-LOGPREFIX,
-'Remove User from ModChannels:',
-user
-);
-
-queueList.delete(user);
-
-QMD_modChannelStore =
-QMD_modChannelStore.filter(
-(channel) => channel !== user
-);
-
-writeStorageList(
-'myModChannels',
-QMD_modChannelStore
-);
-
-if (
-typeof window.refreshQMDModMenu === 'function'
-) {
-window.refreshQMDModMenu();
-}
-
-renderList();
-}
-
-// ##########
 async function banItem(user) {
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Ban blockiert: Der aktuelle Kanal ist nicht moderierbar.'
+        );
+        return false;
+    }
+    const actionChannel = activeChannel;
     const normalizedUser = normalizeUser(user);
-
+    if (!isValidUsername(normalizedUser)) {
+        console.warn(
+            LOGPREFIX,
+            `Ungültiger Benutzername ignoriert: ${normalizedUser}`
+        );
+        queueList.delete(normalizedUser);
+        queueListSources.delete(normalizedUser);
+        renderList();
+        return false;
+    }
     try {
-        const isWhitelisted =
+        const whitelisted =
             await isUserWhitelisted(normalizedUser);
-
-        if (isWhitelisted) {
+        if (whitelisted) {
             console.log(
                 LOGPREFIX,
                 `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`
-            );
-
-            queueList.delete(normalizedUser);
-            queueListSources.delete(normalizedUser);
+                );
+                queueList.delete(normalizedUser);
+                queueListSources.delete(normalizedUser);
+            if (
+                activeListInfo &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.skippedUsers.add(normalizedUser);
+            }
             renderList();
-
             return false;
         }
     } catch (error) {
@@ -1858,191 +1945,361 @@ async function banItem(user) {
             `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
             error
         );
-
         return false;
     }
-
+    const banReasonInput =
+        d.querySelector('#banReason');
     const reason =
-        d.querySelector('#banReason').value.trim() ||
+        banReasonInput?.value.trim() ||
         defaultBanReason;
-
+    const safeReason = reason
+        .replace(/[\r\n]+/g, ' ')
+        .slice(0, 500);
+    try {
+        if (
+            !actionChannel ||
+            activeChannel !== actionChannel ||
+            getModeratedChannel() !== actionChannel
+        ) {
+            console.warn(
+                LOGPREFIX,
+                `Ban von ${normalizedUser} wurde wegen eines Kanalwechsels abgebrochen.`
+            );
+            return false;
+        }
+        sendMessage(
+            `/ban ${normalizedUser} ${safeReason}`
+        );
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+            error
+        );
+        return false;
+    }
+    if (
+        !actionChannel ||
+        activeChannel !== actionChannel ||
+        getModeratedChannel() !== actionChannel
+    ) {
+        console.warn(
+            LOGPREFIX,
+            `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.`
+        );
+        return false;
+    }
     const listSuffixes =
         queueListSources.get(normalizedUser) ||
         new Set();
-
     queueList.delete(normalizedUser);
     queueListSources.delete(normalizedUser);
-
     if (!QMD_bannedUsersStore.includes(normalizedUser)) {
         QMD_bannedUsersStore.push(normalizedUser);
     }
-
-    sendMessage(
-        `/ban ${normalizedUser} ${reason}`
-    );
-
     writeStorageValue(
-        `${activeChannel}_banlist`,
+        `${actionChannel}_banlist`,
         QMD_bannedUsersStore
     );
-
     for (const listSuffix of listSuffixes) {
         const listStorageKey =
-            `${activeChannel}_banlist${listSuffix}`;
-
+            `${actionChannel}_banlist${listSuffix}`;
         const listBannedUsers =
             normalizeUserList(
-                readStorageValue(
-                    listStorageKey,
-                    []
-                )
+                readStorageValue(listStorageKey, [])
             );
-
         if (!listBannedUsers.includes(normalizedUser)) {
             listBannedUsers.push(normalizedUser);
         }
-
         writeStorageValue(
             listStorageKey,
             listBannedUsers
         );
     }
-
     renderList();
     return true;
 }
-
-// #####
 function addModChannel(user) {
-const normalizedUser =
-user.trim().toLowerCase();
-
-if (!QMD_modChannelStore.includes(normalizedUser)) {
-console.log(
-LOGPREFIX,
-`${normalizedUser} zu ModChannels hinzugefügt`
-);
-
-queueList.delete(normalizedUser);
-QMD_modChannelStore.push(normalizedUser);
-
-QMD_modChannelStore =
-sortAndStoreModChannels(
-QMD_modChannelStore
-);
-
-if (
-typeof window.refreshQMDModMenu === 'function'
-) {
-window.refreshQMDModMenu();
-}
-
-renderList();
-} else {
-console.log(
-LOGPREFIX,
-`Benutzer ${normalizedUser} ist bereits in den ModChannels.`
-);
-}
+    const normalizedUser = normalizeUser(user);
+    if (!isValidUsername(normalizedUser)) {
+        console.warn(
+            LOGPREFIX,
+            `Ungültiger Mod-Kanal wurde ignoriert: ${normalizedUser}`
+        );
+        return;
+    }
+    if (!QMD_modChannelStore.includes(normalizedUser)) {
+        console.log(
+            LOGPREFIX,
+            `${normalizedUser} zu ModChannels hinzugefügt`
+        );
+        queueList.delete(normalizedUser);
+        QMD_modChannelStore.push(normalizedUser);
+        QMD_modChannelStore =
+            sortAndStoreModChannels(
+                QMD_modChannelStore
+            );
+        if (
+            typeof window.refreshQMDModMenu === 'function'
+        ) {
+            window.refreshQMDModMenu();
+        }
+        renderList();
+    } else {
+        console.log(
+            LOGPREFIX,
+            `Benutzer ${normalizedUser} ist bereits in den ModChannels.`
+        );
+    }
 }
 // ############################################################################
 // ##### NACHRICHTEN AN DEN TWITCH-CHAT SENDEN ###############################
-// ############################################################################
 function sendMessage(message) {
-sendMessageSlate(message);
+    if (!isCurrentChannelModerated()) {
+        throw new Error(
+            'Moderationsaktion blockiert: Der aktuelle Kanal ist nicht moderierbar.'
+        );
+    }
+    sendMessageSlate(message);
 }
-
 function sendMessageSlate(message) {
-const editor =
-document.querySelector(
-'[data-slate-editor="true"]'
-);
+    const normalizedMessage =
+        String(message ?? '').trim();
 
-if (!editor) {
-throw new Error(
-'Slate-Chat-Eingabe nicht gefunden.'
-);
+    if (!normalizedMessage) {
+        throw new Error(
+            'Leere Chat-Nachricht wurde blockiert.'
+        );
+    }
+    const editor =
+        document.querySelector(
+            '[data-slate-editor="true"]'
+        );
+    if (
+        !(editor instanceof HTMLElement) ||
+        editor.getAttribute('contenteditable') !== 'true'
+    ) {
+        throw new Error(
+            'Keine aktive Chat-Eingabe gefunden.'
+        );
+    }
+    editor.focus();
+    if (
+        typeof InputEvent === 'undefined' ||
+        typeof KeyboardEvent === 'undefined'
+    ) {
+        throw new Error(
+            'Der Browser unterstützt die benötigten Chat-Events nicht.'
+        );
+    }
+    editor.dispatchEvent(
+        new InputEvent('beforeinput', {
+            bubbles: true,
+            data: normalizedMessage,
+            inputType: 'insertText'
+        })
+    );
+    editor.dispatchEvent(
+        new InputEvent('input', {
+            bubbles: true,
+            data: normalizedMessage,
+            inputType: 'insertText'
+        })
+    );
+    editor.dispatchEvent(
+        new KeyboardEvent('keydown', {
+            bubbles: true,
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13
+        })
+    );
 }
-
-editor.focus();
-
-editor.dispatchEvent(
-new InputEvent('beforeinput', {
-bubbles: true,
-data: message,
-inputType: 'insertText'
-})
-);
-
-editor.dispatchEvent(
-new InputEvent('input', {
-bubbles: true,
-data: message,
-inputType: 'insertText'
-})
-);
-
-editor.dispatchEvent(
-new KeyboardEvent('keydown', {
-bubbles: true,
-key: 'Enter',
-code: 'Enter',
-keyCode: 13,
-which: 13
-})
-);
-}
-
 // Button 'ban' / 'unban' - aktivieren / deaktivieren
 function updateBulkActionButtons() {
     const banAllButton =
         d.querySelector('.banAll');
-
     const unbanAllButton =
         d.querySelector('.unbanAll');
-
     const hasQueueItems =
         queueList.size > 0;
-
     if (banAllButton) {
         const shouldDisable =
             !hasQueueItems ||
             activeListAction === 'unban';
-
         banAllButton.disabled = shouldDisable;
         banAllButton.setAttribute(
             'aria-disabled',
             String(shouldDisable)
         );
-
         banAllButton.title =
             activeListAction === 'unban'
                 ? 'Für eine Unban-Liste deaktiviert'
                 : 'Alle auf der Liste bannen';
     }
-
     if (unbanAllButton) {
         const shouldDisable =
             !hasQueueItems ||
             activeListAction === 'ban';
-
         unbanAllButton.disabled = shouldDisable;
         unbanAllButton.setAttribute(
             'aria-disabled',
             String(shouldDisable)
         );
-
         unbanAllButton.title =
             activeListAction === 'ban'
                 ? 'Für eine Bannliste deaktiviert'
                 : 'Alle auf der Liste entbannen';
     }
 }
-
+// ############################################################################
+// ##### Hilfsfunktionen für die Zeitberechnung #########################################
+function formatEstimatedDuration(milliseconds) {
+if (!Number.isFinite(milliseconds) || milliseconds <= 0) {
+return 'weniger als 1 Minute';
+}
+const totalSeconds = Math.max(
+1,
+Math.ceil(milliseconds / 1000)
+);
+const hours = Math.floor(totalSeconds / 3600);
+const minutes = Math.floor(
+(totalSeconds % 3600) / 60
+);
+const seconds = totalSeconds % 60;
+const parts = [];
+if (hours > 0) {
+parts.push(
+`${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`
+);
+}
+if (minutes > 0) {
+parts.push(
+`${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`
+);
+}
+// Sekunden nur anzeigen, wenn die geschätzte Dauer unter einer Minute liegt.
+if (hours === 0 && minutes === 0 && seconds > 0) {
+parts.push(
+`${seconds} ${seconds === 1 ? 'Sekunde' : 'Sekunden'}`
+);
+}
+return parts.join(' ');
+}
+function getAverageActionDuration() {
+if (actionDurationSamples.length === 0) {
+// Konservativer Anfangswert, bis echte Messwerte vorliegen.
+return 600;
+}
+const totalDuration =
+actionDurationSamples.reduce(
+(sum, duration) => sum + duration,
+0
+);
+return totalDuration / actionDurationSamples.length;
+}
+function addActionDurationSample(duration) {
+if (!Number.isFinite(duration) || duration <= 0) {
+return;
+}
+actionDurationSamples.push(duration);
+if (
+actionDurationSamples.length >
+ACTION_DURATION_SAMPLE_SIZE
+) {
+actionDurationSamples.shift();
+}
+}
+function updateListStatus() {
+const statusElement =
+d.querySelector('#listStatus');
+if (!statusElement) {
+return;
+}
+if (
+!activeListInfo ||
+!activeListInfo.users ||
+activeListInfo.users.size === 0
+) {
+statusElement.textContent = '';
+statusElement.className = 'list-status';
+statusElement.style.display = 'none';
+return;
+}
+const listUsers = activeListInfo.users;
+const processedStore =
+activeListInfo.action === 'unban'
+? QMD_unbannedUsersStore
+: QMD_bannedUsersStore;
+const processedUsers = [...listUsers].filter(
+(user) => processedStore.includes(user)
+);
+const skippedUsers = [...listUsers].filter(
+(user) => activeListInfo.skippedUsers.has(user)
+);
+const totalCount = listUsers.size;
+const processedCount = processedUsers.length;
+const skippedCount = skippedUsers.length;
+const remainingCount = Math.max(
+0,
+totalCount - processedCount - skippedCount
+);
+const actionWord =
+activeListInfo.action === 'unban'
+? 'entbannt'
+: 'gebannt';
+const actionVerb =
+activeListInfo.action === 'unban'
+? 'entbannt'
+: 'gebannt';
+const channelName =
+activeListInfo.channel || activeChannel || 'aktuellen Kanal';
+// Textaufbau
+let statusText =
+`Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei ▶ ${channelName} ◀ ${actionWord}.`;
+let progressText = '';
+if (skippedCount > 0) {
+progressText +=
+`Übersprungen: ${skippedCount.toLocaleString('de-DE')}. `;
+}
+if (remainingCount > 0) {
+const estimatedDuration =
+remainingCount * getAverageActionDuration();
+progressText +=
+`Verbleibend: ${remainingCount.toLocaleString('de-DE')} ... `;
+progressText +=
+`Voraussichtliche Dauer: ca. ${formatEstimatedDuration(estimatedDuration)}.`;
+} else {
+progressText +=
+'Liste vollständig abgearbeitet.';
+}
+statusText += `\n${progressText}`;
+if (
+activeListInfo.action !== 'unban' &&
+activeListInfo.banReason
+) {
+statusText +=
+`\nBei jedem Ban dieser Liste wird der Grund: ▶ ${activeListInfo.banReason} ◀ angegeben.\n`;
+}
+// ##### ^^^^^ #####
+statusElement.textContent = statusText;
+statusElement.className =
+`list-status ${
+remainingCount === 0 ? 'complete' : 'incomplete'
+}`;
+if (isPaused && remainingCount > 0) {
+statusElement.classList.remove('incomplete');
+statusElement.classList.add('paused');
+statusElement.textContent +=
+' Status: pausiert.';
+}
+statusElement.style.display = 'block';
+}
 // ############################################################################
 // ##### LISTENANZEIGE UND RENDERING #########################################
-// ############################################################################
 function renderList() {
+    updateListStatus();
     const buttonsToToggle = [
         '.ignoreAll',
         '.banAll',
@@ -2050,19 +2307,15 @@ function renderList() {
         '.pause',
         '.unbanAll'
     ];
-
     buttonsToToggle.forEach((selector) => {
         const button = d.querySelector(selector);
-
         if (button) {
             button.style.display =
                 queueList.size ? '' : 'none';
         }
     });
-
     updateBulkActionButtons();
-
-const renderItem = (item) => `
+    const renderItem = (item) => `
 <li>
 <button
 class="accountage"
@@ -2071,7 +2324,6 @@ title="Schreibt !accountage ${escapeHtml(item)} in den Chat"
 >
 ?
 </button>
-
 <button
 class="ignore"
 data-user="${escapeHtml(item)}"
@@ -2079,7 +2331,6 @@ title="Benutzer aus Liste entfernen"
 >
 ❌
 </button>
-
 <button
 class="unban"
 data-user="${escapeHtml(item)}"
@@ -2087,7 +2338,6 @@ title="Benutzer entbannen"
 >
 Unban
 </button>
-
 <button
 class="ban"
 data-user="${escapeHtml(item)}"
@@ -2095,7 +2345,6 @@ title="Benutzer bannen"
 >
 Ban
 </button>
-
 <span>
 <a
 href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
@@ -2108,10 +2357,9 @@ ${escapeHtml(item)}
 </span>
 </li>
 `;
-
-const inner = queueList.size
-? [...queueList].map(renderItem).join('')
-: `
+    const inner = queueList.size
+        ? [...queueList].map(renderItem).join('')
+        : `
 <div id="empty" class="empty">
 <img
 class="toggleImport"
@@ -2123,328 +2371,266 @@ style="cursor: pointer; max-height: 270px; min-height: 270px"
 >
 </div>
 `;
-
-d.querySelector('.list').innerHTML = `
+    d.querySelector('.list').innerHTML = `
 <ul>${inner}</ul>
 `;
 }
-
 function escapeHtml(value) {
-return String(value)
-.replaceAll('&', '&amp;')
-.replaceAll('<', '&lt;')
-.replaceAll('>', '&gt;')
-.replaceAll('"', '&quot;')
-.replaceAll("'", '&#039;');
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 // ############################################################################
 // ##### MOD-MENÜ ############################################################
-// ############################################################################
 function sortAndStoreModChannels(channels) {
-const uniqueChannels = [
-...new Set(
-channels
-.filter(
-(channel) =>
-typeof channel === 'string' &&
-channel.trim().length > 0
-)
-.map((channel) =>
-channel.trim().toLowerCase()
-)
-)
-];
-
-uniqueChannels.sort((first, second) =>
-first.localeCompare(
-second,
-'de',
-{ sensitivity: 'base' }
-)
-);
-
-writeStorageList(
-'myModChannels',
-uniqueChannels
-);
-
-QMD_modChannelStore = uniqueChannels;
-
-return uniqueChannels;
+    const uniqueChannels = [
+        ...new Set(
+            channels
+                .filter(
+                    (channel) =>
+                        typeof channel === 'string' &&
+                        channel.trim().length > 0
+                )
+                .map((channel) =>
+                    channel.trim().toLowerCase()
+                )
+        )
+    ];
+    uniqueChannels.sort((first, second) =>
+        first.localeCompare(
+            second,
+            'de',
+            { sensitivity: 'base' }
+        )
+    );
+    writeStorageList(
+        'myModChannels',
+        uniqueChannels
+    );
+    QMD_modChannelStore = uniqueChannels;
+    return uniqueChannels;
 }
-
 function processStoredModChannels() {
-return readStorageList('myModChannels');
+    return readStorageList('myModChannels');
 }
-
 function getModViewButton() {
-return document.querySelector(
-[
-'[data-test-selector="mod-view-link"]',
-'[data-a-target="mod-view-link"]'
-].join(', ')
-);
+    return document.querySelector(
+        [
+            '[data-test-selector="mod-view-link"]',
+            '[data-a-target="mod-view-link"]'
+        ].join(', ')
+    );
 }
-
 function getChannelFromModViewLink() {
-const modButton = getModViewButton();
-
-if (!modButton) {
-return null;
+    const modButton = getModViewButton();
+    if (!modButton) {
+        return null;
+    }
+    const possibleHref =
+        modButton.href ||
+        modButton.getAttribute('href') ||
+        modButton.getAttribute('data-href');
+    if (!possibleHref) {
+        return null;
+    }
+    try {
+        const url = new URL(
+            possibleHref,
+            window.location.origin
+        );
+        const match =
+            url.pathname.match(
+                /^\/moderator\/([^/]+)/i
+            );
+        return match
+            ? decodeURIComponent(match[1]).toLowerCase()
+            : null;
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            'Kanalname aus dem Mod-Link konnte nicht gelesen werden:',
+            error
+        );
+        return null;
+    }
 }
-
-const possibleHref =
-modButton.href ||
-modButton.getAttribute('href') ||
-modButton.getAttribute('data-href');
-
-if (!possibleHref) {
-return null;
-}
-
-try {
-const url = new URL(
-possibleHref,
-window.location.origin
-);
-
-const match =
-url.pathname.match(
-/^\/moderator\/([^/]+)/i
-);
-
-return match
-? decodeURIComponent(match[1]).toLowerCase()
-: null;
-} catch (error) {
-console.error(
-LOGPREFIX,
-'Kanalname aus dem Mod-Link konnte nicht gelesen werden:',
-error
-);
-
-return null;
-}
-}
-
 function getChannelFromModeratorUrl() {
-const match =
-window.location.pathname.match(
-/^\/moderator\/([^/]+)/i
-);
-
-return match
-? decodeURIComponent(match[1]).toLowerCase()
-: null;
+    const match =
+        window.location.pathname.match(
+            /^\/moderator\/([^/]+)/i
+        );
+    if (!match) {
+        return null;
+    }
+    try {
+        return decodeURIComponent(
+            match[1]
+        ).toLowerCase();
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            'Kanalname aus der Moderator-URL konnte nicht dekodiert werden:',
+            error
+        );
+        return null;
+    }
 }
-
 // Speichert den aktuell moderierten Kanal automatisch.
 function addCurrentModChannel() {
-const modButton = getModViewButton();
-
-const chatButton =
-document.querySelector(
-'[data-a-target="chat-send-button"]'
-);
-
-const isModeratorPage =
-window.location.pathname
-.toLowerCase()
-.includes('/moderator/');
-
-let currentChannel = null;
-
-if (modButton) {
-currentChannel =
-getChannelFromModViewLink();
+    const modButton = getModViewButton();
+    const chatButton =
+        document.querySelector(
+            '[data-a-target="chat-send-button"]'
+        );
+    const isModeratorPage =
+        window.location.pathname
+            .toLowerCase()
+            .includes('/moderator/');
+    let currentChannel = null;
+    if (modButton) {
+        currentChannel =
+            getChannelFromModViewLink();
+    }
+    if (
+        !currentChannel &&
+        isModeratorPage &&
+        chatButton
+    ) {
+        currentChannel =
+            getChannelFromModeratorUrl();
+    }
+    if (!currentChannel) {
+        return;
+    }
+    const storedChannels = [
+        ...new Set(
+            processStoredModChannels()
+                .map(normalizeUser)
+                .filter(isValidUsername)
+        )
+    ];
+    if (!storedChannels.includes(currentChannel)) {
+        storedChannels.push(currentChannel);
+        const sortedChannels =
+            sortAndStoreModChannels(
+                storedChannels
+            );
+        console.log(
+            LOGPREFIX,
+            `${currentChannel} wurde automatisch zu den ModChannels hinzugefügt`
+        );
+        if (
+            typeof window.refreshQMDModMenu === 'function'
+        ) {
+            window.refreshQMDModMenu(sortedChannels);
+        }
+    } else {
+        sortAndStoreModChannels(storedChannels);
+    }
 }
-
-if (
-!currentChannel &&
-isModeratorPage &&
-chatButton
-) {
-currentChannel =
-getChannelFromModeratorUrl();
-}
-
-if (!currentChannel) {
-return;
-}
-
-const storedChannels =
-processStoredModChannels();
-
-if (!storedChannels.includes(currentChannel)) {
-storedChannels.push(currentChannel);
-
-const sortedChannels =
-sortAndStoreModChannels(
-storedChannels
-);
-
-console.log(
-LOGPREFIX,
-`${currentChannel} wurde automatisch zu den ModChannels hinzugefügt`
-);
-
-if (
-typeof window.refreshQMDModMenu === 'function'
-) {
-window.refreshQMDModMenu(sortedChannels);
-}
-} else {
-sortAndStoreModChannels(storedChannels);
-}
-}
-
 function modMenu() {
-if (window.__QMD_MOD_MENU_STATE__) {
-window.__QMD_MOD_MENU_STATE__.run();
-return;
-}
-
-const state = {
-dropdownButton: null,
-dropdownList: null,
-logoContainer: null,
-documentClickHandler: null,
-createAttempts: 0,
-run: null
-};
-
-window.__QMD_MOD_MENU_STATE__ = state;
-
-function getHomeLink() {
-return document.querySelector(
-'[data-a-target="home-link"]'
-);
-}
-
-function hasModeratorTools() {
-const modButton =
-document.querySelector(
-'[data-test-selector="mod-view-link"], [data-a-target="mod-view-link"]'
-);
-
-const chatButton =
-document.querySelector(
-'[data-a-target="chat-send-button"]'
-);
-
-const isModeratorPage =
-window.location.pathname
-.toLowerCase()
-.includes('/moderator/');
-
-return Boolean(modButton) ||
-(
-isModeratorPage &&
-Boolean(chatButton)
-);
-}
-
-function renderDropdownList(channels = null) {
-if (!state.dropdownList) {
-return;
-}
-
-state.dropdownList.replaceChildren();
-
-const storedChannels =
-channels ||
-sortAndStoreModChannels(
-processStoredModChannels()
-);
-
-if (storedChannels.length === 0) {
-const listItem = document.createElement('li');
-const linkItem = document.createElement('a');
-
-linkItem.innerText =
-'Bitte lies die Anleitung hier';
-
-linkItem.href =
-'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
-
-linkItem.target = '_blank';
-linkItem.rel = 'noopener noreferrer';
-linkItem.title = 'Anleitung lesen';
-
-listItem.appendChild(linkItem);
-state.dropdownList.appendChild(listItem);
-
-return;
-}
-
-storedChannels.forEach((channel) => {
-const listItem =
-document.createElement('li');
-
-const linkItem =
-document.createElement('a');
-
-linkItem.innerText = channel;
-
-linkItem.href =
-`https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
-
-linkItem.target = '_blank';
-linkItem.rel = 'noopener noreferrer';
-
-linkItem.title =
-`Mod-View für den Kanal ${channel}`;
-
-linkItem.style.display = 'block';
-linkItem.style.padding = '4px 8px';
-linkItem.style.whiteSpace = 'nowrap';
-
-listItem.appendChild(linkItem);
-state.dropdownList.appendChild(listItem);
-});
-}
-
-function createDropdownMenu() {
-const referenceButton = getHomeLink();
-
-// Twitch lädt den Header dynamisch.
-if (
-!referenceButton ||
-!referenceButton.parentElement
-) {
-state.createAttempts += 1;
-return false;
-}
-
-if (
-state.dropdownButton &&
-state.dropdownList &&
-document.contains(state.dropdownButton)
-) {
-applyModMenuVisibility();
-return true;
-}
-
-const logoContainer =
-referenceButton.parentElement;
-
-logoContainer.style.position = 'relative';
-logoContainer.style.display = 'flex';
-logoContainer.style.alignItems = 'center';
-
-const dropdownButton =
-document.createElement('button');
-
-dropdownButton.id = 'modMenu';
-dropdownButton.type = 'button';
-dropdownButton.title = 'Mod-Kanäle';
-
-dropdownButton.setAttribute(
-'aria-label',
-'Mod-Kanäle öffnen'
-);
-
-dropdownButton.innerHTML = `
+    if (window.__QMD_MOD_MENU_STATE__) {
+        window.__QMD_MOD_MENU_STATE__.run();
+        return;
+    }
+    const state = {
+        dropdownButton: null,
+        dropdownList: null,
+        logoContainer: null,
+        documentClickHandler: null,
+        createAttempts: 0,
+        run: null
+    };
+    window.__QMD_MOD_MENU_STATE__ = state;
+    function getHomeLink() {
+        return document.querySelector(
+            '[data-a-target="home-link"]'
+        );
+    }
+    function hasModeratorTools() {
+        return Boolean(
+            getModeratedChannel()
+        );
+    }
+    function renderDropdownList(channels = null) {
+        if (!state.dropdownList) {
+            return;
+        }
+        state.dropdownList.replaceChildren();
+        const storedChannels =
+            channels ||
+            sortAndStoreModChannels(
+                processStoredModChannels()
+            );
+        if (storedChannels.length === 0) {
+            const listItem = document.createElement('li');
+            const linkItem = document.createElement('a');
+            linkItem.innerText =
+                'Bitte lies die Anleitung hier';
+            linkItem.href =
+                'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+            linkItem.target = '_blank';
+            linkItem.rel = 'noopener noreferrer';
+            linkItem.title = 'Anleitung lesen';
+            listItem.appendChild(linkItem);
+            state.dropdownList.appendChild(listItem);
+            return;
+        }
+        storedChannels.forEach((channel) => {
+            const listItem =
+                document.createElement('li');
+            const linkItem =
+                document.createElement('a');
+            linkItem.innerText = channel;
+            linkItem.href =
+                `https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
+            linkItem.target = '_blank';
+            linkItem.rel = 'noopener noreferrer';
+            linkItem.title =
+                `Mod-View für den Kanal ${channel}`;
+            linkItem.style.display = 'block';
+            linkItem.style.padding = '4px 8px';
+            linkItem.style.whiteSpace = 'nowrap';
+            listItem.appendChild(linkItem);
+            state.dropdownList.appendChild(listItem);
+        });
+    }
+    function createDropdownMenu() {
+        const referenceButton = getHomeLink();
+        // Twitch lädt den Header dynamisch.
+        if (
+            !referenceButton ||
+            !referenceButton.parentElement
+        ) {
+            state.createAttempts += 1;
+            return false;
+        }
+        if (
+            state.dropdownButton &&
+            state.dropdownList &&
+            document.contains(state.dropdownButton)
+        ) {
+            applyModMenuVisibility();
+            return true;
+        }
+        const logoContainer =
+            referenceButton.parentElement;
+        logoContainer.style.position = 'relative';
+        logoContainer.style.display = 'flex';
+        logoContainer.style.alignItems = 'center';
+        const dropdownButton =
+            document.createElement('button');
+        dropdownButton.id = 'modMenu';
+        dropdownButton.type = 'button';
+        dropdownButton.title = 'Mod-Kanäle';
+        dropdownButton.setAttribute(
+            'aria-label',
+            'Mod-Kanäle öffnen'
+        );
+        dropdownButton.innerHTML = `
 <img
 src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_axt.png"
 width="25"
@@ -2452,8 +2638,7 @@ height="25"
 alt="Mod-Kanäle"
 >
 `;
-
-dropdownButton.style.cssText = `
+        dropdownButton.style.cssText = `
 width: 25px;
 height: 25px;
 padding: 0;
@@ -2467,11 +2652,9 @@ color: #9146FF;
 background-color: transparent;
 cursor: pointer;
 `;
-
-const dropdownList =
-document.createElement('ul');
-
-dropdownList.style.cssText = `
+        const dropdownList =
+            document.createElement('ul');
+        dropdownList.style.cssText = `
 display: none;
 position: absolute;
 top: 38px;
@@ -2487,173 +2670,145 @@ background-color: #000;
 border: 1px solid #9146FF;
 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 `;
-
-dropdownButton.addEventListener(
-'click',
-(event) => {
-event.stopPropagation();
-
-if (!isModMenuVisible) {
-return;
-}
-
-dropdownList.style.display =
-dropdownList.style.display === 'none'
-? 'block'
-: 'none';
-}
-);
-
-dropdownList.addEventListener(
-'click',
-(event) => {
-const selectedLink =
-event.target.closest('a');
-
-if (selectedLink) {
-dropdownList.style.display = 'none';
-}
-}
-);
-
-if (!state.documentClickHandler) {
-state.documentClickHandler = (event) => {
-const clickedInsideMenu =
-(
-state.logoContainer &&
-state.logoContainer.contains(event.target)
-) ||
-(
-state.dropdownButton &&
-state.dropdownButton.contains(event.target)
-) ||
-(
-state.dropdownList &&
-state.dropdownList.contains(event.target)
-);
-
-if (
-!clickedInsideMenu &&
-state.dropdownList
-) {
-state.dropdownList.style.display = 'none';
-}
-};
-
-document.addEventListener(
-'click',
-state.documentClickHandler,
-true
-);
-}
-
-state.dropdownButton = dropdownButton;
-state.dropdownList = dropdownList;
-state.logoContainer = logoContainer;
-
-renderDropdownList();
-applyModMenuVisibility();
-
-window.refreshQMDModMenu = (
-channels = null
-) => {
-renderDropdownList(channels);
-applyModMenuVisibility();
-};
-
-return true;
-}
-
-function appendModMenuButton() {
-const menuCreated =
-createDropdownMenu();
-
-if (!menuCreated) {
-return;
-}
-
-const modToolsAvailable =
-hasModeratorTools();
-// Auf nicht moderierten Seiten werden Button und Liste entfernt.
-if (!modToolsAvailable) {
-if (
-state.dropdownButton &&
-state.dropdownButton.isConnected
-) {
-state.dropdownButton.remove();
-}
-
-if (
-state.dropdownList &&
-state.dropdownList.isConnected
-) {
-state.dropdownList.remove();
-}
-
-return;
-}
-// Der aktuelle Mod-Kanal wird vor dem Rendern der Liste gespeichert.
-addCurrentModChannel();
-
-const twitchLogo = getHomeLink();
-
-if (
-!twitchLogo ||
-!twitchLogo.parentElement
-) {
-return;
-}
-
-const logoContainer =
-twitchLogo.parentElement;
-
-state.logoContainer = logoContainer;
-
-logoContainer.style.position = 'relative';
-logoContainer.style.display = 'flex';
-logoContainer.style.alignItems = 'center';
-
-// Button direkt neben dem Twitch-Logo einfügen.
-if (
-!logoContainer.contains(
-state.dropdownButton
-)
-) {
-if (twitchLogo.nextSibling) {
-logoContainer.insertBefore(
-state.dropdownButton,
-twitchLogo.nextSibling
-);
-} else {
-logoContainer.appendChild(
-state.dropdownButton
-);
-}
-}
-// Dropdown-Liste im gleichen Header-Container platzieren.
-if (
-!logoContainer.contains(
-state.dropdownList
-)
-) {
-logoContainer.appendChild(
-state.dropdownList
-);
-}
-
-renderDropdownList();
-applyModMenuVisibility();
-}
-
-state.run = appendModMenuButton;
-
-// CSS für die Animation nur einmal hinzufügen.
-if (!document.getElementById('mod-menu-style')) {
-const style = document.createElement('style');
-
-style.id = 'mod-menu-style';
-
-style.textContent = `
+        dropdownButton.addEventListener(
+            'click',
+            (event) => {
+                event.stopPropagation();
+                if (!isModMenuVisible) {
+                    return;
+                }
+                dropdownList.style.display =
+                    dropdownList.style.display === 'none'
+                        ? 'block'
+                        : 'none';
+            }
+        );
+        dropdownList.addEventListener(
+            'click',
+            (event) => {
+                const selectedLink =
+                    event.target.closest('a');
+                if (selectedLink) {
+                    dropdownList.style.display = 'none';
+                }
+            }
+        );
+        if (!state.documentClickHandler) {
+            state.documentClickHandler = (event) => {
+                const clickedInsideMenu =
+                    (
+                        state.logoContainer &&
+                        state.logoContainer.contains(event.target)
+                    ) ||
+                    (
+                        state.dropdownButton &&
+                        state.dropdownButton.contains(event.target)
+                    ) ||
+                    (
+                        state.dropdownList &&
+                        state.dropdownList.contains(event.target)
+                    );
+                if (
+                    !clickedInsideMenu &&
+                    state.dropdownList
+                ) {
+                    state.dropdownList.style.display = 'none';
+                }
+            };
+            document.addEventListener(
+                'click',
+                state.documentClickHandler,
+                true
+            );
+        }
+        state.dropdownButton = dropdownButton;
+        state.dropdownList = dropdownList;
+        state.logoContainer = logoContainer;
+        renderDropdownList();
+        applyModMenuVisibility();
+        window.refreshQMDModMenu = (
+            channels = null
+        ) => {
+            renderDropdownList(channels);
+            applyModMenuVisibility();
+        };
+        return true;
+    }
+    function appendModMenuButton() {
+        const menuCreated =
+            createDropdownMenu();
+        if (!menuCreated) {
+            return;
+        }
+        const modToolsAvailable =
+            hasModeratorTools();
+        // Auf nicht moderierten Seiten werden Button und Liste entfernt.
+        if (!modToolsAvailable) {
+            if (
+                state.dropdownButton &&
+                state.dropdownButton.isConnected
+            ) {
+                state.dropdownButton.remove();
+            }
+            if (
+                state.dropdownList &&
+                state.dropdownList.isConnected
+            ) {
+                state.dropdownList.remove();
+            }
+            return;
+        }
+        // Der aktuelle Mod-Kanal wird vor dem Rendern der Liste gespeichert.
+        addCurrentModChannel();
+        const twitchLogo = getHomeLink();
+        if (
+            !twitchLogo ||
+            !twitchLogo.parentElement
+        ) {
+            return;
+        }
+        const logoContainer =
+            twitchLogo.parentElement;
+        state.logoContainer = logoContainer;
+        logoContainer.style.position = 'relative';
+        logoContainer.style.display = 'flex';
+        logoContainer.style.alignItems = 'center';
+        // Button direkt neben dem Twitch-Logo einfügen.
+        if (
+            !logoContainer.contains(
+                state.dropdownButton
+            )
+        ) {
+            if (twitchLogo.nextSibling) {
+                logoContainer.insertBefore(
+                    state.dropdownButton,
+                    twitchLogo.nextSibling
+                );
+            } else {
+                logoContainer.appendChild(
+                    state.dropdownButton
+                );
+            }
+        }
+        // Dropdown-Liste im gleichen Header-Container platzieren.
+        if (
+            !logoContainer.contains(
+                state.dropdownList
+            )
+        ) {
+            logoContainer.appendChild(
+                state.dropdownList
+            );
+        }
+        renderDropdownList();
+        applyModMenuVisibility();
+    }
+    state.run = appendModMenuButton;
+    // CSS für die Animation nur einmal hinzufügen.
+    if (!document.getElementById('mod-menu-style')) {
+        const style = document.createElement('style');
+        style.id = 'mod-menu-style';
+        style.textContent = `
 @keyframes qmdModMenuPulse {
 0% {
 transform: scale(1);
@@ -2665,120 +2820,129 @@ transform: scale(1.1);
 transform: scale(1);
 }
 }
-
 #modMenu {
 animation: qmdModMenuPulse 2s infinite;
 }
 `;
-
-document.head.appendChild(style);
-}
-
-// Sofortiger erster Durchlauf.
-state.run();
+        document.head.appendChild(style);
+    }
+    // Sofortiger erster Durchlauf.
+    state.run();
 }
 // ############################################################################
 // ##### AKTIVIERUNGSBUTTON IM TWITCH-MENÜ ###############################
-// ############################################################################
 function appendActivatorBtn() {
-const modBtn =
-document.querySelector(
-'[data-test-selector="mod-view-link"], [data-a-target="mod-view-link"]'
-);
-
-if (modBtn) {
-const twitchBar =
-modBtn.parentElement &&
-modBtn.parentElement.parentElement &&
-modBtn.parentElement.parentElement.parentElement;
-
-if (
-twitchBar &&
-!twitchBar.contains(activateBtn)
-) {
-console.log(
-LOGPREFIX,
-'Mod tools available. Adding button...'
-);
-
-twitchBar.insertBefore(
-activateBtn,
-twitchBar.firstChild
-);
-
-appendToolToDocument();
-makeToolDraggable();
+    const moderatedChannel = getModeratedChannel();
+    // Ohne nachweisbaren Moderationskontext darf der Aktivierungsbutton nicht angezeigt werden.
+    if (!moderatedChannel) {
+        if (enabled) {
+            console.log(
+                LOGPREFIX,
+                'Moderationskontext nicht mehr vorhanden. Tool wird ausgeblendet.'
+            );
+            enabled = false;
+            hide();
+        }
+        return;
+    }
+    const modBtn =
+        document.querySelector(
+            '[data-test-selector="mod-view-link"], [data-a-target="mod-view-link"]'
+        );
+    let anchorElement = modBtn;
+    // Im Twitch-Mod-View gibt es möglicherweise keinen klassischen Moderator-Link. Dann wird der Chat-Sende-Button als Anker verwendet.
+    if (!anchorElement) {
+        anchorElement =
+            document.querySelector(
+                '[data-a-target="chat-send-button"]'
+            );
+    }
+    if (!anchorElement) {
+        return;
+    }
+    const twitchBar =
+        anchorElement.parentElement &&
+        anchorElement.parentElement.parentElement &&
+        anchorElement.parentElement.parentElement.parentElement;
+    if (
+        twitchBar &&
+        !twitchBar.contains(activateBtn)
+    ) {
+        console.log(
+            LOGPREFIX,
+            `Moderationswerkzeuge für ${moderatedChannel} erkannt.`
+        );
+        twitchBar.insertBefore(
+            activateBtn,
+            twitchBar.firstChild
+        );
+        appendToolToDocument();
+        makeToolDraggable();
+    }
 }
-
-return;
+let lastKnownChannel = getModeratedChannel();
+function refreshActiveChannel() {
+    const detectedChannel = getModeratedChannel();
+    if (detectedChannel === lastKnownChannel) {
+        return;
+    }
+    console.log(
+        LOGPREFIX,
+        `Moderationskontext geändert: ${
+            lastKnownChannel || '(kein Kanal)'
+        } → ${
+            detectedChannel || '(kein moderierbarer Kanal)'
+        }`
+    );
+    lastKnownChannel = detectedChannel;
+    activeChannel = detectedChannel;
+    queueList.clear();
+    queueListSources.clear();
+    ignoredList.clear();
+    bannedList.clear();
+    activeListAction = null;
+    activeListInfo = null;
+    actionDurationSamples = [];
+    QMD_bannedUsersStore = [];
+    QMD_unbannedUsersStore = [];
+    if (activeChannel) {
+        QMD_bannedUsersStore = normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_banlist`,
+                []
+            )
+        );
+        QMD_unbannedUsersStore = normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_unbanlist`,
+                []
+            )
+        );
+    } else {
+        // Beim Verlassen des Mod-Kontexts darf das Tool nichts mehr anzeigen und keine Aktionen mehr ausführen.
+        hide();
+    }
+    updateListStatus();
+    renderList();
+    updateBulkActionButtons();
 }
-
-if (
-window.location.pathname
-.toLowerCase()
-.includes('/moderator/')
-) {
-const chatBtn =
-document.querySelector(
-'[data-a-target="chat-send-button"]'
-);
-
-if (!chatBtn) {
-return;
-}
-
-const twitchBar =
-chatBtn.parentElement &&
-chatBtn.parentElement.parentElement &&
-chatBtn.parentElement.parentElement.parentElement;
-
-if (
-twitchBar &&
-!twitchBar.contains(activateBtn)
-) {
-console.log(
-LOGPREFIX,
-'Mod tools available. Adding button...'
-);
-
-twitchBar.insertBefore(
-activateBtn,
-twitchBar.firstChild
-);
-
-appendToolToDocument();
-makeToolDraggable();
-}
-
-return;
-}
-
-if (enabled) {
-console.log(
-LOGPREFIX,
-'Mod tools not found. Stopped chatWatchdog!'
-);
-
-watchdogTimer = null;
-enabled = false;
-hide();
-}
-}
-// Twitch rendert Header und Mod-Ansicht dynamisch. Deshalb werden beide Buttons dauerhaft geprüft.
-setInterval(
-appendActivatorBtn,
-1000
-);
 // ############################################################################
 // ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG ###############################
-// ############################################################################
+// Twitch rendert Header und Mod-Ansicht dynamisch. Deshalb werden beide Buttons dauerhaft geprüft.
 // Der Prüfzyklus bleibt aktiv und erstellt den Button beim ersten vollständig verfügbaren Header.
-modMenu();
-
-setInterval(
-modMenu,
-1000
-);
+const twitchWatchdogTimer = window.setInterval(() => {
+    try {
+        refreshActiveChannel();
+        appendActivatorBtn();
+        modMenu();
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            'Fehler im Twitch-Watchdog:',
+            error
+        );
+    }
+}, 1000);
 // Initiale Anzeige der Benutzerliste.
 renderList();
 // Initiales Bild des Mod-Menü-Umschalters.
