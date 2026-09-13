@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.139f
+// @version 1.9.6.144
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
 'use strict';
 // ############################################################################
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-const myVersion = '1.9.6.139f';
+const myVersion = '1.9.6.144';
 const LOGPREFIX = '[QMD_MCT]▶ ';
 const BROWSER_STORAGE_PREFIX = '_QMD_';
 const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -540,8 +540,11 @@ const html = /* html */ `
                 position: absolute;
                 top: 250px;
                 left: 350px;
-                min-width: 600px;
-                padding: 5px;
+                width: 900px;
+                min-width: 820px;
+                max-width: calc(100vw - 24px);
+                box-sizing: border-box;
+                padding: 8px;
                 background-color: var(--color-background-base);
                 color: var(--color-text-base);
                 border: var(--border-width-default) solid var(--color-border-base);
@@ -623,6 +626,90 @@ const html = /* html */ `
                 background: #34ae0c;
                 color: var(--color-text-button-primary);
             }
+/* Aktionszeile mit drei festen Bereichen */
+.magicMorningStar .action-bar {
+display: grid;
+grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+align-items: center;
+gap: 8px;
+width: 100%;
+margin: 5px 0;
+}
+/* Linke, mittlere und rechte Buttongruppe */
+.magicMorningStar .action-group {
+display: flex;
+align-items: center;
+gap: 4px;
+min-width: 0;
+}
+.magicMorningStar .action-group-left {
+justify-content: flex-start;
+}
+.magicMorningStar .action-group-center {
+justify-content: center;
+}
+.magicMorningStar .action-group-right {
+justify-content: flex-end;
+}
+/* Einheitliche Buttonbreiten innerhalb der Aktionszeile */
+.magicMorningStar .action-bar button {
+flex: 0 0 auto;
+min-height: 32px;
+white-space: nowrap;
+}
+/* Neutrale Navigation */
+.magicMorningStar .action-bar .back {
+min-width: 78px;
+background: #5f6368;
+color: #ffffff;
+}
+/* Cache und externe Werkzeuge */
+.magicMorningStar .action-bar .commanderRoot {
+min-width: 58px;
+background: #2878b5;
+color: #ffffff;
+}
+.magicMorningStar .action-bar .chatstats,
+.magicMorningStar .action-bar .modLogger,
+.magicMorningStar .action-bar .chatDeepStats {
+min-width: 48px;
+background: #2878b5;
+color: #ffffff;
+}
+/* Listenaktionen */
+.magicMorningStar .action-bar .pause {
+min-width: 48px;
+background: #d99a00;
+color: #ffffff;
+}
+.magicMorningStar .action-bar .pause.is-paused {
+background: #b77900;
+}
+.magicMorningStar .action-bar .ignoreAll {
+min-width: 48px;
+background: #6c757d;
+color: #ffffff;
+}
+/* Die bestehenden Ban-/Unban-Farben bleiben semantisch erhalten */
+.magicMorningStar .action-bar .unbanAll {
+min-width: 48px;
+background: #34ae0c;
+color: #ffffff;
+}
+.magicMorningStar .action-bar .banAll {
+min-width: 48px;
+background: #f44336;
+color: #ffffff;
+}
+/* Einheitliches Hover-Verhalten */
+.magicMorningStar .action-bar button:not(:disabled):hover {
+filter: brightness(1.12);
+transform: translateY(-1px);
+}
+.magicMorningStar .action-bar button:not(:disabled):active {
+filter: brightness(0.95);
+transform: translateY(0);
+}
             .magicMorningStar .import {
                 min-height: 20px;
                 padding: 3px;
@@ -638,16 +725,24 @@ const html = /* html */ `
                 font-size: 10pt;
             }
             .magicMorningStar .footer {
+                display: block;
+                width: 100%;
+                margin-top: 6px;
+                padding-top: 4px;
+                border-top: 1px solid var(--color-border-base);
                 font-size: 7pt;
+                line-height: 1.4;
                 text-align: center;
             }
             .magicMorningStar .list-status {
                 display: none;
                 width: 100%;
                 font-size: 9pt;
-                line-height: 1.4;
+                line-height: 1.45;
                 margin-top: 2px;
                 margin-bottom: 6px;
+                padding: 0 8px;
+                box-sizing: border-box;
                 text-align: center;
                 white-space: pre-line;
             }
@@ -752,159 +847,152 @@ const html = /* html */ `
             <!-- Zentral erzeugte Listenbuttons 01 bis 15 -->
             ${listButtonsHtml}
         </div>
-        <!-- Hauptbereich und Benutzerliste -->
-        <div class="body">
-            <div class="list"></div>
-            <div style="display: flex; margin: 5px;">
-                <span style="flex-grow: 2;"></span>
-                <div id="buttons" class="buttons">
-                    <!-- Ansichten -->
-                    <button
-                        class="back"
-                        type="button"
-                        title="Zurück"
-                    >
-                        ⬅
-                    </button>
-                    <!-- Cache und externe Werkzeuge -->
-                    <button
-                        class="clearBannedUsers"
-                        type="button"
-                        title="Gespeicherte gebannte Benutzer löschen"
-                    >
-                        ban-cache leeren
-                    </button>
-                    <button
-                        class="MooBot"
-                        type="button"
-                        title="Öffnet Moobot"
-                    >
-                        <img
-                            src="https://moo.bot/favicon.ico"
-                            height="17"
-                            alt="Moobot"
-                        >
-                    </button>
-                    <button
-                        class="NightBot"
-                        type="button"
-                        title="Öffnet Nightbot"
-                    >
-                        <img
-                            src="https://logodix.com/logo/1909538.png"
-                            height="17"
-                            alt="Nightbot"
-                        >
-                    </button>
-                    <button
-                        class="comanderRoot"
-                        type="button"
-                        title="Öffnet CommanderRoot"
-                    >
-                        🤖
-                    </button>
-                    <button
-                        class="sLabs"
-                        type="button"
-                        title="Öffnet Streamlabs"
-                    >
-                        <img
-                            src="https://cdn.streamlabs.com/static/imgs/streamlabs-logos/app-icon/streamlabs-app-icon.png"
-                            height="17"
-                            alt="Streamlabs"
-                        >
-                    </button>
-                    <button
-                        class="sElements"
-                        type="button"
-                        title="Öffnet StreamElements"
-                    >
-                        <img
-                            src="https://avatars.githubusercontent.com/u/16977512?s=17&v=4"
-                            alt="StreamElements"
-                        >
-                    </button>
-                    <!-- Kanalstatistiken und Moderationswerkzeuge -->
-                    <button
-                        class="chatstats"
-                        type="button"
-                        title="Öffnet SullyGnome-Kanalstatistiken"
-                    >
-                        📈
-                    </button>
-                    <button
-                        class="modLogger"
-                        type="button"
-                        title="Öffnet ModLogger für den aktuellen Kanal"
-                    >
-                        🗄
-                    </button>
-                    <button
-                        class="chatDeepStats"
-                        type="button"
-                        title="Öffnet ChatStats für den aktuellen Kanal"
-                    >
-                        🩻
-                    </button>
-                    <!-- Listenaktionen -->
-                    <button
-                        class="pause"
-                        id="pause"
-                        type="button"
-                        title="Pause/Play"
-                    >
-                        ⏸
-                    </button>
-                    <button
-                        class="ignoreAll"
-                        type="button"
-                        title="Liste leeren"
-                    >
-                        🗑
-                    </button>
-                    <button
-                        class="unbanAll"
-                        type="button"
-                        title="Alle auf der Liste entbannen"
-                    >
-                        👹
-                    </button>
-                    <button
-                        class="banAll"
-                        type="button"
-                        title="Alle auf der Liste bannen"
-                    >
-                        ⚔
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Status der aktuell geladenen Liste -->
-        <div id="listStatus" class="list-status" aria-live="polite"></div>
-        <!-- Footer -->
-        <div id="footer" class="footer">
-            <a
-                href="${urlBannlisten}"
-                target="_blank"
-                rel="noopener noreferrer"
-                style="color: ${themeTextColor};"
-                id="replaceFooter"
-                title="Zur Liste"
-            >
-                MagicCleaningTool Listen
-            </a>
-            &nbsp;-&nbsp;
-            <a
-                id="manoooo"
-                href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
-                title="Aktuelle Version installieren"
-            >
-                ${updateText}
-            </a>
-            &nbsp;-&nbsp;&nbsp;
-            ${myVersion}
-        </div>
-    </div>
+
+<!-- Hauptbereich und Benutzerliste -->
+<div class="body">
+
+<div class="list"></div>
+
+<!-- Aktionszeile -->
+<div id="buttons" class="action-bar">
+
+<!-- Linke Gruppe: Navigation -->
+<div class="action-group action-group-left">
+<button
+class="back"
+type="button"
+title="Zurück"
+aria-label="Zurück"
+>
+⬅ zurück
+</button>
+</div>
+
+<!-- Mittlere Gruppe: Cache und externe Werkzeuge -->
+<div class="action-group action-group-center">
+
+<button
+class="commanderRoot"
+type="button"
+title="Öffnet CommanderRoot"
+aria-label="CommanderRoot öffnen"
+>
+🤖
+</button>
+
+<button
+class="chatstats"
+type="button"
+title="Öffnet SullyGnome-Kanalstatistiken"
+aria-label="SullyGnome-Kanalstatistiken öffnen"
+>
+📈
+</button>
+
+<button
+class="modLogger"
+type="button"
+title="Öffnet ModLogger für den aktuellen Kanal"
+aria-label="ModLogger öffnen"
+>
+🗄
+</button>
+
+<button
+class="chatDeepStats"
+type="button"
+title="Öffnet ChatStats für den aktuellen Kanal"
+aria-label="ChatStats öffnen"
+>
+🩻
+</button>
+
+</div>
+
+<!-- Rechte Gruppe: Listenaktionen -->
+<div class="action-group action-group-right">
+
+<button
+class="pause"
+id="pause"
+type="button"
+title="Pause/Play"
+aria-label="Pause oder Fortsetzen"
+>
+⏸
+</button>
+
+<button
+class="ignoreAll"
+type="button"
+title="Liste leeren"
+aria-label="Liste leeren"
+>
+🗑
+</button>
+
+<button
+class="unbanAll"
+type="button"
+title="Alle auf der Liste entbannen"
+aria-label="Alle auf der Liste entbannen"
+>
+👹
+</button>
+
+<button
+class="banAll"
+type="button"
+title="Alle auf der Liste bannen"
+aria-label="Alle auf der Liste bannen"
+>
+⚔
+</button>
+
+</div>
+
+</div>
+
+</div>
+<!-- Ende .body -->
+
+<!-- Status der aktuell geladenen Liste -->
+<div
+id="listStatus"
+class="list-status"
+aria-live="polite"
+></div>
+
+<!-- Footer mit Versionsnummer -->
+<div id="footer" class="footer">
+
+<a
+href="${urlBannlisten}"
+target="_blank"
+rel="noopener noreferrer"
+style="color: ${themeTextColor};"
+id="replaceFooter"
+title="Zur Liste"
+>
+MagicCleaningTool Listen
+</a>
+
+&nbsp;-&nbsp;
+
+<a
+id="manoooo"
+href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
+title="Aktuelle Version installieren"
+>
+${updateText}
+</a>
+
+&nbsp;-&nbsp;&nbsp;
+
+${myVersion}
+
+</div>
+</div>
 `;
 // ############################################################################
 // ##### JAVASCRIPT: MODAL UND TOOL-CONTAINER ERSTELLEN #######################
@@ -1161,21 +1249,31 @@ function toggleBack() {
     renderList();
 }
 function togglePause() {
-    const button = d.querySelector('#pause');
-    if (!button) {
-        return;
-    }
-    isPaused = !isPaused;
-    if (isPaused) {
-        button.value = 'play';
-        button.textContent = '▶️';
-        button.title = 'Fortsetzen';
-    } else {
-        button.value = 'pause';
-        button.textContent = '⏸';
-        button.title = 'Pausieren';
-    }
-    updateListStatus();
+const button = d.querySelector('#pause');
+if (!button) {
+return;
+}
+isPaused = !isPaused;
+if (isPaused) {
+button.value = 'play';
+button.textContent = '▶';
+button.title = 'Fortsetzen';
+button.setAttribute(
+'aria-label',
+'Aktionen fortsetzen'
+);
+button.classList.add('is-paused');
+} else {
+button.value = 'pause';
+button.textContent = '⏸';
+button.title = 'Pausieren';
+button.setAttribute(
+'aria-label',
+'Aktionen pausieren'
+);
+button.classList.remove('is-paused');
+}
+updateListStatus();
 }
 // ############################################################################
 // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
@@ -1321,17 +1419,8 @@ function setupButtonEvents() {
     d.querySelector('.pause').onclick = togglePause;
     d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
     d.querySelector('.importBtn').onclick = importList;
-    d.querySelector('.clearBannedUsers').onclick = clearBannedUsers;
-    d.querySelector('.MooBot').onclick = () =>
-        openExternal('https://moo.bot/');
-    d.querySelector('.NightBot').onclick = () =>
-        openExternal('https://nightbot.tv/dashboard');
-    d.querySelector('.comanderRoot').onclick = () =>
+    d.querySelector('.commanderRoot').onclick = () =>
         openExternal('https://twitch-tools.rootonline.de');
-    d.querySelector('.sLabs').onclick = () =>
-        openExternal('https://streamlabs.com/dashboard');
-    d.querySelector('.sElements').onclick = () =>
-        openExternal('https://streamelements.com/dashboard');
     d.querySelector('.chatstats').onclick = () =>
         openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
     d.querySelector('.modLogger').onclick = () =>
@@ -1367,8 +1456,8 @@ function setupButtonEvents() {
         if (target.matches('.unban')) {
             unbanItem(target.dataset.user);
         }
-        if (target.matches('.accountage')) {
-            accountage(target.dataset.user);
+        if (target.matches('.usercard')) {
+            usercard(target.dataset.user);
         }
         // Das Startbanner öffnet die Auswahl der Bannlisten.
         if (target.matches('.toggleImport, .start')) {
@@ -1383,27 +1472,18 @@ function setupButtonEvents() {
     });
 }
 setupButtonEvents();
-// ############################################################################
-// ##### GESPEICHERTE BANNLISTE LÖSCHEN #######################################
-function clearBannedUsers() {
-    if (!isCurrentChannelModerated()) {
-        console.warn(
-            LOGPREFIX,
-            'Ban-Cache wurde blockiert: Kein moderierbarer Kanal aktiv.'
-        );
-        return;
-    }
-    QMD_bannedUsersStore = [];
-    writeStorageValue(
-        `${activeChannel}_banlist`,
-        []
-    );
-    updateListStatus();
-    renderList();
-    console.log(
-        LOGPREFIX,
-        `Ban-Cache für ${activeChannel} wurde geleert.`
-    );
+
+const banReasonInput =
+d.querySelector('#banReason');
+if (
+banReasonInput &&
+banReasonInput.dataset.reasonListenerAttached !== 'true'
+) {
+banReasonInput.dataset.reasonSource = 'empty';
+banReasonInput.addEventListener('input', () => {
+banReasonInput.dataset.reasonSource = 'custom';
+});
+banReasonInput.dataset.reasonListenerAttached = 'true';
 }
 // ############################################################################
 // ##### IMPORT UND EINGABEVERARBEITUNG #######################################
@@ -1413,20 +1493,32 @@ function insertText(value) {
             ? value.join('\n')
             : value;
 }
+
 function importList() {
-    activeListAction = null;
-    const importTextarea =
-        d.querySelector('.import textarea');
-    if (!importTextarea) {
-        return;
-    }
-    const users = parseUserList(importTextarea.value);
-    for (const user of users) {
-        addUsersToQueue([user]);
-    }
-    importTextarea.value = '';
-    toggleImport();
-    renderList();
+activeListAction = 'ban';
+const importTextarea =
+d.querySelector('.import textarea');
+if (!importTextarea) {
+return;
+}
+const users = parseUserList(importTextarea.value);
+if (users.length === 0) {
+return;
+}
+activeListInfo = {
+fileName: 'Manuelle Eingabe',
+action: 'ban',
+channel: activeChannel,
+banReason: getEffectiveBanReason(defaultBanReason),
+users: new Set(users),
+skippedUsers: new Set()
+};
+for (const user of users) {
+addUsersToQueue([user]);
+}
+importTextarea.value = '';
+toggleImport();
+renderList();
 }
 // Ermittelt eine Listen-Konfiguration anhand ihrer Nummer.
 function getListConfig(number) {
@@ -1487,15 +1579,36 @@ function importMDGGeneric(listConfig) {
     updateListStatus();
     updateBulkActionButtons();
     const usersToProcess = [];
+
     const banReasonInput =
-        d.querySelector('#banReason');
+    d.querySelector('#banReason');
+    const currentBanReason =
+    banReasonInput?.value.trim() || '';
+    const reasonWasAutomaticallyFilled =
+    banReasonInput?.dataset.reasonSource === 'list';
+    const shouldUseListReason =
+    !currentBanReason ||
+    reasonWasAutomaticallyFilled;
     if (
-        normalizedAction === 'ban' &&
-        banReasonInput &&
-        banReasonInput.value.trim() === ''
+    normalizedAction === 'ban' &&
+    banReasonInput &&
+    shouldUseListReason
     ) {
-        banReasonInput.value = listBanReason;
+    banReasonInput.value = listBanReason;
+    banReasonInput.dataset.reasonSource = 'list';
     }
+
+    const effectiveBanReason =
+    normalizedAction === 'ban'
+    ? (
+    banReasonInput?.value.trim() ||
+    listBanReason ||
+    defaultBanReason
+    )
+    .replace(/[\r\n]+/g, ' ')
+    .slice(0, 500)
+    : '';
+
     const sourceButton =
         d.querySelector(`#${buttonId}`);
     if (sourceButton) {
@@ -1521,7 +1634,7 @@ function importMDGGeneric(listConfig) {
             fileName,
             action: normalizedAction,
             channel: activeChannel,
-            banReason: listBanReason,
+            banReason: effectiveBanReason,
             users: new Set(parsedUsers),
             skippedUsers: new Set()
             };
@@ -1780,13 +1893,27 @@ async function unbanAll() {
         }
     }
 }
-function accountage(user) {
-    console.log(
-        LOGPREFIX,
-        'send !accountage',
-        user
-    );
-    sendMessage(`!accountage ${user}`);
+function usercard(user) {
+const normalizedUser = normalizeUser(user);
+if (
+!activeChannel ||
+!isValidUsername(normalizedUser)
+) {
+console.warn(
+LOGPREFIX,
+'Usercard konnte nicht geöffnet werden:',
+normalizedUser
+);
+return;
+}
+const usercardUrl =
+`https://www.twitch.tv/popout/${encodeURIComponent(activeChannel)}/viewercard/${encodeURIComponent(normalizedUser)}`;
+console.log(
+LOGPREFIX,
+'Öffne Usercard:',
+usercardUrl
+);
+openExternal(usercardUrl);
 }
 function ignoreItem(user) {
     const normalizedUser = normalizeUser(user);
@@ -1947,14 +2074,14 @@ async function banItem(user) {
         );
         return false;
     }
-    const banReasonInput =
-        d.querySelector('#banReason');
-    const reason =
-        banReasonInput?.value.trim() ||
+        const storedBanReason =
+        activeListInfo?.action === 'ban'
+        ? activeListInfo.banReason
+        : '';
+        const safeReason =
+        storedBanReason ||
+//        getEffectiveBanReason(defaultBanReason);
         defaultBanReason;
-    const safeReason = reason
-        .replace(/[\r\n]+/g, ' ')
-        .slice(0, 500);
     try {
         if (
             !actionChannel ||
@@ -2153,6 +2280,18 @@ function updateBulkActionButtons() {
                 : 'Alle auf der Liste entbannen';
     }
 }
+// Hilfsfunktion für den Banngrund
+function getEffectiveBanReason(fallbackReason = defaultBanReason) {
+const banReasonInput = d.querySelector('#banReason');
+const enteredReason = banReasonInput?.value.trim();
+const reason =
+enteredReason ||
+fallbackReason ||
+defaultBanReason;
+return reason
+.replace(/[\r\n]+/g, ' ')
+.slice(0, 500);
+}
 // ############################################################################
 // ##### Hilfsfunktionen für die Zeitberechnung #########################################
 function formatEstimatedDuration(milliseconds) {
@@ -2255,6 +2394,13 @@ activeListInfo.action === 'unban'
 : 'gebannt';
 const channelName =
 activeListInfo.channel || activeChannel || 'aktuellen Kanal';
+const reasonText =
+activeListInfo.action === 'unban'
+? 'Bei dieser Liste wird kein Banngrund angewandt.'
+: `Es wird bei jedem Ban der Grund: ▶ ${
+activeListInfo.banReason ||
+defaultBanReason
+} ◀ hinterlegt.`;
 // Textaufbau
 let statusText =
 `Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei ▶ ${channelName} ◀ ${actionWord}.`;
@@ -2275,13 +2421,7 @@ progressText +=
 'Liste vollständig abgearbeitet.';
 }
 statusText += `\n${progressText}`;
-if (
-activeListInfo.action !== 'unban' &&
-activeListInfo.banReason
-) {
-statusText +=
-`\nBei jedem Ban dieser Liste wird der Grund: ▶ ${activeListInfo.banReason} ◀ angegeben.\n`;
-}
+statusText += `\n${reasonText}`;
 // ##### ^^^^^ #####
 statusElement.textContent = statusText;
 statusElement.className =
@@ -2303,7 +2443,6 @@ function renderList() {
     const buttonsToToggle = [
         '.ignoreAll',
         '.banAll',
-        '.back',
         '.pause',
         '.unbanAll'
     ];
@@ -2318,9 +2457,10 @@ function renderList() {
     const renderItem = (item) => `
 <li>
 <button
-class="accountage"
+class="usercard"
 data-user="${escapeHtml(item)}"
-title="Schreibt !accountage ${escapeHtml(item)} in den Chat"
+title="Öffnet die Viewer-Card von ${escapeHtml(item)}"
+aria-label="Viewer-Card von ${escapeHtml(item)} öffnen"
 >
 ?
 </button>
