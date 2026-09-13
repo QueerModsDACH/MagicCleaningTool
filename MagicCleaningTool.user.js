@@ -2,7 +2,7 @@
 // @name Magic Cleaning Tool
 // @description Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace Magic Cleaning Tool ...for a little better World
-// @version 1.9.6.144
+// @version 1.9.6.145
 // @match *://www.twitch.tv/*
 // @run-at document-idle
 // @author QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
 'use strict';
 // ############################################################################
 // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-const myVersion = '1.9.6.144';
+const myVersion = '1.9.6.145';
 const LOGPREFIX = '[QMD_MCT]▶ ';
 const BROWSER_STORAGE_PREFIX = '_QMD_';
 const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -27,143 +27,145 @@ let whitelistPromise = null;
 let whitelistUsers = new Set();
 // ############################################################################
 // ##### ZENTRALE KONFIGURATION DER LISTENBUTTONS #############################
+// Anzahl der Listenbuttons pro Zeile.
+const LIST_BUTTONS_PER_ROW = 4;
 // Jede Liste besitzt eigene zentrale Variablen:
 const Listen_rawURL = 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/';
 // -----------------------------------------------------------------------------
 // Button 01
-const Button_01_ListSaveSuffix = '_Suspect_List';
 const Button_01_IdClass = 'Button_01';
 const Button_01_Text = 'suspect';
+const Button_01_BanReason = 'suspect (QMD-List)';
+const Button_01_ListSaveSuffix = '_Suspect_List';
 const Button_01_AltText = 'Importiert die Suspect-Liste';
 const Button_01_FileName = 'suspect.txt';
 const Button_01_URL = `${Listen_rawURL}${Button_01_FileName}`;
-const Button_01_BanReason = 'suspect (QMD-List)';
 const Button_01_Action = 'ban';
 // Button 02
-const Button_02_ListSaveSuffix = '_hostile_Troll_List';
 const Button_02_IdClass = 'Button_02';
 const Button_02_Text = 'hostile Troll';
+const Button_02_BanReason = 'hostile Troll (QMD-List)';
+const Button_02_ListSaveSuffix = '_hostile_Troll_List';
 const Button_02_AltText = 'Importiert die hostile-Trol-Liste';
 const Button_02_FileName = 'hostile_troll.txt';
 const Button_02_URL = `${Listen_rawURL}${Button_02_FileName}`;
-const Button_02_BanReason = 'hostile Troll (QMD-List)';
 const Button_02_Action = 'ban';
 // Button 03
-const Button_03_ListSaveSuffix = '_List03';
 const Button_03_IdClass = 'Button_03';
 const Button_03_Text = 'Liste_03';
+const Button_03_BanReason = defaultBanReason;
+const Button_03_ListSaveSuffix = '_List03';
 const Button_03_AltText = 'Importiert die 03-Liste';
 const Button_03_FileName = 'hate_troll_list_3.txt';
 const Button_03_URL = `${Listen_rawURL}${Button_03_FileName}`;
-const Button_03_BanReason = defaultBanReason;
 const Button_03_Action = 'ban';
 // Button 04
-const Button_04_ListSaveSuffix = '_List04';
 const Button_04_IdClass = 'Button_04';
 const Button_04_Text = 'Liste_04';
+const Button_04_BanReason = defaultBanReason;
+const Button_04_ListSaveSuffix = '_List04';
 const Button_04_AltText = 'Importiert die 04-Liste';
 const Button_04_FileName = 'security_ban_list.txt';
 const Button_04_URL = `${Listen_rawURL}${Button_04_FileName}`;
-const Button_04_BanReason = defaultBanReason;
 const Button_04_Action = 'ban';
 // Button 05
-const Button_05_ListSaveSuffix = '_List05';
 const Button_05_IdClass = 'Button_05';
 const Button_05_Text = 'Liste_05';
+const Button_05_BanReason = defaultBanReason;
+const Button_05_ListSaveSuffix = '_List05';
 const Button_05_AltText = 'Importiert die 05-Liste';
 const Button_05_FileName = 'viewer_bot_list.txt';
 const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
-const Button_05_BanReason = defaultBanReason;
 const Button_05_Action = 'ban';
 // Button 06
-const Button_06_ListSaveSuffix = '_List06';
 const Button_06_IdClass = 'Button_06';
 const Button_06_Text = 'Liste_06';
+const Button_06_BanReason = defaultBanReason;
+const Button_06_ListSaveSuffix = '_List06';
 const Button_06_AltText = 'Importiert die 06-Liste';
 const Button_06_FileName = 'porn_bot_acc_list.txt';
 const Button_06_URL = `${Listen_rawURL}${Button_06_FileName}`;
-const Button_06_BanReason = defaultBanReason;
 const Button_06_Action = 'ban';
 // Button 07
-const Button_07_ListSaveSuffix = '_List07';
 const Button_07_IdClass = 'Button_07';
 const Button_07_Text = 'Liste_07';
+const Button_07_BanReason = defaultBanReason;
+const Button_07_ListSaveSuffix = '_List07';
 const Button_07_AltText = 'Importiert die 07-Liste';
 const Button_07_FileName = 'mad_tos_list.txt';
 const Button_07_URL = `${Listen_rawURL}${Button_07_FileName}`;
-const Button_07_BanReason = defaultBanReason;
 const Button_07_Action = 'ban';
 // Button 08
-const Button_08_ListSaveSuffix = '_List08';
 const Button_08_IdClass = 'Button_08';
 const Button_08_Text = 'Liste_08';
+const Button_08_BanReason = defaultBanReason;
+const Button_08_ListSaveSuffix = '_List08';
 const Button_08_AltText = 'Importiert die 08-Liste';
 const Button_08_FileName = 'follower_bot_list.txt';
 const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
-const Button_08_BanReason = defaultBanReason;
 const Button_08_Action = 'ban';
 // Button 09
-const Button_09_ListSaveSuffix = '_List09';
 const Button_09_IdClass = 'Button_09';
 const Button_09_Text = 'Liste_09';
+const Button_09_BanReason = defaultBanReason;
+const Button_09_ListSaveSuffix = '_List09';
 const Button_09_AltText = 'Importiert die 09-Liste';
 const Button_09_FileName = 'seller_advertising_list.txt';
 const Button_09_URL = `${Listen_rawURL}${Button_09_FileName}`;
-const Button_09_BanReason = defaultBanReason;
 const Button_09_Action = 'ban';
 // Button 10
-const Button_10_ListSaveSuffix = '_List10';
 const Button_10_IdClass = 'Button_10';
 const Button_10_Text = 'Liste_10';
+const Button_10_BanReason = defaultBanReason;
+const Button_10_ListSaveSuffix = '_List10';
 const Button_10_AltText = 'Importiert die 10-Liste';
 const Button_10_FileName = 'spam_bot_list.txt';
 const Button_10_URL = `${Listen_rawURL}${Button_10_FileName}`;
-const Button_10_BanReason = defaultBanReason;
 const Button_10_Action = 'ban';
 // Button 11
-const Button_11_ListSaveSuffix = '_List11';
 const Button_11_IdClass = 'Button_11';
 const Button_11_Text = 'Liste_11';
+const Button_11_BanReason = defaultBanReason;
+const Button_11_ListSaveSuffix = '_List11';
 const Button_11_AltText = 'Importiert die 11-Liste';
 const Button_11_FileName = 'list_11.txt';
 const Button_11_URL = `${Listen_rawURL}${Button_11_FileName}`;
-const Button_11_BanReason = defaultBanReason;
 const Button_11_Action = 'ban';
 // Button 12
-const Button_12_ListSaveSuffix = '_List12';
 const Button_12_IdClass = 'Button_12';
 const Button_12_Text = 'Liste_12';
+const Button_12_BanReason = defaultBanReason;
+const Button_12_ListSaveSuffix = '_List12';
 const Button_12_AltText = 'Platzhalter für die 12-Liste';
 const Button_12_FileName = 'list_12.txt';
 const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
-const Button_12_BanReason = defaultBanReason;
 const Button_12_Action = 'ban';
 // Button 13
-const Button_13_ListSaveSuffix = '_List13';
 const Button_13_IdClass = 'Button_13';
 const Button_13_Text = 'Liste_13';
+const Button_13_BanReason = defaultBanReason;
+const Button_13_ListSaveSuffix = '_List13';
 const Button_13_AltText = 'Platzhalter für die 13-Liste';
 const Button_13_FileName = 'list_13.txt';
 const Button_13_URL = `${Listen_rawURL}${Button_13_FileName}`;
-const Button_13_BanReason = defaultBanReason;
 const Button_13_Action = 'ban';
 // Button 14
-const Button_14_ListSaveSuffix = '_WHITELISTED_user';
 const Button_14_IdClass = 'Button_14';
 const Button_14_Text = 'UNBAN Whitelisted User';
+const Button_14_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
+const Button_14_ListSaveSuffix = '_WHITELISTED_user';
 const Button_14_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
 const Button_14_FileName = 'WHITELISTED_user.txt';
 const Button_14_URL = `${Listen_rawURL}${Button_14_FileName}`;
-const Button_14_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
 const Button_14_Action = 'unban';
 // Button 15
-const Button_15_ListSaveSuffix = '_WHITELISTED_bots';
 const Button_15_IdClass = 'Button_15';
 const Button_15_Text = 'UNBAN Whitelisted Bots';
+const Button_15_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
+const Button_15_ListSaveSuffix = '_WHITELISTED_bots';
 const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
 const Button_15_FileName = 'WHITELISTED_bots.txt';
 const Button_15_URL = `${Listen_rawURL}${Button_15_FileName}`;
-const Button_15_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
 const Button_15_Action = 'unban';
 // -----------------------------------------------------------------------------
 // Zentrale Zusammenfassung aller Listenbuttons.
@@ -492,7 +494,6 @@ function createListButtonHtml(listConfig, width = '32%') {
     const disabledAttributes = listConfig.placeholder
         ? 'disabled aria-disabled="true"'
         : '';
-
     const title = listConfig.placeholder
         ? `${listConfig.altText} – noch nicht verfügbar`
         : listConfig.altText;
@@ -511,19 +512,31 @@ function createListButtonHtml(listConfig, width = '32%') {
 </button>
 `;
 }
-// Erzeugt alle 15 Listenbuttons.
+// Erzeugt alle Listenbuttons mit der vorgegebenen Anzahl pro Zeile.
 function createAllListButtonsHtml() {
     const rows = [];
-
-    for (let index = 0; index < LIST_BUTTONS.length; index += 3) {
-        const first = LIST_BUTTONS[index];
-        const second = LIST_BUTTONS[index + 1];
-        const third = LIST_BUTTONS[index + 2];
+    const buttonWidth = `${(100 / LIST_BUTTONS_PER_ROW) - 1}%`;
+    for (
+        let index = 0;
+        index < LIST_BUTTONS.length;
+        index += LIST_BUTTONS_PER_ROW
+    ) {
+        const rowButtons = [];
+        for (
+            let offset = 0;
+            offset < LIST_BUTTONS_PER_ROW;
+            offset++
+        ) {
+            const button = LIST_BUTTONS[index + offset];
+            if (button) {
+                rowButtons.push(
+                    createListButtonHtml(button, buttonWidth)
+                );
+            }
+        }
         rows.push(`
-<div class="list-button-row" style="text-align: center;">
-    ${createListButtonHtml(first, '32%')}
-    ${second ? createListButtonHtml(second, '33%') : ''}
-    ${third ? createListButtonHtml(third, '32%') : ''}
+<div class="list-button-row">
+    ${rowButtons.join('')}
 </div>
 `);
     }
@@ -579,13 +592,22 @@ const html = /* html */ `
                 min-height: 8em;
                 max-height: 350px;
                 padding: 8px;
+                margin: 4px 0;
                 overflow-y: auto;
+                background-color: var(--color-background-body);
+                color: var(--color-text-base);
+                border: var(--border-width-default) solid var(--color-border-base);
+                border-radius: var(--border-radius-medium);
+                box-sizing: border-box;
             }
             .magicMorningStar .list span {
+                display: inline-block;
                 font-weight: var(--font-weight-semibold);
+                color: var(--color-text-base);
             }
             .magicMorningStar .empty {
                 padding: 2em;
+                color: var(--color-text-base);
                 text-align: center;
                 opacity: 0.85;
             }
@@ -631,6 +653,7 @@ const html = /* html */ `
 display: grid;
 grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 align-items: center;
+padding: 10px 0;
 gap: 8px;
 width: 100%;
 margin: 5px 0;
@@ -764,6 +787,7 @@ transform: translateY(0);
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+                box-sizing: border-box;
             }
         </style>
         <div class="header">
@@ -850,8 +874,9 @@ transform: translateY(0);
 
 <!-- Hauptbereich und Benutzerliste -->
 <div class="body">
-
 <div class="list"></div>
+</div>
+<!-- Ende .body -->
 
 <!-- Aktionszeile -->
 <div id="buttons" class="action-bar">
@@ -868,7 +893,7 @@ aria-label="Zurück"
 </button>
 </div>
 
-<!-- Mittlere Gruppe: Cache und externe Werkzeuge -->
+<!-- Mittlere Gruppe: externe Werkzeuge -->
 <div class="action-group action-group-center">
 
 <button
@@ -952,9 +977,6 @@ aria-label="Alle auf der Liste bannen"
 </div>
 
 </div>
-
-</div>
-<!-- Ende .body -->
 
 <!-- Status der aktuell geladenen Liste -->
 <div
@@ -1210,18 +1232,22 @@ function toggle() {
     checkVersion();
 }
 function toggleImport() {
-    const textField = d.querySelector('#textfield');
-    const importDiv = d.querySelector('.import');
-    const body = d.querySelector('.body');
-    textField.value = '';
-    if (importDiv.style.display !== 'none') {
-        importDiv.style.display = 'none';
-        body.style.display = '';
-    } else {
-        importDiv.style.display = '';
-        body.style.display = 'none';
-        textField.focus();
-    }
+const textField = d.querySelector('#textfield');
+const importDiv = d.querySelector('.import');
+const body = d.querySelector('.body');
+if (!textField || !importDiv || !body) {
+return;
+}
+textField.value = '';
+if (importDiv.style.display !== 'none') {
+importDiv.style.display = 'none';
+body.style.display = '';
+} else {
+importDiv.style.display = '';
+body.style.display = 'none';
+textField.focus();
+}
+renderList();
 }
 function toggleBack() {
     queueList.clear();
@@ -2440,19 +2466,41 @@ statusElement.style.display = 'block';
 // ##### LISTENANZEIGE UND RENDERING #########################################
 function renderList() {
     updateListStatus();
-    const buttonsToToggle = [
-        '.ignoreAll',
-        '.banAll',
-        '.pause',
-        '.unbanAll'
-    ];
-    buttonsToToggle.forEach((selector) => {
-        const button = d.querySelector(selector);
-        if (button) {
-            button.style.display =
-                queueList.size ? '' : 'none';
-        }
-    });
+const importDiv = d.querySelector('.import');
+const backButton = d.querySelector('.back');
+
+const isSelectionView =
+importDiv &&
+importDiv.style.display !== 'none';
+
+const hasActiveList =
+queueList.size > 0 ||
+Boolean(activeListInfo);
+
+const buttonsToToggle = [
+'.ignoreAll',
+'.banAll',
+'.pause',
+'.unbanAll'
+];
+
+buttonsToToggle.forEach((selector) => {
+const button = d.querySelector(selector);
+
+if (!button) {
+return;
+}
+
+button.style.display =
+queueList.size > 0 ? '' : 'none';
+});
+
+if (backButton) {
+backButton.style.display =
+isSelectionView || hasActiveList
+? ''
+: 'none';
+}
     updateBulkActionButtons();
     const renderItem = (item) => `
 <li>
