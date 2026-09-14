@@ -1554,6 +1554,7 @@
                     >
                 </button>
             </div>
+
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
                 <textarea
@@ -1561,24 +1562,27 @@
                     placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen"
                 ></textarea>
                 <div style="text-align: right;">
-                    <input
-                        type="text"
-                        id="banReason"
-                        style="width: 66%;"
-                        placeholder="Hier optional einen eigenen Ban-Grund angeben"
-                    >
                     <button
                         class="importBtn"
                         type="button"
                         title="Benutzer zur Liste hinzufügen"
-                        style="width: 32%;"
+                        style="width: 32%; font-size: 12px; margin-right: 16px; margin-bottom: 16px;"
                     >
                         &#8627; Benutzername(n) Hinzufügen
                     </button>
                 </div>
                 <!-- Zentral erzeugte Listenbuttons 01 bis 16 -->
                 ${listButtonsHtml}
+                <div style="text-align: left; margin-left: 16px; margin-top: 16px;">
+                    <input
+                        type="text"
+                        id="banReason"
+                        style="width: 66%;"
+                        placeholder="Hier optional einen eigenen Ban-Grund angeben"
+                    >
+                </div>
             </div>
+
             <!-- Hauptbereich und Benutzerliste -->
             <div class="body">
                 <div class="list"></div>
