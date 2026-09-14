@@ -100,11 +100,11 @@
     const Button_07_Action = 'ban';
     // Button 08
     const Button_08_IdClass = 'Button_08';
-    const Button_08_Text = 'LIST well known bots';
-    const Button_08_BanReason = 'LIST well known bots (QMD-List)';
-    const Button_08_ListSaveSuffix = '_LIST_well_known_bots';
-    const Button_08_AltText = 'Importiert die LIST_well_known_bots-Liste';
-    const Button_08_FileName = 'LIST_well_known_ti_bots.txt';
+    const Button_08_Text = 'LIST unwanted bots';
+    const Button_08_BanReason = 'LIST unwanted bots (QMD-List)';
+    const Button_08_ListSaveSuffix = '_LIST_unwanted_bots';
+    const Button_08_AltText = 'Importiert die LIST_mad_tos_porn_seller_spam_bot-Liste';
+    const Button_08_FileName = 'LIST_mad_tos_porn_seller_spam_bot.txt';
     const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
     const Button_08_Action = 'ban';
     // Button 09
@@ -136,11 +136,11 @@
     const Button_11_Action = 'ban';
     // Button 12
     const Button_12_IdClass = 'Button_12';
-    const Button_12_Text = 'Liste_12';
-    const Button_12_BanReason = defaultBanReason;
-    const Button_12_ListSaveSuffix = '_List12';
-    const Button_12_AltText = 'Platzhalter für die 12-Liste';
-    const Button_12_FileName = 'list_12.txt';
+    const Button_12_Text = 'LIST well known bots';
+    const Button_12_BanReason = 'LIST well known bots (QMD-List)';
+    const Button_12_ListSaveSuffix = '_LIST_well_known_bots';
+    const Button_12_AltText = 'Importiert die LIST_well_known_bots-Liste';
+    const Button_12_FileName = 'LIST_well_known_ti_bots.txt';
     const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
     const Button_12_Action = 'ban';
     // Button 13
@@ -336,7 +336,7 @@
             url: Button_12_URL,
             banReason: Button_12_BanReason,
             action: Button_12_Action,
-            placeholder: true
+            placeholder: false
         },
         {
             number: '13',
