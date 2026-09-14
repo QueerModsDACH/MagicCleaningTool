@@ -37,7 +37,7 @@
     // ----------------------------------------------------------------------------
     // Button 01
     const Button_01_IdClass = 'Button_01';
-    const Button_01_Text = 'follow bot';
+    const Button_01_Text = 'follow bot\n( QMD-List )';
     const Button_01_BanReason = 'follow bot (QMD-List)';
     const Button_01_ListSaveSuffix = '_follow_bot_List';
     const Button_01_AltText = 'Importiert die follow_bot-Liste';
@@ -46,7 +46,7 @@
     const Button_01_Action = 'ban';
     // Button 02
     const Button_02_IdClass = 'Button_02';
-    const Button_02_Text = 'hostile Troll';
+    const Button_02_Text = 'hostile Troll\n( QMD-List )';
     const Button_02_BanReason = 'hostile Troll (QMD-List)';
     const Button_02_ListSaveSuffix = '_hostile_Troll_List';
     const Button_02_AltText = 'Importiert die hostile-Troll-Liste';
@@ -55,7 +55,7 @@
     const Button_02_Action = 'ban';
     // Button 03
     const Button_03_IdClass = 'Button_03';
-    const Button_03_Text = 'unsorted';
+    const Button_03_Text = 'unsorted Troll\n( QMD-List )';
     const Button_03_BanReason = 'unsorted Troll (QMD-List)';
     const Button_03_ListSaveSuffix = '_unsorted';
     const Button_03_AltText = 'Importiert die unsorted-Liste';
@@ -64,7 +64,7 @@
     const Button_03_Action = 'ban';
     // Button 04
     const Button_04_IdClass = 'Button_04';
-    const Button_04_Text = 'suspect';
+    const Button_04_Text = 'suspect\n( QMD-List )';
     const Button_04_BanReason = 'suspect (QMD-List)';
     const Button_04_ListSaveSuffix = '_Suspect_List';
     const Button_04_AltText = 'Importiert die Suspect-Liste';
@@ -73,79 +73,79 @@
     const Button_04_Action = 'ban';
     // Button 05
     const Button_05_IdClass = 'Button_05';
-    const Button_05_Text = 'LIST follower bot';
-    const Button_05_BanReason = 'LIST follower bot (QMD-List)';
-    const Button_05_ListSaveSuffix = '_LIST_follower_bot';
-    const Button_05_AltText = 'Importiert die LIST_follower_bot-Liste';
-    const Button_05_FileName = 'LIST_follower_bot.txt';
+    const Button_05_Text = '5B2Z Bots (a-m)\n…list currently being compiled…';
+    const Button_05_BanReason = '5B2Z-Bot Account created on 5 May 2024 (QMD-List)';
+    const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
+    const Button_05_AltText = 'Importiert die 5B2Z-Bot-Liste';
+    const Button_05_FileName = 'API_5B2Z_20240505_completely.txt';
     const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
     const Button_05_Action = 'ban';
     // Button 06
     const Button_06_IdClass = 'Button_06';
-    const Button_06_Text = 'LIST troll';
-    const Button_06_BanReason = 'LIST troll (QMD-List)';
-    const Button_06_ListSaveSuffix = '_LIST_troll';
-    const Button_06_AltText = 'Importiert die LIST_troll-Liste';
-    const Button_06_FileName = 'LIST_troll.txt';
+    const Button_06_Text = 'placeholder 06';
+    const Button_06_BanReason = defaultBanReason;
+    const Button_06_ListSaveSuffix = '_List06';
+    const Button_06_AltText = 'Importiert die 06-Liste';
+    const Button_06_FileName = 'list06.txt';
     const Button_06_URL = `${Listen_rawURL}${Button_06_FileName}`;
     const Button_06_Action = 'ban';
     // Button 07
     const Button_07_IdClass = 'Button_07';
-    const Button_07_Text = 'LIST viewer bot';
-    const Button_07_BanReason = 'LIST viewer bot (QMD-List)';
-    const Button_07_ListSaveSuffix = '_LIST_viewer_bot';
-    const Button_07_AltText = 'Importiert die LIST_viewer_bot-Liste';
-    const Button_07_FileName = 'LIST_viewer_bot.txt';
+    const Button_07_Text = 'placeholder 07';
+    const Button_07_BanReason = defaultBanReason;
+    const Button_07_ListSaveSuffix = '_List07';
+    const Button_07_AltText = 'Importiert die 07-Liste';
+    const Button_07_FileName = 'list07.txt';
     const Button_07_URL = `${Listen_rawURL}${Button_07_FileName}`;
     const Button_07_Action = 'ban';
     // Button 08
     const Button_08_IdClass = 'Button_08';
-    const Button_08_Text = 'LIST unwanted bots';
-    const Button_08_BanReason = 'LIST unwanted bots (QMD-List)';
-    const Button_08_ListSaveSuffix = '_LIST_unwanted_bots';
-    const Button_08_AltText = 'Importiert die LIST_mad_tos_porn_seller_spam_bot-Liste';
-    const Button_08_FileName = 'LIST_mad_tos_porn_seller_spam_bot.txt';
+    const Button_08_Text = 'well known bots\n( from ti list )';
+    const Button_08_BanReason = 'LIST well known bots (QMD-List)';
+    const Button_08_ListSaveSuffix = '_LIST_well_known_bots';
+    const Button_08_AltText = 'Importiert die LIST_well_known_bots-Liste';
+    const Button_08_FileName = 'LIST_well_known_ti_bots.txt';
     const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
     const Button_08_Action = 'ban';
     // Button 09
     const Button_09_IdClass = 'Button_09';
-    const Button_09_Text = '5B2Z Bots (a-m)';
-    const Button_09_BanReason = '5B2Z-Bot Account created on 5 May 2024 (QMD-List)';
-    const Button_09_ListSaveSuffix = '_5B2Z_20240505_completely';
-    const Button_09_AltText = 'Importiert die 5B2Z-Bot-Liste';
-    const Button_09_FileName = 'API_5B2Z_20240505_completely.txt';
+    const Button_09_Text = 'follower bot\n( from isds list )';
+    const Button_09_BanReason = 'LIST follower bot (QMD-List)';
+    const Button_09_ListSaveSuffix = '_LIST_follower_bot';
+    const Button_09_AltText = 'Importiert die LIST_follower_bot-Liste';
+    const Button_09_FileName = 'LIST_follower_bot.txt';
     const Button_09_URL = `${Listen_rawURL}${Button_09_FileName}`;
     const Button_09_Action = 'ban';
     // Button 10
     const Button_10_IdClass = 'Button_10';
-    const Button_10_Text = 'Liste_10';
-    const Button_10_BanReason = defaultBanReason;
-    const Button_10_ListSaveSuffix = '_List10';
-    const Button_10_AltText = 'Importiert die 10-Liste';
-    const Button_10_FileName = 'spam_bot_list.txt';
+    const Button_10_Text = 'troll\n( from isds list )';
+    const Button_10_BanReason = 'LIST troll (QMD-List)';
+    const Button_10_ListSaveSuffix = '_LIST_troll';
+    const Button_10_AltText = 'Importiert die LIST_troll-Liste';
+    const Button_10_FileName = 'LIST_troll.txt';
     const Button_10_URL = `${Listen_rawURL}${Button_10_FileName}`;
     const Button_10_Action = 'ban';
     // Button 11
     const Button_11_IdClass = 'Button_11';
-    const Button_11_Text = 'Liste_11';
-    const Button_11_BanReason = defaultBanReason;
-    const Button_11_ListSaveSuffix = '_List11';
-    const Button_11_AltText = 'Importiert die 11-Liste';
-    const Button_11_FileName = 'list_11.txt';
+    const Button_11_Text = 'viewer bot\n( from isds list )';
+    const Button_11_BanReason = 'LIST viewer bot (QMD-List)';
+    const Button_11_ListSaveSuffix = '_LIST_viewer_bot';
+    const Button_11_AltText = 'Importiert die LIST_viewer_bot-Liste';
+    const Button_11_FileName = 'LIST_viewer_bot.txt';
     const Button_11_URL = `${Listen_rawURL}${Button_11_FileName}`;
     const Button_11_Action = 'ban';
     // Button 12
     const Button_12_IdClass = 'Button_12';
-    const Button_12_Text = 'LIST well known bots';
-    const Button_12_BanReason = 'LIST well known bots (QMD-List)';
-    const Button_12_ListSaveSuffix = '_LIST_well_known_bots';
-    const Button_12_AltText = 'Importiert die LIST_well_known_bots-Liste';
-    const Button_12_FileName = 'LIST_well_known_ti_bots.txt';
+    const Button_12_Text = 'unwanted bots\n( from isds list )';
+    const Button_12_BanReason = 'LIST unwanted bots (QMD-List)';
+    const Button_12_ListSaveSuffix = '_LIST_unwanted_bots';
+    const Button_12_AltText = 'Importiert die LIST_mad_tos_porn_seller_spam_bot-Liste';
+    const Button_12_FileName = 'LIST_mad_tos_porn_seller_spam_bot.txt';
     const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
     const Button_12_Action = 'ban';
     // Button 13
     const Button_13_IdClass = 'Button_13';
-    const Button_13_Text = '/monitor';
+    const Button_13_Text = '/monitor\n …function coming soon…';
     const Button_13_BanReason = 'MONITOR-List (QMD-List)';
     const Button_13_ListSaveSuffix = '_MONITOR_List';
     const Button_13_AltText = 'Importiert die MONITOR-Liste';
@@ -164,7 +164,7 @@
     const Button_14_Action = 'unban';
     // Button 15
     const Button_15_IdClass = 'Button_15';
-    const Button_15_Text = 'UNBAN Whitelisted User';
+    const Button_15_Text = 'UNBAN\nWhitelisted User';
     const Button_15_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
     const Button_15_ListSaveSuffix = '_WHITELISTED_user';
     const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
@@ -173,7 +173,7 @@
     const Button_15_Action = 'unban';
     // Button 16
     const Button_16_IdClass = 'Button_16';
-    const Button_16_Text = 'UNBAN Whitelisted Bots';
+    const Button_16_Text = 'UNBAN\nWhitelisted Bots';
     const Button_16_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
     const Button_16_ListSaveSuffix = '_WHITELISTED_bots';
     const Button_16_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
@@ -258,7 +258,7 @@
             url: Button_06_URL,
             banReason: Button_06_BanReason,
             action: Button_06_Action,
-            placeholder: false
+            placeholder: true
         },
         {
             number: '07',
@@ -271,7 +271,7 @@
             url: Button_07_URL,
             banReason: Button_07_BanReason,
             action: Button_07_Action,
-            placeholder: false
+            placeholder: true
         },
         {
             number: '08',
@@ -310,7 +310,7 @@
             url: Button_10_URL,
             banReason: Button_10_BanReason,
             action: Button_10_Action,
-            placeholder: true
+            placeholder: false
         },
         {
             number: '11',
@@ -323,7 +323,7 @@
             url: Button_11_URL,
             banReason: Button_11_BanReason,
             action: Button_11_Action,
-            placeholder: true
+            placeholder: false
         },
         {
             number: '12',
@@ -1157,9 +1157,7 @@
                 aria-label="${title}"
                 data-list-number="${listConfig.number}"
                 ${disabledAttributes}
-            >
-                ${listConfig.text}
-            </button>
+            >${listConfig.text}</button>
         `;
     }
     // Erzeugt alle Listenbuttons mit der vorgegebenen Anzahl pro Zeile.
@@ -1488,10 +1486,16 @@
                     align-items: center;
                 }
                 .magicMorningStar .list-button-row button {
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
                     box-sizing: border-box;
+                    overflow: visible;
+                    text-overflow: clip;
+                    white-space: pre-line;
+                    min-height: 40px;
+                    height: auto;
+                    padding: 4px 4px;
+                    font-size: 12px;
+                    line-height: 1.2;
+                    text-align: center;
                 }
             </style>
             <div class="header">
@@ -1554,7 +1558,7 @@
             <div id="import" class="import" style="display: none;">
                 <textarea
                     id="textfield"
-                    placeholder="Ein Benutzername pro Zeile"
+                    placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen"
                 ></textarea>
                 <div style="text-align: right;">
                     <input
@@ -1569,7 +1573,7 @@
                         title="Benutzer zur Liste hinzufügen"
                         style="width: 32%;"
                     >
-                        Hinzufügen
+                        &#8627; Benutzername(n) Hinzufügen
                     </button>
                 </div>
                 <!-- Zentral erzeugte Listenbuttons 01 bis 16 -->
@@ -1597,7 +1601,7 @@
                         title="Bearbeitungsstand aller Listen prüfen"
                         aria-label="Bearbeitungsstand aller Listen prüfen"
                     >
-                        Quick check
+                        &#9432; Quick check
                     </button>
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
