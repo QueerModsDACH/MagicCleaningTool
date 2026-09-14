@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
-// @namespace    Magic Cleaning Tool ...for a little better World
+// @namespace    Magic Cleaning Tool …for a little better World
 // @version      1.9.6.151
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
@@ -10,15 +10,13 @@
 // @supportURL   https://github.com/QueerModsDACH/MagicCleaningTool/issues
 // @license      MIT
 // ==/UserScript==
-
 /* jshint esversion: 8 */
-
 (function () {
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
     const myVersion = '1.9.6.151';
-    const LOGPREFIX = '[QMD_MCT]▶ ';
+    const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
     const defaultBanReason = 'Ban by QMD list';
@@ -157,7 +155,7 @@
     const Button_13_Action = 'ban';
     // Button 14
     const Button_14_IdClass = 'Button_14';
-    const Button_14_Text = 'UNBAN ...';
+    const Button_14_Text = 'UNBAN …';
     const Button_14_BanReason = 'UNBAN-List (QMD-UNBAN-List)';
     const Button_14_ListSaveSuffix = '_UNBAN_List';
     const Button_14_AltText = 'Importiert die UNBAN-Liste';
@@ -1591,7 +1589,7 @@
                         title="Zurück"
                         aria-label="Zurück"
                     >
-                        zurück
+                        &#8592; zurück
                     </button>
                     <button
                         class="quickCheck"
@@ -1610,7 +1608,7 @@
                         title="Öffnet CommanderRoot"
                         aria-label="CommanderRoot öffnen"
                     >
-                        🤖
+                        <img src="https://twitch-tools.rootonline.de/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
                     <button
                         class="chatstats"
@@ -1618,7 +1616,7 @@
                         title="Öffnet SullyGnome-Kanalstatistiken"
                         aria-label="SullyGnome-Kanalstatistiken öffnen"
                     >
-                        📈
+                        <img src="https://sullygnome.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
                     <button
                         class="modLogger"
@@ -1626,7 +1624,7 @@
                         title="Öffnet ModLogger für den aktuellen Kanal"
                         aria-label="ModLogger öffnen"
                     >
-                        🗄
+                        &#9783;
                     </button>
                     <button
                         class="chatDeepStats"
@@ -1634,7 +1632,7 @@
                         title="Öffnet ChatStats für den aktuellen Kanal"
                         aria-label="ChatStats öffnen"
                     >
-                        🩻
+                        📈
                     </button>
                 </div>
                 <!-- Rechte Gruppe: Listenaktionen -->
@@ -1646,7 +1644,7 @@
                         title="Pause/Play"
                         aria-label="Pause oder Fortsetzen"
                     >
-                        ⏸
+                        &#9208; &#9655;
                     </button>
                     <button
                         class="ignoreAll"
@@ -1654,7 +1652,7 @@
                         title="Liste leeren"
                         aria-label="Liste leeren"
                     >
-                        🗑
+                        &#10005;
                     </button>
                     <button
                         class="unbanAll"
@@ -1670,7 +1668,7 @@
                         title="Alle auf der Liste bannen"
                         aria-label="Alle auf der Liste bannen"
                     >
-                        ⚔
+                        &#9876;
                     </button>
                 </div>
             </div>
@@ -1989,7 +1987,7 @@
         isPaused = !isPaused;
         if (isPaused) {
             button.value = 'play';
-            button.textContent = '▶';
+            button.textContent = '\u25B6';
             button.title = 'Fortsetzen';
             button.setAttribute(
                 'aria-label',
@@ -1998,7 +1996,7 @@
             button.classList.add('is-paused');
         } else {
             button.value = 'pause';
-            button.textContent = '⏸';
+            button.textContent = '\u23F8';
             button.title = 'Pausieren';
             button.setAttribute(
                 'aria-label',
@@ -3265,13 +3263,13 @@
         const reasonText =
             activeListInfo.action === 'unban'
                 ? 'Bei dieser Liste wird kein Banngrund angewandt.'
-                : `Es wird bei jedem Ban der Grund: ▶ ${
+                : `Es wird bei jedem Ban der Grund: \u25B6 ${
                     activeListInfo.banReason ||
                     defaultBanReason
-                } ◀ hinterlegt.`;
+                } \u25C0 hinterlegt.`;
         // Erstellt den sichtbaren Status- und Fortschrittstext.
         let statusText =
-            `Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei ▶ ${channelName} ◀ ${actionWord}.`;
+            `Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei \u25B6 ${channelName} \u25C0 ${actionWord}.`;
         let progressText = '';
         if (skippedCount > 0) {
             progressText +=
@@ -3282,7 +3280,7 @@
                 remainingCount *
                 getAverageActionDuration();
             progressText +=
-                `Verbleibend: ${remainingCount.toLocaleString('de-DE')} ... `;
+                `Verbleibend: ${remainingCount.toLocaleString('de-DE')} … `;
             progressText +=
                 `Voraussichtliche Dauer: ca. ${
                     formatEstimatedDuration(
@@ -3402,7 +3400,7 @@
                 <span>
                     <a
                         href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
-                        title="Dieser User folgt ... Weiterleitung zu CommanderRoot"
+                        title="Dieser User folgt … Weiterleitung zu CommanderRoot"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
