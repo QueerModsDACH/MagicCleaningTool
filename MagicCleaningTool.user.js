@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.1
+// @version      1.9.7.3
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.1';
+    const myVersion = '1.9.7.3';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -215,8 +215,10 @@
         { number: '16', saveSuffix: Button_16_ListSaveSuffix, id: Button_16_IdClass, className: Button_16_IdClass, text: Button_16_Text, altText: Button_16_AltText,
             fileName: Button_16_FileName, url: Button_16_URL, banReason: Button_16_BanReason, action: Button_16_Action, placeholder: false }
     ];
-    // Laufzeitstatus der aktuellen Listenaktion.
-    let isPaused = false;
+    // Laufzeitstatus der Listenaktionen.
+    const listPauseStates = new Map();
+    const pausedActionResumes = new Map();
+    const listRunningActions = new Map();
     const queueList = new Set();
     let activeListAction = null;
     const queueListSources = new Map();
@@ -267,8 +269,133 @@
     );
     // ############################################################################
     // ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN ####################################
-    const delay = (time) =>
-        new Promise((resolve) => setTimeout(resolve, time));
+    const delay = (time) => new Promise((resolve) => setTimeout(resolve, time));
+    function getListPauseKey(listInfo = activeListInfo) {
+        if (!listInfo) {
+            return null;
+        }
+        const channel =
+            listInfo.channel ||
+            activeChannel ||
+            '';
+        const listIdentifier =
+            listInfo.listSuffix ||
+            listInfo.fileName ||
+            'manual';
+        return [
+            channel,
+            listInfo.action || 'ban',
+            listIdentifier
+        ].join('|');
+    }
+    function isListPaused(pauseKey) {
+        return Boolean(
+            pauseKey &&
+            listPauseStates.get(pauseKey) === true
+        );
+    }
+
+function isListActionRunning(pauseKey) {
+    return Boolean(
+        pauseKey &&
+        listRunningActions.get(pauseKey) === true
+    );
+}
+
+function updatePauseButton() {
+    const button = d.querySelector('.pause');
+
+    if (!button) {
+        return;
+    }
+
+    const pauseKey =
+        getListPauseKey();
+
+    const actionRunning =
+        isListActionRunning(pauseKey);
+
+    const listPaused =
+        isListPaused(pauseKey);
+
+    button.disabled = !actionRunning;
+    button.setAttribute(
+        'aria-disabled',
+        String(!actionRunning)
+    );
+
+    if (!actionRunning) {
+        button.value = 'pause';
+        button.textContent = '\u23F8';
+        button.title =
+            'Keine laufende Aktion';
+        button.setAttribute(
+            'aria-label',
+            'Keine laufende Aktion'
+        );
+        button.classList.remove(
+            'is-paused'
+        );
+        return;
+    }
+
+    if (listPaused) {
+        button.value = 'play';
+        button.textContent = '\u25B6';
+        button.title = 'Fortsetzen';
+        button.setAttribute(
+            'aria-label',
+            'Aktionen fortsetzen'
+        );
+        button.classList.add('is-paused');
+    } else {
+        button.value = 'pause';
+        button.textContent = '\u23F8';
+        button.title = 'Pausieren';
+        button.setAttribute(
+            'aria-label',
+            'Aktionen pausieren'
+        );
+        button.classList.remove(
+            'is-paused'
+        );
+    }
+}
+
+
+    function waitForActionResume(pauseKey) {
+        if (!isListPaused(pauseKey)) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+            pausedActionResumes.set(
+                pauseKey,
+                resolve
+            );
+        });
+    }
+    function setListPauseState(
+        pauseKey,
+        shouldPause
+    ) {
+        if (!pauseKey) {
+            return;
+        }
+        listPauseStates.set(
+            pauseKey,
+            shouldPause
+        );
+        if (!shouldPause) {
+            const resumeAction =
+                pausedActionResumes.get(pauseKey);
+            if (resumeAction) {
+                pausedActionResumes.delete(
+                    pauseKey
+                );
+                resumeAction();
+            }
+        }
+    }
     // Führt einen Fetch-Aufruf mit einem Zeitlimit aus.
     async function fetchWithTimeout(
         url,
@@ -293,7 +420,6 @@
     // Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen dadurch möglicherweise zu schnell nacheinander ausgeführt werden.
     const DELAY_BAN_ACTION = 130;
     const DELAY_UNBAN_ACTION = 130;
-    const DELAY_PAUSE_CHECK = 1000;
     // ############################################################################
     // ##### LOCALSTORAGE-HILFSFUNKTIONEN #########################################
     function storageKey(key) {
@@ -1418,6 +1544,11 @@
         const body = d.querySelector('.body');
         const importDiv = d.querySelector('.import');
         insertText('');
+        const banReasonInput = d.querySelector('#banReason');
+        if (banReasonInput && banReasonInput.dataset.reasonSource === 'list') {
+            banReasonInput.value = '';
+            banReasonInput.dataset.reasonSource = 'empty';
+        }
         if (importDiv.style.display !== 'none') {
             importDiv.style.display = 'none';
             body.style.display = '';
@@ -1426,39 +1557,34 @@
             body.style.display = 'none';
             d.querySelector('.import textarea').focus();
         }
-        d.querySelector('#replaceFooter').innerHTML =
-            'Alle Bannlisten anzeigen';
-        d.querySelector('#replaceFooter').href =
-            urlBannlisten;
+        d.querySelector('#replaceFooter').innerHTML = 'Alle Bannlisten anzeigen';
+        d.querySelector('#replaceFooter').href = urlBannlisten;
         renderList();
     }
-    function togglePause() {
-        const button = d.querySelector('#pause');
-        if (!button) {
-            return;
-        }
-        isPaused = !isPaused;
-        if (isPaused) {
-            button.value = 'play';
-            button.textContent = '\u25B6';
-            button.title = 'Fortsetzen';
-            button.setAttribute(
-                'aria-label',
-                'Aktionen fortsetzen'
-            );
-            button.classList.add('is-paused');
-        } else {
-            button.value = 'pause';
-            button.textContent = '\u23F8';
-            button.title = 'Pausieren';
-            button.setAttribute(
-                'aria-label',
-                'Aktionen pausieren'
-            );
-            button.classList.remove('is-paused');
-        }
-        updateListStatus();
+
+function togglePause() {
+    const pauseKey =
+        getListPauseKey();
+
+    if (
+        !pauseKey ||
+        !isListActionRunning(pauseKey)
+    ) {
+        return;
     }
+
+    const shouldPause =
+        !isListPaused(pauseKey);
+
+    setListPauseState(
+        pauseKey,
+        shouldPause
+    );
+
+    updatePauseButton();
+    updateListStatus();
+}
+
     // ############################################################################
     // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
     // Aktualisiert das Bild und die Beschriftung des Umschalters.
@@ -1705,6 +1831,7 @@
         }
         activeListInfo = {
             fileName: 'Manuelle Eingabe',
+            listSuffix: 'manual',
             action: 'ban',
             channel: activeChannel,
             banReason: getEffectiveBanReason(
@@ -1838,6 +1965,7 @@
                 const parsedUsers = parseUserList(data);
                 activeListInfo = {
                     fileName,
+                    listSuffix,
                     action: normalizedAction,
                     channel: activeChannel,
                     banReason: effectiveBanReason,
@@ -2003,25 +2131,51 @@
             console.warn(LOGPREFIX, 'Ban All wurde für eine Unban-Liste blockiert.');
             return;
         }
+        const actionPauseKey = getListPauseKey(activeListInfo);
+        if (
+            !actionPauseKey ||
+            isListActionRunning(actionPauseKey)
+        ) {
+            return;
+        }
+        listRunningActions.set(
+            actionPauseKey,
+            true
+        );
+        updatePauseButton();
         console.log(LOGPREFIX, 'Banning all...', queueList);
-        for (const user of [...queueList]) {
-            while (isPaused) {
-                await delay(DELAY_PAUSE_CHECK);
-            }
-            if (!isCurrentChannelModerated()) {
-                console.warn(LOGPREFIX, 'Ban All wegen eines Kanalwechsels abgebrochen.');
-                break;
-            }
-            const actionStartedAt = performance.now();
-            const wasBanned = await banItem(user);
-            if (wasBanned) {
-                await delay(DELAY_BAN_ACTION);
-                const actionDuration = performance.now() - actionStartedAt;
-                addActionDurationSample(
-                    actionDuration
+        try {
+            for (const user of [...queueList]) {
+                await waitForActionResume(
+                    actionPauseKey
                 );
-                updateListStatus();
+                if (!isCurrentChannelModerated()) {
+                    console.warn(LOGPREFIX, 'Ban All wegen eines Kanalwechsels abgebrochen.');
+                    break;
+                }
+                const actionStartedAt = performance.now();
+                const wasBanned = await banItem(user);
+                if (wasBanned) {
+                    await delay(
+                        DELAY_BAN_ACTION
+                    );
+                    const actionDuration = performance.now() - actionStartedAt;
+                    addActionDurationSample(
+                        actionDuration
+                    );
+                    updateListStatus();
+                }
             }
+        } finally {
+            listRunningActions.delete(
+                actionPauseKey
+            );
+            setListPauseState(
+                actionPauseKey,
+                false
+            );
+            updatePauseButton();
+            updateListStatus();
         }
     }
     async function unbanAll() {
@@ -2033,25 +2187,51 @@
             console.warn(LOGPREFIX, 'Unban All wurde für eine Bannliste blockiert.');
             return;
         }
+        const actionPauseKey = getListPauseKey(activeListInfo);
+        if (
+            !actionPauseKey ||
+            isListActionRunning(actionPauseKey)
+        ) {
+            return;
+        }
+        listRunningActions.set(
+            actionPauseKey,
+            true
+        );
+        updatePauseButton();
         console.log(LOGPREFIX, 'Unbanning all...', queueList);
-        for (const user of [...queueList]) {
-            while (isPaused) {
-                await delay(DELAY_PAUSE_CHECK);
-            }
-            if (!isCurrentChannelModerated()) {
-                console.warn(LOGPREFIX, 'Unban All wegen eines Kanalwechsels abgebrochen.');
-                break;
-            }
-            const actionStartedAt = performance.now();
-            const wasUnbanned = await unbanItem(user);
-            if (wasUnbanned) {
-                await delay(DELAY_UNBAN_ACTION);
-                const actionDuration = performance.now() - actionStartedAt;
-                addActionDurationSample(
-                    actionDuration
+        try {
+            for (const user of [...queueList]) {
+                await waitForActionResume(
+                    actionPauseKey
                 );
-                updateListStatus();
+                if (!isCurrentChannelModerated()) {
+                    console.warn(LOGPREFIX, 'Unban All wegen eines Kanalwechsels abgebrochen.');
+                    break;
+                }
+                const actionStartedAt = performance.now();
+                const wasUnbanned = await unbanItem(user);
+                if (wasUnbanned) {
+                    await delay(
+                        DELAY_UNBAN_ACTION
+                    );
+                    const actionDuration = performance.now() - actionStartedAt;
+                    addActionDurationSample(
+                        actionDuration
+                    );
+                    updateListStatus();
+                }
             }
+        } finally {
+            listRunningActions.delete(
+                actionPauseKey
+            );
+            setListPauseState(
+                actionPauseKey,
+                false
+            );
+            updatePauseButton();
+            updateListStatus();
         }
     }
     function usercard(user) {
@@ -2581,7 +2761,11 @@
                     ? 'complete'
                     : 'incomplete'
             }`;
-        if (isPaused && remainingCount > 0) {
+        const activePauseKey = getListPauseKey(activeListInfo);
+        if (
+            isListPaused(activePauseKey) &&
+            remainingCount > 0
+        ) {
             statusElement.classList.remove(
                 'incomplete'
             );
@@ -2630,9 +2814,12 @@
         }
         if (quickCheckButton) {
             quickCheckButton.style.display =
-                navigationDisplay;
+                isSelectionView && !hasActiveList
+                    ? ''
+                    : 'none';
         }
         updateBulkActionButtons();
+        updatePauseButton();
         const allItems = Array.from(queueList);
         const visibleItems = allItems.slice(
             0,
