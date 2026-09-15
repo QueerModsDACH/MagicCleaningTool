@@ -1112,6 +1112,7 @@
             </div>
             <!-- Aktionszeile -->
             <div id="buttons" class="action-bar">
+
                 <!-- Linke Gruppe: Navigation -->
                 <div class="action-group action-group-left">
                     <button class="back" type="button" title="Zurück" aria-label="Zurück" >
@@ -1121,6 +1122,7 @@
                         &#9432; Quick check
                     </button>
                 </div>
+
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
                 <div class="action-group action-group-center">
                     <button class="commanderRoot" type="button" title="Öffnet CommanderRoot" aria-label="CommanderRoot öffnen" >
@@ -1133,24 +1135,26 @@
                         &#9783;
                     </button>
                     <button class="chatDeepStats" type="button" title="Öffnet ChatStats für den aktuellen Kanal" aria-label="ChatStats öffnen" >
-                        📈
+                        &#128200;
                     </button>
                 </div>
+
                 <!-- Rechte Gruppe: Listenaktionen -->
                 <div class="action-group action-group-right">
                     <button class="pause" id="pause" type="button" title="Pause/Play" aria-label="Pause oder Fortsetzen" >
                         &#9208; &#9655;
                     </button>
                     <button class="ignoreAll" type="button" title="Liste leeren" aria-label="Liste leeren" >
-                        &#10005;
+                        &#10006;
                     </button>
                     <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen" >
-                        👹
+                        &#128519;
                     </button>
                     <button class="banAll" type="button" title="Alle auf der Liste bannen" aria-label="Alle auf der Liste bannen" >
-                        &#9876;
+                        &#128121;
                     </button>
                 </div>
+
             </div>
             <!-- Status der aktuell geladenen Liste -->
             <div id="listStatus" class="list-status" aria-live="polite"
