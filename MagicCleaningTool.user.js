@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.3
+// @version      1.9.7.4
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.3';
+    const myVersion = '1.9.7.4';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -255,6 +255,8 @@
     const bannedList = new Set();
     // Aktuell moderierbarer Twitch-Kanal. Der Wert wird nach der Definition der Moderationsprüfung gesetzt.
     let activeChannel = '';
+    // Anzeigename des aktuell moderierten Kanals mit ursprünglicher Groß-/Kleinschreibung.
+    let activeChannelDisplay = '';
     // Bilder für die Benutzeroberfläche.
     const activateImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
     const modMenuOnImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_on.png';
@@ -361,8 +363,6 @@ function updatePauseButton() {
         );
     }
 }
-
-
     function waitForActionResume(pauseKey) {
         if (!isListPaused(pauseKey)) {
             return Promise.resolve();
@@ -386,8 +386,7 @@ function updatePauseButton() {
             shouldPause
         );
         if (!shouldPause) {
-            const resumeAction =
-                pausedActionResumes.get(pauseKey);
+            const resumeAction = pausedActionResumes.get(pauseKey);
             if (resumeAction) {
                 pausedActionResumes.delete(
                     pauseKey
@@ -988,7 +987,35 @@ function updatePauseButton() {
             moderatedChannel === activeChannel
         );
     }
+// Ermittelt den Kanalnamen für die Anzeige mit ursprünglicher Groß-/Kleinschreibung.
+    function getDisplayChannelName() {
+        const channelElement =
+            document.querySelector(
+                '[data-a-target="channel-header-title"]'
+            );
+        if (
+            channelElement &&
+            channelElement.textContent.trim() !== ''
+        ) {
+            return channelElement.textContent.trim();
+        }
+        const moderatorMatch =
+            window.location.pathname.match(
+                /^\/moderator\/([^/]+)/i
+            );
+        if (moderatorMatch) {
+            try {
+                return decodeURIComponent(
+                    moderatorMatch[1]
+                );
+            } catch (error) {
+                console.error(LOGPREFIX, 'Anzeigename des Moderationskanals konnte nicht dekodiert werden:', error);
+            }
+        }
+        return activeChannel;
+    }
     activeChannel = getModeratedChannel();
+    activeChannelDisplay = getDisplayChannelName();
     console.log(LOGPREFIX, 'Aktiv moderierbarer Kanal:', activeChannel || '(kein moderierbarer Kanal)');
     // ############################################################################
     // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
@@ -1106,6 +1133,29 @@ function updatePauseButton() {
                 .magicMorningStar h6 button { height: auto; background: none; }
                 .magicMorningStar .header { display: flex; align-items: center; }
                 .magicMorningStar .logo { min-height: 30px; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
+                .magicMorningStar .info-bar {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 100%;
+                    margin: 4px 0 8px;
+                    padding: 4px 8px 6px;
+                    box-sizing: border-box;
+                    border-bottom: 1px solid var(--color-border-base);
+                    text-align: center;
+                }
+                .magicMorningStar .channel-name {
+                    color: ${themeTextColor};
+                    font-size: 20px;
+                    font-weight: var(--font-weight-semibold);
+                    line-height: 1.3;
+                    letter-spacing: 0.2px;
+                }
+                .magicMorningStar #loadedList {
+                    color: var(--color-text-base);
+                    font-size: 9pt;
+                    line-height: 1.4;
+                }
                 .magicMorningStar .list { min-height: 8em; max-height: 350px; padding: 8px; margin: 4px 0; overflow-y: auto;
                     background-color: var(--color-background-body); color: var(--color-text-base);
                     border: var(--border-width-default) solid var(--color-border-base);
@@ -1212,6 +1262,19 @@ function updatePauseButton() {
                 </button>
             </div>
 
+            <!-- Informationsbereich unterhalb des Headers -->
+            <div class="info-bar" aria-live="polite">
+                <div id="channelName" class="channel-name"></div>
+                <a
+                    id="loadedList"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="display: none;"
+                    title="Geladene Liste anzeigen"
+                ></a>
+            </div>
+
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
                 <textarea id="textfield" placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen" ></textarea>
@@ -1287,14 +1350,13 @@ function updatePauseButton() {
             ></div>
             <!-- Footer mit Versionsnummer -->
             <div id="footer" class="footer">
-                <a href="${urlBannlisten}" target="_blank" rel="noopener noreferrer" style="color: ${themeTextColor};" id="replaceFooter" title="Zur Liste" >
-                    MagicCleaningTool Listen
-                </a>
-                &nbsp;-&nbsp;
-                <a id="manupdate" href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js" title="Aktuelle Version installieren" >
+                <a id="manupdate"
+                    href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
+                    title="Aktuelle Version installieren"
+                >
                     ${updateText}
                 </a>
-                &nbsp;-&nbsp;&nbsp;
+                &nbsp;-&nbsp;
                 ${myVersion}
             </div>
         </div>
@@ -1485,6 +1547,17 @@ function updatePauseButton() {
             renderList();
         }
     }
+    // Aktualisiert den Kanalnamen im Informationsbereich.
+    function updateChannelInfo() {
+        const channelElement = d.querySelector('#channelName');
+        if (!channelElement) {
+            return;
+        }
+        channelElement.textContent =
+            activeChannelDisplay ||
+            activeChannel ||
+            'Kein moderierbarer Kanal';
+    }
     // ############################################################################
     // ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #############################
     function show() {
@@ -1495,10 +1568,12 @@ function updatePauseButton() {
             return;
         }
         activeChannel = moderatedChannel;
+        activeChannelDisplay = getDisplayChannelName();
         console.log(LOGPREFIX, `Tool für moderierten Kanal ${activeChannel} geöffnet.`);
         appendToolToDocument();
         d.style.display = '';
         enabled = true;
+        updateChannelInfo();
         makeToolDraggable();
         renderList();
     }
@@ -1557,34 +1632,30 @@ function updatePauseButton() {
             body.style.display = 'none';
             d.querySelector('.import textarea').focus();
         }
-        d.querySelector('#replaceFooter').innerHTML = 'Alle Bannlisten anzeigen';
-        d.querySelector('#replaceFooter').href = urlBannlisten;
+        const loadedList = d.querySelector('#loadedList');
+        if (loadedList) {
+            loadedList.textContent = '';
+            loadedList.removeAttribute('href');
+            loadedList.style.display = 'none';
+        }
         renderList();
     }
-
-function togglePause() {
-    const pauseKey =
-        getListPauseKey();
-
-    if (
-        !pauseKey ||
-        !isListActionRunning(pauseKey)
-    ) {
-        return;
+    function togglePause() {
+        const pauseKey = getListPauseKey();
+        if (
+            !pauseKey ||
+            !isListActionRunning(pauseKey)
+        ) {
+            return;
+        }
+        const shouldPause = !isListPaused(pauseKey);
+        setListPauseState(
+            pauseKey,
+            shouldPause
+        );
+        updatePauseButton();
+        updateListStatus();
     }
-
-    const shouldPause =
-        !isListPaused(pauseKey);
-
-    setListPauseState(
-        pauseKey,
-        shouldPause
-    );
-
-    updatePauseButton();
-    updateListStatus();
-}
-
     // ############################################################################
     // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
     // Aktualisiert das Bild und die Beschriftung des Umschalters.
@@ -1903,8 +1974,8 @@ function togglePause() {
                 );
             }
         }
-        const footerText = `Geladene Liste '${fileName}' anzeigen`;
-        const footerHref = url;
+        const loadedListText = `Geladene Liste '${fileName}' anzeigen`;
+        const loadedListHref = url;
         if (!isCurrentChannelModerated()) {
             console.warn(LOGPREFIX, 'Listenimport blockiert: Kein moderierbarer Kanal aktiv.');
             return;
@@ -2052,10 +2123,11 @@ function togglePause() {
                         defaultButtonText;
                 }
             });
-        const footer = d.querySelector('#replaceFooter');
-        if (footer) {
-            footer.innerHTML = footerText;
-            footer.href = footerHref;
+        const loadedList = d.querySelector('#loadedList');
+        if (loadedList) {
+            loadedList.textContent = loadedListText;
+            loadedList.href = loadedListHref;
+            loadedList.style.display = 'inline-block';
         }
     }
     // ############################################################################
@@ -2707,9 +2779,7 @@ function togglePause() {
         const skippedCount = skippedUsers.length;
         const remainingCount = Math.max(
             0,
-            totalCount -
-            processedCount -
-            skippedCount
+            totalCount - processedCount - skippedCount
         );
         const actionWord =
             activeListInfo.action === 'unban'
@@ -3291,6 +3361,8 @@ function togglePause() {
         console.log(LOGPREFIX, `Moderationskontext geändert: ${lastKnownChannel || '(kein Kanal)'} → ${detectedChannel || '(kein moderierbarer Kanal)'}`);
         lastKnownChannel = detectedChannel;
         activeChannel = detectedChannel;
+        activeChannelDisplay = getDisplayChannelName();
+        updateChannelInfo();
         restoreListStatuses();
         queueList.clear();
         queueListSources.clear();
