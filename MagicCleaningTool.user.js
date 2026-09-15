@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.4
+// @version      1.9.7.7
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.4';
+    const myVersion = '1.9.7.7';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -297,72 +297,60 @@
         );
     }
 
-function isListActionRunning(pauseKey) {
-    return Boolean(
-        pauseKey &&
-        listRunningActions.get(pauseKey) === true
-    );
-}
-
-function updatePauseButton() {
-    const button = d.querySelector('.pause');
-
-    if (!button) {
-        return;
-    }
-
-    const pauseKey =
-        getListPauseKey();
-
-    const actionRunning =
-        isListActionRunning(pauseKey);
-
-    const listPaused =
-        isListPaused(pauseKey);
-
-    button.disabled = !actionRunning;
-    button.setAttribute(
-        'aria-disabled',
-        String(!actionRunning)
-    );
-
-    if (!actionRunning) {
-        button.value = 'pause';
-        button.textContent = '\u23F8';
-        button.title =
-            'Keine laufende Aktion';
-        button.setAttribute(
-            'aria-label',
-            'Keine laufende Aktion'
-        );
-        button.classList.remove(
-            'is-paused'
-        );
-        return;
-    }
-
-    if (listPaused) {
-        button.value = 'play';
-        button.textContent = '\u25B6';
-        button.title = 'Fortsetzen';
-        button.setAttribute(
-            'aria-label',
-            'Aktionen fortsetzen'
-        );
-        button.classList.add('is-paused');
-    } else {
-        button.value = 'pause';
-        button.textContent = '\u23F8';
-        button.title = 'Pausieren';
-        button.setAttribute(
-            'aria-label',
-            'Aktionen pausieren'
-        );
-        button.classList.remove(
-            'is-paused'
+    function isListActionRunning(pauseKey) {
+        return Boolean(
+            pauseKey &&
+            listRunningActions.get(pauseKey) === true
         );
     }
-}
+    function updatePauseButton() {
+        const button = d.querySelector('.pause');
+        if (!button) {
+            return;
+        }
+        const pauseKey = getListPauseKey();
+        const actionRunning = isListActionRunning(pauseKey);
+        const listPaused = isListPaused(pauseKey);
+        button.disabled = !actionRunning;
+        button.setAttribute(
+            'aria-disabled',
+            String(!actionRunning)
+        );
+        if (!actionRunning) {
+            button.value = 'pause';
+            button.textContent = '\u23F8';
+            button.title = 'Keine laufende Aktion';
+            button.setAttribute(
+                'aria-label',
+                'Keine laufende Aktion'
+            );
+            button.classList.remove(
+                'is-paused'
+            );
+            return;
+        }
+        if (listPaused) {
+            button.value = 'play';
+            button.textContent = '\u25B6';
+            button.title = 'Fortsetzen';
+            button.setAttribute(
+                'aria-label',
+                'Aktionen fortsetzen'
+            );
+            button.classList.add('is-paused');
+        } else {
+            button.value = 'pause';
+            button.textContent = '\u23F8';
+            button.title = 'Pausieren';
+            button.setAttribute(
+                'aria-label',
+                'Aktionen pausieren'
+            );
+            button.classList.remove(
+                'is-paused'
+            );
+        }
+    }
     function waitForActionResume(pauseKey) {
         if (!isListPaused(pauseKey)) {
             return Promise.resolve();
@@ -441,9 +429,18 @@ function updatePauseButton() {
     }
     function writeStorageList(key, list) {
         try {
+            const storageKeyName = storageKey(key);
+            const newValue = JSON.stringify(list);
+            const oldValue =
+                localStorage.getItem(
+                    storageKeyName
+                );
+            if (oldValue === newValue) {
+                return true;
+            }
             localStorage.setItem(
-                storageKey(key),
-                JSON.stringify(list)
+                storageKeyName,
+                newValue
             );
             return true;
         } catch (error) {
@@ -475,7 +472,7 @@ function updatePauseButton() {
             return false;
         }
     }
-    // Vereinheitlicht Benutzernamen für Vergleiche und Speicherung.
+    // Vereinheitlicht Benutzernamen ausschließlich für Vergleiche.
     function normalizeUser(user) {
         return String(user ?? '')
             .trim()
@@ -987,32 +984,72 @@ function updatePauseButton() {
             moderatedChannel === activeChannel
         );
     }
-// Ermittelt den Kanalnamen für die Anzeige mit ursprünglicher Groß-/Kleinschreibung.
-    function getDisplayChannelName() {
-        const channelElement =
-            document.querySelector(
-                '[data-a-target="channel-header-title"]'
-            );
-        if (
-            channelElement &&
-            channelElement.textContent.trim() !== ''
-        ) {
-            return channelElement.textContent.trim();
+    // Ermittelt den Kanalnamen für die Anzeige mit ursprünglicher Groß-/Kleinschreibung.
+    function getDisplayChannelName(
+        channel = activeChannel
+    ) {
+        const normalizedChannel = normalizeUser(channel);
+        if (!normalizedChannel) {
+            return '';
         }
-        const moderatorMatch =
-            window.location.pathname.match(
-                /^\/moderator\/([^/]+)/i
-            );
-        if (moderatorMatch) {
-            try {
-                return decodeURIComponent(
-                    moderatorMatch[1]
+        // Diese Elemente enthalten normalerweise die sichtbare Schreibweise aus dem Twitch-Header.
+        const preferredSelectors = [
+            '[data-a-target="channel-header-title"]',
+            '[data-a-target="channel-name"]',
+            '[data-a-target="streamer-card-title"]',
+            'h1',
+            'h2'
+        ];
+        for (const selector of preferredSelectors) {
+            const elements =
+                document.querySelectorAll(
+                    selector
                 );
-            } catch (error) {
-                console.error(LOGPREFIX, 'Anzeigename des Moderationskanals konnte nicht dekodiert werden:', error);
+            for (const element of elements) {
+                const text =
+                    element.textContent.trim();
+                if (
+                    text &&
+                    normalizeUser(text) ===
+                    normalizedChannel
+                ) {
+                    return text;
+                }
             }
         }
-        return activeChannel;
+        // Fallback: passende Links und sonstige Twitch-Elemente. Eine Schreibweise mit Großbuchstaben wird dabei bevorzugt.
+        const fallbackSelectors = [
+            'a[href]',
+            '[data-a-target]'
+        ];
+        let lowercaseFallback = '';
+        for (const selector of fallbackSelectors) {
+            const elements =
+                document.querySelectorAll(
+                    selector
+                );
+            for (const element of elements) {
+                const text = element.textContent.trim();
+                if (
+                    !text ||
+                    normalizeUser(text) !==
+                    normalizedChannel
+                ) {
+                    continue;
+                }
+                if (
+                    text !==
+                    normalizeUser(text)
+                ) {
+                    return text;
+                }
+                if (!lowercaseFallback) {
+                    lowercaseFallback = text;
+                }
+            }
+        }
+        // Nur wenn Twitch keine sichtbare Mischschreibweise liefert, wird die Kleinschreibweise verwendet.
+        return lowercaseFallback || normalizedChannel;
     }
     activeChannel = getModeratedChannel();
     activeChannelDisplay = getDisplayChannelName();
@@ -2400,7 +2437,8 @@ function updatePauseButton() {
         QMD_modChannelStore =
             QMD_modChannelStore.filter(
                 (channel) =>
-                    channel !== normalizedUser
+                    normalizeUser(channel) !==
+                    normalizedUser
             );
         writeStorageList(
             'myModChannels',
@@ -2523,20 +2561,28 @@ function updatePauseButton() {
         renderList();
         return true;
     }
+
     function addModChannel(user) {
-        const normalizedUser = normalizeUser(user);
+        const displayUser =
+            String(user ?? '').trim();
+        const normalizedUser = normalizeUser(displayUser);
         if (!isValidUsername(normalizedUser)) {
-            console.warn(LOGPREFIX, `Ungültiger Mod-Kanal wurde ignoriert: ${normalizedUser}`);
+            console.warn(
+                LOGPREFIX,
+                `Ungültiger Mod-Kanal wurde ignoriert: ${normalizedUser}`
+            );
             return;
         }
-        if (
-            !QMD_modChannelStore.includes(
-                normalizedUser
-            )
-        ) {
-            console.log(LOGPREFIX, `${normalizedUser} zu ModChannels hinzugefügt`);
+        const channelAlreadyStored =
+            QMD_modChannelStore.some(
+                (channel) =>
+                    normalizeUser(channel) ===
+                    normalizedUser
+            );
+        if (!channelAlreadyStored) {
+            console.log(LOGPREFIX, `${displayUser} zu ModChannels hinzugefügt`);
             queueList.delete(normalizedUser);
-            QMD_modChannelStore.push(normalizedUser);
+            QMD_modChannelStore.push(displayUser);
             QMD_modChannelStore =
                 sortAndStoreModChannels(
                     QMD_modChannelStore
@@ -2673,7 +2719,6 @@ function updatePauseButton() {
     }
     // ############################################################################
     // ##### HILFSFUNKTIONEN FÜR DIE ZEITBERECHNUNG ###############################
-
     function formatEstimatedDuration(milliseconds) {
         if (
             !Number.isFinite(milliseconds) ||
@@ -2959,19 +3004,46 @@ function updatePauseButton() {
     // ############################################################################
     // ##### MOD-MENÜ ############################################################
     function sortAndStoreModChannels(channels) {
-        const uniqueChannels = [
-            ...new Set(
-                channels
-                    .filter(
-                        (channel) =>
-                            typeof channel === 'string' &&
-                            channel.trim().length > 0
-                    )
-                    .map((channel) =>
-                        channel.trim().toLowerCase()
-                    )
-            )
-        ];
+        const uniqueChannels = [];
+        const storedChannels = readStorageList('myModChannels');
+        const storedDisplayNames = new Map();
+        for (const storedChannel of storedChannels) {
+            const displayChannel = String(storedChannel ?? '').trim();
+            const normalizedChannel = normalizeUser(displayChannel);
+            if (
+                !isValidUsername(normalizedChannel) ||
+                storedDisplayNames.has(normalizedChannel)
+            ) {
+                continue;
+            }
+            storedDisplayNames.set(
+                normalizedChannel,
+                displayChannel
+            );
+        }
+        for (const channel of channels) {
+            const displayChannel = String(channel ?? '').trim();
+            const normalizedChannel = normalizeUser(displayChannel);
+            if (!isValidUsername(normalizedChannel)) {
+                continue;
+            }
+            if (
+                uniqueChannels.some(
+                    (storedChannel) =>
+                        normalizeUser(storedChannel) ===
+                        normalizedChannel
+                )
+            ) {
+                continue;
+            }
+            const stableDisplayChannel =
+                storedDisplayNames.get(
+                    normalizedChannel
+                ) || displayChannel;
+            uniqueChannels.push(
+                stableDisplayChannel
+            );
+        }
         uniqueChannels.sort(
             (first, second) =>
                 first.localeCompare(
@@ -2980,11 +3052,16 @@ function updatePauseButton() {
                     { sensitivity: 'base' }
                 )
         );
-        writeStorageList(
-            'myModChannels',
-            uniqueChannels
-        );
-        QMD_modChannelStore = uniqueChannels;
+        const oldValue = JSON.stringify(storedChannels);
+        const newValue = JSON.stringify(uniqueChannels);
+        if (oldValue !== newValue) {
+            writeStorageList(
+                'myModChannels',
+                uniqueChannels
+            );
+        }
+        QMD_modChannelStore =
+            uniqueChannels;
         return uniqueChannels;
     }
     function processStoredModChannels() {
@@ -3001,11 +3078,14 @@ function updatePauseButton() {
     // Speichert den aktuell moderierten Kanal automatisch.
     function addCurrentModChannel() {
         const modButton = getModViewButton();
-        const chatButton = document.querySelector( '[data-a-target="chat-send-button"]' );
+        const chatButton =
+            document.querySelector(
+                '[data-a-target="chat-send-button"]'
+            );
         const isModeratorPage =
             window.location.pathname
-                .toLowerCase()
-                .includes('/moderator/');
+            .toLowerCase()
+            .includes('/moderator/');
         let currentChannel = null;
         if (modButton) {
             currentChannel =
@@ -3023,20 +3103,27 @@ function updatePauseButton() {
         if (!currentChannel) {
             return;
         }
-        const storedChannels = [
-            ...new Set(
-                processStoredModChannels()
-                    .map(normalizeUser)
-                    .filter(isValidUsername)
-            )
-        ];
-        if (!storedChannels.includes(currentChannel)) {
-            storedChannels.push(currentChannel);
+        const normalizedCurrentChannel = normalizeUser(currentChannel);
+        const storedChannels = processStoredModChannels();
+        const existingChannelIndex =
+            storedChannels.findIndex(
+                (storedChannel) =>
+                    normalizeUser(storedChannel) ===
+                    normalizedCurrentChannel
+            );
+        if (existingChannelIndex === -1) {
+            const displayChannel =
+                getDisplayChannelName(
+                    normalizedCurrentChannel
+                ) || normalizedCurrentChannel;
+            storedChannels.push(
+                displayChannel
+            );
+            console.log(LOGPREFIX, `${displayChannel} wurde automatisch zu den ModChannels hinzugefügt`);
             const sortedChannels =
                 sortAndStoreModChannels(
                     storedChannels
                 );
-            console.log(LOGPREFIX, `${currentChannel} wurde automatisch zu den ModChannels hinzugefügt`);
             if (
                 typeof window.refreshQMDModMenu ===
                 'function'
@@ -3045,10 +3132,6 @@ function updatePauseButton() {
                     sortedChannels
                 );
             }
-        } else {
-            sortAndStoreModChannels(
-                storedChannels
-            );
         }
     }
     // Erstellt und verwaltet das Dropdown-Menü mit gespeicherten Mod-Kanälen.
@@ -3083,9 +3166,7 @@ function updatePauseButton() {
             state.dropdownList.replaceChildren();
             const storedChannels =
                 channels ||
-                sortAndStoreModChannels(
-                    processStoredModChannels()
-                );
+                processStoredModChannels();
             if (storedChannels.length === 0) {
                 const listItem = document.createElement('li');
                 const linkItem = document.createElement('a');
