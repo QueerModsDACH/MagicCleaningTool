@@ -1314,7 +1314,7 @@
 
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
-                <textarea id="textfield" placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen" ></textarea>
+                <textarea id="textfield" placeholder="für separaten bann, hier ein Benutzername pro Zeile einfügen" ></textarea>
                 <div style="text-align: right;">
                     <button class="importBtn" type="button" title="Benutzer zur Liste hinzufügen"
                         style="width: 32%; font-size: 12px; margin-right: 16px; margin-bottom: 16px;" >
