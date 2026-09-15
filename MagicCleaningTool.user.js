@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.6.151
+// @version      1.9.7.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.6.151';
+    const myVersion = '1.9.7.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -76,7 +76,7 @@
     const Button_05_Text = '5B2Z Bots (a-m)\n…list currently being compiled…';
     const Button_05_BanReason = '5B2Z-Bot Account created on 5 May 2024 (QMD-List)';
     const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
-    const Button_05_AltText = 'Importiert die 5B2Z-Bot-Liste';
+    const Button_05_AltText = 'Importiert die 5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
     const Button_05_FileName = 'API_5B2Z_20240505_completely.txt';
     const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
     const Button_05_Action = 'ban';
@@ -182,214 +182,38 @@
     const Button_16_Action = 'unban';
     // Zentrale Zusammenfassung aller Listenbutton-Konfigurationen.
     const LIST_BUTTONS = [
-        {
-            number: '01',
-            saveSuffix: Button_01_ListSaveSuffix,
-            id: Button_01_IdClass,
-            className: Button_01_IdClass,
-            text: Button_01_Text,
-            altText: Button_01_AltText,
-            fileName: Button_01_FileName,
-            url: Button_01_URL,
-            banReason: Button_01_BanReason,
-            action: Button_01_Action,
-            placeholder: false
-        },
-        {
-            number: '02',
-            saveSuffix: Button_02_ListSaveSuffix,
-            id: Button_02_IdClass,
-            className: Button_02_IdClass,
-            text: Button_02_Text,
-            altText: Button_02_AltText,
-            fileName: Button_02_FileName,
-            url: Button_02_URL,
-            banReason: Button_02_BanReason,
-            action: Button_02_Action,
-            placeholder: false
-        },
-        {
-            number: '03',
-            saveSuffix: Button_03_ListSaveSuffix,
-            id: Button_03_IdClass,
-            className: Button_03_IdClass,
-            text: Button_03_Text,
-            altText: Button_03_AltText,
-            fileName: Button_03_FileName,
-            url: Button_03_URL,
-            banReason: Button_03_BanReason,
-            action: Button_03_Action,
-            placeholder: false
-        },
-        {
-            number: '04',
-            saveSuffix: Button_04_ListSaveSuffix,
-            id: Button_04_IdClass,
-            className: Button_04_IdClass,
-            text: Button_04_Text,
-            altText: Button_04_AltText,
-            fileName: Button_04_FileName,
-            url: Button_04_URL,
-            banReason: Button_04_BanReason,
-            action: Button_04_Action,
-            placeholder: false
-        },
-        {
-            number: '05',
-            saveSuffix: Button_05_ListSaveSuffix,
-            id: Button_05_IdClass,
-            className: Button_05_IdClass,
-            text: Button_05_Text,
-            altText: Button_05_AltText,
-            fileName: Button_05_FileName,
-            url: Button_05_URL,
-            banReason: Button_05_BanReason,
-            action: Button_05_Action,
-            placeholder: false
-        },
-        {
-            number: '06',
-            saveSuffix: Button_06_ListSaveSuffix,
-            id: Button_06_IdClass,
-            className: Button_06_IdClass,
-            text: Button_06_Text,
-            altText: Button_06_AltText,
-            fileName: Button_06_FileName,
-            url: Button_06_URL,
-            banReason: Button_06_BanReason,
-            action: Button_06_Action,
-            placeholder: true
-        },
-        {
-            number: '07',
-            saveSuffix: Button_07_ListSaveSuffix,
-            id: Button_07_IdClass,
-            className: Button_07_IdClass,
-            text: Button_07_Text,
-            altText: Button_07_AltText,
-            fileName: Button_07_FileName,
-            url: Button_07_URL,
-            banReason: Button_07_BanReason,
-            action: Button_07_Action,
-            placeholder: true
-        },
-        {
-            number: '08',
-            saveSuffix: Button_08_ListSaveSuffix,
-            id: Button_08_IdClass,
-            className: Button_08_IdClass,
-            text: Button_08_Text,
-            altText: Button_08_AltText,
-            fileName: Button_08_FileName,
-            url: Button_08_URL,
-            banReason: Button_08_BanReason,
-            action: Button_08_Action,
-            placeholder: false
-        },
-        {
-            number: '09',
-            saveSuffix: Button_09_ListSaveSuffix,
-            id: Button_09_IdClass,
-            className: Button_09_IdClass,
-            text: Button_09_Text,
-            altText: Button_09_AltText,
-            fileName: Button_09_FileName,
-            url: Button_09_URL,
-            banReason: Button_09_BanReason,
-            action: Button_09_Action,
-            placeholder: false
-        },
-        {
-            number: '10',
-            saveSuffix: Button_10_ListSaveSuffix,
-            id: Button_10_IdClass,
-            className: Button_10_IdClass,
-            text: Button_10_Text,
-            altText: Button_10_AltText,
-            fileName: Button_10_FileName,
-            url: Button_10_URL,
-            banReason: Button_10_BanReason,
-            action: Button_10_Action,
-            placeholder: false
-        },
-        {
-            number: '11',
-            saveSuffix: Button_11_ListSaveSuffix,
-            id: Button_11_IdClass,
-            className: Button_11_IdClass,
-            text: Button_11_Text,
-            altText: Button_11_AltText,
-            fileName: Button_11_FileName,
-            url: Button_11_URL,
-            banReason: Button_11_BanReason,
-            action: Button_11_Action,
-            placeholder: false
-        },
-        {
-            number: '12',
-            saveSuffix: Button_12_ListSaveSuffix,
-            id: Button_12_IdClass,
-            className: Button_12_IdClass,
-            text: Button_12_Text,
-            altText: Button_12_AltText,
-            fileName: Button_12_FileName,
-            url: Button_12_URL,
-            banReason: Button_12_BanReason,
-            action: Button_12_Action,
-            placeholder: false
-        },
-        {
-            number: '13',
-            saveSuffix: Button_13_ListSaveSuffix,
-            id: Button_13_IdClass,
-            className: Button_13_IdClass,
-            text: Button_13_Text,
-            altText: Button_13_AltText,
-            fileName: Button_13_FileName,
-            url: Button_13_URL,
-            banReason: Button_13_BanReason,
-            action: Button_13_Action,
-            placeholder: true
-        },
-        {
-            number: '14',
-            saveSuffix: Button_14_ListSaveSuffix,
-            id: Button_14_IdClass,
-            className: Button_14_IdClass,
-            text: Button_14_Text,
-            altText: Button_14_AltText,
-            fileName: Button_14_FileName,
-            url: Button_14_URL,
-            banReason: Button_14_BanReason,
-            action: Button_14_Action,
-            placeholder: true
-        },
-        {
-            number: '15',
-            saveSuffix: Button_15_ListSaveSuffix,
-            id: Button_15_IdClass,
-            className: Button_15_IdClass,
-            text: Button_15_Text,
-            altText: Button_15_AltText,
-            fileName: Button_15_FileName,
-            url: Button_15_URL,
-            banReason: Button_15_BanReason,
-            action: Button_15_Action,
-            placeholder: false
-        },
-        {
-            number: '16',
-            saveSuffix: Button_16_ListSaveSuffix,
-            id: Button_16_IdClass,
-            className: Button_16_IdClass,
-            text: Button_16_Text,
-            altText: Button_16_AltText,
-            fileName: Button_16_FileName,
-            url: Button_16_URL,
-            banReason: Button_16_BanReason,
-            action: Button_16_Action,
-            placeholder: false
-        }
+        { number: '01', saveSuffix: Button_01_ListSaveSuffix, id: Button_01_IdClass, className: Button_01_IdClass, text: Button_01_Text, altText: Button_01_AltText,
+            fileName: Button_01_FileName, url: Button_01_URL, banReason: Button_01_BanReason, action: Button_01_Action, placeholder: false },
+        { number: '02', saveSuffix: Button_02_ListSaveSuffix, id: Button_02_IdClass, className: Button_02_IdClass, text: Button_02_Text, altText: Button_02_AltText,
+            fileName: Button_02_FileName, url: Button_02_URL, banReason: Button_02_BanReason, action: Button_02_Action, placeholder: false },
+        { number: '03', saveSuffix: Button_03_ListSaveSuffix, id: Button_03_IdClass, className: Button_03_IdClass, text: Button_03_Text, altText: Button_03_AltText,
+            fileName: Button_03_FileName, url: Button_03_URL, banReason: Button_03_BanReason, action: Button_03_Action, placeholder: false },
+        { number: '04', saveSuffix: Button_04_ListSaveSuffix, id: Button_04_IdClass, className: Button_04_IdClass, text: Button_04_Text, altText: Button_04_AltText,
+            fileName: Button_04_FileName, url: Button_04_URL, banReason: Button_04_BanReason, action: Button_04_Action, placeholder: false },
+        { number: '05', saveSuffix: Button_05_ListSaveSuffix, id: Button_05_IdClass, className: Button_05_IdClass, text: Button_05_Text, altText: Button_05_AltText,
+            fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, action: Button_05_Action, placeholder: false },
+        { number: '06', saveSuffix: Button_06_ListSaveSuffix, id: Button_06_IdClass, className: Button_06_IdClass, text: Button_06_Text, altText: Button_06_AltText,
+            fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, action: Button_06_Action, placeholder: true },
+        { number: '07', saveSuffix: Button_07_ListSaveSuffix, id: Button_07_IdClass, className: Button_07_IdClass, text: Button_07_Text, altText: Button_07_AltText,
+            fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, action: Button_07_Action, placeholder: true },
+        { number: '08', saveSuffix: Button_08_ListSaveSuffix, id: Button_08_IdClass, className: Button_08_IdClass, text: Button_08_Text, altText: Button_08_AltText,
+            fileName: Button_08_FileName, url: Button_08_URL, banReason: Button_08_BanReason, action: Button_08_Action, placeholder: false },
+        { number: '09', saveSuffix: Button_09_ListSaveSuffix, id: Button_09_IdClass, className: Button_09_IdClass, text: Button_09_Text, altText: Button_09_AltText,
+            fileName: Button_09_FileName, url: Button_09_URL, banReason: Button_09_BanReason, action: Button_09_Action, placeholder: false },
+        { number: '10', saveSuffix: Button_10_ListSaveSuffix, id: Button_10_IdClass, className: Button_10_IdClass, text: Button_10_Text, altText: Button_10_AltText,
+            fileName: Button_10_FileName, url: Button_10_URL, banReason: Button_10_BanReason, action: Button_10_Action, placeholder: false },
+        { number: '11', saveSuffix: Button_11_ListSaveSuffix, id: Button_11_IdClass, className: Button_11_IdClass, text: Button_11_Text, altText: Button_11_AltText,
+            fileName: Button_11_FileName, url: Button_11_URL, banReason: Button_11_BanReason, action: Button_11_Action, placeholder: false },
+        { number: '12', saveSuffix: Button_12_ListSaveSuffix, id: Button_12_IdClass, className: Button_12_IdClass, text: Button_12_Text, altText: Button_12_AltText,
+            fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, action: Button_12_Action, placeholder: false },
+        { number: '13', saveSuffix: Button_13_ListSaveSuffix, id: Button_13_IdClass, className: Button_13_IdClass, text: Button_13_Text, altText: Button_13_AltText,
+            fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, action: Button_13_Action, placeholder: true },
+        { number: '14', saveSuffix: Button_14_ListSaveSuffix, id: Button_14_IdClass, className: Button_14_IdClass, text: Button_14_Text, altText: Button_14_AltText,
+            fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, action: Button_14_Action, placeholder: true },
+        { number: '15', saveSuffix: Button_15_ListSaveSuffix, id: Button_15_IdClass, className: Button_15_IdClass, text: Button_15_Text, altText: Button_15_AltText,
+            fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, action: Button_15_Action, placeholder: false },
+        { number: '16', saveSuffix: Button_16_ListSaveSuffix, id: Button_16_IdClass, className: Button_16_IdClass, text: Button_16_Text, altText: Button_16_AltText,
+            fileName: Button_16_FileName, url: Button_16_URL, banReason: Button_16_BanReason, action: Button_16_Action, placeholder: false }
     ];
     // Laufzeitstatus der aktuellen Listenaktion.
     let isPaused = false;
@@ -405,10 +229,7 @@
         for (const user of users) {
             const normalizedUser = normalizeUser(user);
             if (!isValidUsername(normalizedUser)) {
-                console.warn(
-                    LOGPREFIX,
-                    `Ungültiger Benutzername wurde ignoriert: ${normalizedUser}`
-                );
+                console.warn(LOGPREFIX, `Ungültiger Benutzername wurde ignoriert: ${normalizedUser}`);
                 continue;
             }
             queueList.add(normalizedUser);
@@ -489,11 +310,7 @@
                 ? parsedValue
                 : [];
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Ungültige Daten im Speicher-Schlüssel "${storageKey(key)}":`,
-                error
-            );
+            console.error(LOGPREFIX, `Ungültige Daten im Speicher-Schlüssel "${storageKey(key)}":`, error);
             return [];
         }
     }
@@ -505,11 +322,7 @@
             );
             return true;
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Konnte Liste "${storageKey(key)}" nicht speichern:`,
-                error
-            );
+            console.error(LOGPREFIX, `Konnte Liste "${storageKey(key)}" nicht speichern:`, error);
             return false;
         }
     }
@@ -521,11 +334,7 @@
             }
             return JSON.parse(value);
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Ungültiger Speicherwert für "${storageKey(key)}":`,
-                error
-            );
+            console.error(LOGPREFIX, `Ungültiger Speicherwert für "${storageKey(key)}":`, error);
             return fallback;
         }
     }
@@ -537,11 +346,7 @@
             );
             return true;
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Konnte Speicherwert "${storageKey(key)}" nicht speichern:`,
-                error
-            );
+            console.error(LOGPREFIX, `Konnte Speicherwert "${storageKey(key)}" nicht speichern:`, error);
             return false;
         }
     }
@@ -554,7 +359,6 @@
     // Prüft, ob ein Benutzername dem erwarteten Twitch-Format entspricht.
     function isValidUsername(user) {
         const normalizedUser = normalizeUser(user);
-
         return /^[a-z0-9_]{1,25}$/.test(normalizedUser);
     }
     // Wandelt einen Text oder ein Array in eine bereinigte Benutzerliste um.
@@ -879,11 +683,7 @@
                 status
             };
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Quick check für ${listConfig.fileName} fehlgeschlagen:`,
-                error
-            );
+            console.error(LOGPREFIX, `Quick check für ${listConfig.fileName} fehlgeschlagen:`, error);
             const status = {
                 status: 'error',
                 total: 0,
@@ -916,10 +716,7 @@
             return;
         }
         if (!activeChannel) {
-            console.warn(
-                LOGPREFIX,
-                'Quick check blockiert: Kein aktiver Kanal.'
-            );
+            console.warn(LOGPREFIX, 'Quick check blockiert: Kein aktiver Kanal.');
             return;
         }
         const activeLists = LIST_BUTTONS.filter(
@@ -982,27 +779,8 @@
         }
         // Bekannte Twitch-Systemseiten sind keine Kanäle.
         const nonChannelRoutes = new Set([
-            'about',
-            'clip',
-            'directory',
-            'downloads',
-            'friends',
-            'following',
-            'inventory',
-            'jobs',
-            'login',
-            'logout',
-            'notifications',
-            'p',
-            'search',
-            'settings',
-            'subscriptions',
-            'turbo',
-            'user',
-            'users',
-            'videos',
-            'wallet',
-            'whispers'
+            'about', 'clip', 'directory', 'downloads', 'friends', 'following', 'inventory', 'jobs', 'login', 'logout',
+            'notifications', 'p', 'search', 'settings', 'subscriptions', 'turbo', 'user', 'users', 'videos', 'wallet', 'whispers'
         ]);
         if (nonChannelRoutes.has(firstPart)) {
             return '';
@@ -1021,11 +799,7 @@
         try {
             return decodeURIComponent(match[1]).toLowerCase();
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                'Kanalname aus der Moderator-URL konnte nicht dekodiert werden:',
-                error
-            );
+            console.error(LOGPREFIX, 'Kanalname aus der Moderator-URL konnte nicht dekodiert werden:', error);
             return null;
         }
     }
@@ -1054,11 +828,7 @@
                 ? decodeURIComponent(match[1]).toLowerCase()
                 : null;
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                'Kanalname aus dem Mod-Link konnte nicht gelesen werden:',
-                error
-            );
+            console.error(LOGPREFIX, 'Kanalname aus dem Mod-Link konnte nicht gelesen werden:', error);
             return null;
         }
     }
@@ -1093,11 +863,7 @@
         );
     }
     activeChannel = getModeratedChannel();
-    console.log(
-        LOGPREFIX,
-        'Aktiv moderierbarer Kanal:',
-        activeChannel || '(kein moderierbarer Kanal)'
-    );
+    console.log(LOGPREFIX, 'Aktiv moderierbarer Kanal:', activeChannel || '(kein moderierbarer Kanal)');
     // ############################################################################
     // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
     let QMD_bannedUsersStore = [];
@@ -1202,383 +968,140 @@
     const html = /* html */ `
         <div id="magicMorningStar" class="magicMorningStar">
             <style>
-                .magicMorningStar {
-                    z-index: 99999999;
-                    position: absolute;
-                    top: 250px;
-                    left: 350px;
-                    width: 900px;
-                    min-width: 820px;
-                    max-width: calc(100vw - 24px);
-                    box-sizing: border-box;
-                    padding: 8px;
-                    background-color: var(--color-background-base);
-                    color: var(--color-text-base);
+                .magicMorningStar {z-index: 99999999; position: absolute; top: 250px; left: 350px; width: 900px; min-width: 820px;
+                    max-width: calc(100vw - 24px); box-sizing: border-box; padding: 8px;
+                    background-color: var(--color-background-base); color: var(--color-text-base);
                     border: var(--border-width-default) solid var(--color-border-base);
-                    box-shadow: var(--shadow-elevation-2);
-                    cursor: move;
+                    box-shadow: var(--shadow-elevation-2); cursor: move;
                 }
-                .magicMorningStar .handle {
-                    cursor: move;
-                    user-select: none;
-                }
-                .magicMorningStar .svg {
-                    color: ${themeTextColor};
-                }
-                .magicMorningStar h6 {
-                    color: var(--color-hinted-grey-7);
-                }
-                .magicMorningStar h6 button {
-                    height: auto;
-                    background: none;
-                }
-                .magicMorningStar .header {
-                    display: flex;
-                    align-items: center;
-                }
-                .magicMorningStar .logo {
-                    min-height: 30px;
-                    line-height: 30px;
-                    font-weight: var(--font-weight-semibold);
-                    --color: var(--color-text-link);
-                }
-                .magicMorningStar .list {
-                    min-height: 8em;
-                    max-height: 350px;
-                    padding: 8px;
-                    margin: 4px 0;
-                    overflow-y: auto;
-                    background-color: var(--color-background-body);
-                    color: var(--color-text-base);
+                .magicMorningStar .handle { cursor: move; user-select: none; }
+                .magicMorningStar .svg { color: ${themeTextColor}; }
+                .magicMorningStar h6 { color: var(--color-hinted-grey-7); }
+                .magicMorningStar h6 button { height: auto; background: none; }
+                .magicMorningStar .header { display: flex; align-items: center; }
+                .magicMorningStar .logo { min-height: 30px; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
+                .magicMorningStar .list { min-height: 8em; max-height: 350px; padding: 8px; margin: 4px 0; overflow-y: auto;
+                    background-color: var(--color-background-body); color: var(--color-text-base);
                     border: var(--border-width-default) solid var(--color-border-base);
-                    border-radius: var(--border-radius-medium);
-                    box-sizing: border-box;
+                    border-radius: var(--border-radius-medium); box-sizing: border-box;
                 }
-                .magicMorningStar .list span {
-                    display: inline-block;
-                    font-weight: var(--font-weight-semibold);
-                    color: var(--color-text-base);
+                .magicMorningStar .list span { display: inline-block; font-weight: var(--font-weight-semibold); color: var(--color-text-base); }
+                .magicMorningStar .empty { padding: 2em; color: var(--color-text-base); text-align: center; opacity: 0.85; }
+                .magicMorningStar button { min-width: 30px; height: var(--button-size-default); margin: 1px; padding: 0 0.5em;
+                    border-radius: var(--border-radius-medium); background-color: var(--color-background-button-secondary-default);
+                    color: var(--color-text-button-secondary); font-size: var(--button-text-default);
+                    font-weight: var(--font-weight-semibold); text-align: center;
                 }
-                .magicMorningStar .empty {
-                    padding: 2em;
-                    color: var(--color-text-base);
-                    text-align: center;
-                    opacity: 0.85;
-                }
-                .magicMorningStar button {
-                    min-width: 30px;
-                    height: var(--button-size-default);
-                    margin: 1px;
-                    padding: 0 0.5em;
-                    border-radius: var(--border-radius-medium);
-                    background-color: var(--color-background-button-secondary-default);
-                    color: var(--color-text-button-secondary);
-                    font-size: var(--button-text-default);
-                    font-weight: var(--font-weight-semibold);
-                    text-align: center;
-                }
-                .magicMorningStar button:disabled {
-                    opacity: 0.45;
-                    cursor: not-allowed;
-                    filter: grayscale(70%);
-                }
+                .magicMorningStar button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(70%); }
                 .magicMorningStar button.ban,
-                .magicMorningStar button.banAll {
-                    background: #f44336;
-                    color: var(--color-text-button-primary);
-                }
-                .magicMorningStar button.ban {
-                    min-width: 60px;
-                }
-                .magicMorningStar button.banAll {
-                    min-width: 40px;
-                }
+                .magicMorningStar button.banAll { background: #f44336; color: var(--color-text-button-primary); }
+                .magicMorningStar button.ban { min-width: 60px; }
+                .magicMorningStar button.banAll { min-width: 40px; }
                 .magicMorningStar button.unban,
-                .magicMorningStar button.unbanAll {
-                    background: #34ae0c;
-                    color: var(--color-text-button-primary);
-                }
-                .magicMorningStar button.unban {
-                    min-width: 60px;
-                }
-                .magicMorningStar button.unbanAll {
-                    min-width: 40px;
-                }
+                .magicMorningStar button.unbanAll { background: #34ae0c; color: var(--color-text-button-primary); }
+                .magicMorningStar button.unban { min-width: 60px; }
+                .magicMorningStar button.unbanAll { min-width: 40px; }
                 /* Aktionszeile mit drei festen Bereichen */
-                .magicMorningStar .action-bar {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-                    align-items: center;
-                    width: 100%;
-                    padding: 10px 0;
-                    margin: 5px 0;
-                    gap: 8px;
+                .magicMorningStar .action-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                    align-items: center; width: 100%; padding: 10px 0; margin: 5px 0; gap: 8px;
                 }
                 /* Linke, mittlere und rechte Buttongruppe */
-                .magicMorningStar .action-group {
-                    display: flex;
-                    align-items: center;
-                    min-width: 0;
-                    gap: 4px;
-                }
-                .magicMorningStar .action-group-left {
-                    justify-content: flex-start;
-                }
-                .magicMorningStar .action-group-center {
-                    justify-content: center;
-                }
-                .magicMorningStar .action-group-right {
-                    justify-content: flex-end;
-                }
+                .magicMorningStar .action-group { display: flex; align-items: center; min-width: 0; gap: 4px; }
+                .magicMorningStar .action-group-left { justify-content: flex-start; }
+                .magicMorningStar .action-group-center { justify-content: center; }
+                .magicMorningStar .action-group-right { justify-content: flex-end; }
                 /* Einheitliche Buttonbreiten innerhalb der Aktionszeile */
-                .magicMorningStar .action-bar button {
-                    flex: 0 0 auto;
-                    min-height: 32px;
-                    white-space: nowrap;
-                }
+                .magicMorningStar .action-bar button { flex: 0 0 auto; min-height: 32px; white-space: nowrap; }
                 /* Neutrale Navigation */
-                .magicMorningStar .action-bar .back {
-                    min-width: 78px;
-                    background: #5f6368;
-                    color: #ffffff;
-                }
-                .magicMorningStar .action-bar .quickCheck {
-                    min-width: 96px;
-                    background: #2878b5;
-                    color: #ffffff;
-                }
-                .magicMorningStar .action-bar .quickCheck.is-checking {
-                    background: #6c757d;
-                    cursor: wait;
-                }
-                .magicMorningStar .list-button-row button.qmd-list-status {
-                    border: 2px solid rgba(255, 255, 255, 0.55);
-                    transition:
-                        background-color 160ms ease,
-                        border-color 160ms ease,
-                        filter 160ms ease;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-unknown {
-                    background: #6c757d !important;
-                    color: #ffffff !important;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-empty {
-                    background: #2878b5 !important;
-                    color: #ffffff !important;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-open {
-                    background: #c0392b !important;
-                    color: #ffffff !important;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-partial {
-                    background: #d99000 !important;
-                    color: #ffffff !important;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-complete {
-                    background: #218838 !important;
-                    color: #ffffff !important;
-                }
-                .magicMorningStar .list-button-row button.qmd-status-error {
-                    background: #5b3f8c !important;
-                    color: #ffffff !important;
-                }
+                .magicMorningStar .action-bar .back { min-width: 78px; background: #5f6368; color: #ffffff; }
+                .magicMorningStar .action-bar .quickCheck { min-width: 96px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .quickCheck.is-checking { background: #6c757d; cursor: wait; }
+                .magicMorningStar .list-button-row button.qmd-list-status { border: 2px solid rgba(255, 255, 255, 0.55);
+                    transition: background-color 160ms ease, border-color 160ms ease, filter 160ms ease; }
+                .magicMorningStar .list-button-row button.qmd-status-unknown { background: #6c757d !important; color: #ffffff !important; }
+                .magicMorningStar .list-button-row button.qmd-status-empty { background: #2878b5 !important; color: #ffffff !important; }
+                .magicMorningStar .list-button-row button.qmd-status-open { background: #c0392b !important; color: #ffffff !important; }
+                .magicMorningStar .list-button-row button.qmd-status-partial { background: #d99000 !important; color: #ffffff !important; }
+                .magicMorningStar .list-button-row button.qmd-status-complete { background: #218838 !important; color: #ffffff !important; }
+                .magicMorningStar .list-button-row button.qmd-status-error { background: #5b3f8c !important; color: #ffffff !important; }
                 /* Cache und externe Werkzeuge */
-                .magicMorningStar .action-bar .commanderRoot {
-                    min-width: 58px;
-                    background: #2878b5;
-                    color: #ffffff;
-                }
+                .magicMorningStar .action-bar .commanderRoot { min-width: 58px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .chatstats,
                 .magicMorningStar .action-bar .modLogger,
-                .magicMorningStar .action-bar .chatDeepStats {
-                    min-width: 48px;
-                    background: #2878b5;
-                    color: #ffffff;
-                }
+                .magicMorningStar .action-bar .chatDeepStats { min-width: 48px; background: #2878b5; color: #ffffff; }
                 /* Listenaktionen */
-                .magicMorningStar .action-bar .pause {
-                    min-width: 48px;
-                    background: #d99a00;
-                    color: #ffffff;
-                }
-                .magicMorningStar .action-bar .pause.is-paused {
-                    background: #b77900;
-                }
-                .magicMorningStar .action-bar .ignoreAll {
-                    min-width: 48px;
-                    background: #6c757d;
-                    color: #ffffff;
-                }
-                .magicMorningStar .action-bar .unbanAll {
-                    min-width: 48px;
-                    background: #34ae0c;
-                    color: #ffffff;
-                }
-                .magicMorningStar .action-bar .banAll {
-                    min-width: 48px;
-                    background: #f44336;
-                    color: #ffffff;
-                }
+                .magicMorningStar .action-bar .pause { min-width: 48px; background: #d99a00; color: #ffffff; }
+                .magicMorningStar .action-bar .pause.is-paused { background: #b77900; }
+                .magicMorningStar .action-bar .ignoreAll { min-width: 48px; background: #6c757d; color: #ffffff; }
+                .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff; }
+                .magicMorningStar .action-bar .banAll { min-width: 48px; background: #f44336; color: #ffffff; }
                 /* Einheitliches Hover-Verhalten */
-                .magicMorningStar .action-bar button:not(:disabled):hover {
-                    filter: brightness(1.12);
-                    transform: translateY(-1px);
-                }
-                .magicMorningStar .action-bar button:not(:disabled):active {
-                    filter: brightness(0.95);
-                    transform: translateY(0);
-                }
-                .magicMorningStar .import {
-                    min-height: 20px;
-                    padding: 3px;
-                    background: var(--color-background-body);
-                    border: var(--border-width-default) solid var(--color-border-base);
-                }
-                .magicMorningStar textarea {
-                    width: 100%;
-                    min-height: 8em;
-                    padding: 0.5em;
-                    background: var(--color-background-base);
-                    color: var(--color-text-base);
-                    font-size: 10pt;
-                }
-                .magicMorningStar .footer {
-                    display: block;
-                    width: 100%;
-                    margin-top: 6px;
-                    padding-top: 4px;
-                    border-top: 1px solid var(--color-border-base);
-                    font-size: 7pt;
-                    line-height: 1.4;
-                    text-align: center;
-                }
-                .magicMorningStar .list-status {
-                    display: none;
-                    width: 100%;
-                    margin-top: 2px;
-                    margin-bottom: 6px;
-                    padding: 0 8px;
-                    box-sizing: border-box;
-                    font-size: 9pt;
-                    line-height: 1.45;
-                    text-align: center;
-                    white-space: pre-line;
-                }
-                .magicMorningStar .list-limit-info {
-                    padding: 12px;
-                    color: var(--color-hinted-grey-7);
-                    text-align: center;
-                    font-size: 0.9em;
-                    line-height: 1.4;
-                }
-                .magicMorningStar .list-status.incomplete {
-                    color: #ff9a9a;
-                }
-                .magicMorningStar .list-status.complete {
-                    color: #9be7a1;
-                }
-                .magicMorningStar .list-status.paused {
-                    color: #f4d35e;
-                }
-                .magicMorningStar .list-button-row {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                .magicMorningStar .list-button-row button {
-                    box-sizing: border-box;
-                    overflow: visible;
-                    text-overflow: clip;
-                    white-space: pre-line;
-                    min-height: 40px;
-                    height: auto;
-                    padding: 4px 4px;
-                    font-size: 12px;
-                    line-height: 1.2;
-                    text-align: center;
+                .magicMorningStar .action-bar button:not(:disabled):hover { filter: brightness(1.12); transform: translateY(-1px); }
+                .magicMorningStar .action-bar button:not(:disabled):active { filter: brightness(0.95); transform: translateY(0); }
+                .magicMorningStar .import { min-height: 20px; padding: 3px; background: var(--color-background-body);
+                    border: var(--border-width-default) solid var(--color-border-base); }
+                .magicMorningStar textarea { width: 100%; min-height: 8em; padding: 0.5em; background: var(--color-background-base);
+                    color: var(--color-text-base); font-size: 10pt; }
+                .magicMorningStar .footer { display: block; width: 100%; margin-top: 6px; padding-top: 4px;
+                    border-top: 1px solid var(--color-border-base); font-size: 7pt; line-height: 1.4; text-align: center; }
+                .magicMorningStar .list-status { display: none; width: 100%; margin-top: 2px; margin-bottom: 6px; padding: 0 8px;
+                    box-sizing: border-box; font-size: 9pt; line-height: 1.45; text-align: center; white-space: pre-line; }
+                .magicMorningStar .list-limit-info { padding: 12px; color: var(--color-hinted-grey-7);
+                    text-align: center; font-size: 0.9em; line-height: 1.4; }
+                .magicMorningStar .list-status.incomplete { color: #ff9a9a; }
+                .magicMorningStar .list-status.complete { color: #9be7a1; }
+                .magicMorningStar .list-status.paused { color: #f4d35e; }
+                .magicMorningStar .list-button-row { display: flex; justify-content: center; align-items: center; }
+                .magicMorningStar .list-button-row button { box-sizing: border-box; overflow: visible; text-overflow: clip; white-space: pre-line;
+                    min-height: 40px; height: auto; padding: 4px 4px; font-size: 12px; line-height: 1.2; text-align: center;
                 }
             </style>
+
             <div class="header">
                 <span class="handle"></span>
                 <!-- Umschalter für die Sichtbarkeit des Mod-Menüs -->
-                <button
-                    class="modMenuToggle"
-                    type="button"
-                    title="Mod-Menü ein- oder ausblenden"
-                    aria-label="Mod-Menü ein- oder ausblenden"
-                    style="display: inline-flex;"
-                >
-                    <img
-                        class="modMenuToggleImage"
-                        src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
-                        title="Mod-Menü ein- oder ausblenden"
-                        alt="Mod-Menü"
-                        width="32"
-                        height="32"
-                    >
+                <button class="modMenuToggle" type="button" title="Mod-Menü ein- oder ausblenden" aria-label="Mod-Menü ein- oder ausblenden" style="display: inline-flex;" >
+                    <img class="modMenuToggleImage" src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
+                        title="Mod-Menü ein- oder ausblenden" alt="Mod-Menü" width="32" height="32" >
                 </button>
                 <span style="flex-grow: 1;"></span>
                 <!-- Repository-Link und Tool-Titel -->
                 <h5 id="header" class="logo">
-                    <a
-                        href="https://github.com/QueerModsDACH/MagicCleaningTool"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style="color: ${themeTextColor};"
-                        title="Zum QueerModsDACH Repository"
+                    <a href="https://github.com/QueerModsDACH/MagicCleaningTool" target="_blank" rel="noopener noreferrer"
+                        style="color: ${themeTextColor};" title="Zum QueerModsDACH Repository"
                     >
                         Magic Cleaning Tool&nbsp;&nbsp;
-                        <img
-                            src="${activateImage}"
-                            alt="Repository öffnen"
-                            width="18"
-                            height="18"
-                            style="vertical-align: middle;"
+                        <img src="${activateImage}" alt="Repository öffnen"
+                            width="18" height="18" style="vertical-align: middle;"
                         >
                         &nbsp;&nbsp;for a little better World
                     </a>
                 </h5>
                 <span style="flex-grow: 1;"></span>
                 <!-- Fenster schließen beziehungsweise minimieren -->
-                <button
-                    class="closeBtn"
-                    type="button"
-                    title="Tool minimieren"
-                    aria-label="Tool minimieren"
-                >
-                    <img
-                        src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png"
-                        alt="Tool minimieren"
-                        width="18"
-                        height="18"
+                <button class="closeBtn" type="button" title="Tool minimieren" aria-label="Tool minimieren" >
+                    <img src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png" alt="Tool minimieren"
+                        width="18" height="18"
                     >
                 </button>
             </div>
 
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
-                <textarea
-                    id="textfield"
-                    placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen"
-                ></textarea>
+                <textarea id="textfield" placeholder="für separaten ban, hier ein Benutzername pro Zeile einfügen" ></textarea>
                 <div style="text-align: right;">
-                    <button
-                        class="importBtn"
-                        type="button"
-                        title="Benutzer zur Liste hinzufügen"
-                        style="width: 32%; font-size: 12px; margin-right: 16px; margin-bottom: 16px;"
-                    >
+                    <button class="importBtn" type="button" title="Benutzer zur Liste hinzufügen"
+                        style="width: 32%; font-size: 12px; margin-right: 16px; margin-bottom: 16px;" >
                         &#8627; Benutzername(n) Hinzufügen
                     </button>
                 </div>
                 <!-- Zentral erzeugte Listenbuttons 01 bis 16 -->
                 ${listButtonsHtml}
-                <div style="text-align: left; margin-left: 16px; margin-top: 16px;">
-                    <input
-                        type="text"
-                        id="banReason"
-                        style="width: 66%;"
-                        placeholder="Hier optional einen eigenen Ban-Grund angeben"
+
+                <div style=" display: flex; align-items: center; gap: 8px; margin-left: 16px; margin-top: 16px; text-align: left; font-size: 12px;" >
+                    <label for="banReason">Bangrund:</label>
+                    <input type="text" id="banReason" style="width: 66%;"
+                        placeholder=" Hier OPTIONAL einen eigenen Ban-Grund angeben"
                     >
                 </div>
             </div>
@@ -1591,119 +1114,54 @@
             <div id="buttons" class="action-bar">
                 <!-- Linke Gruppe: Navigation -->
                 <div class="action-group action-group-left">
-                    <button
-                        class="back"
-                        type="button"
-                        title="Zurück"
-                        aria-label="Zurück"
-                    >
+                    <button class="back" type="button" title="Zurück" aria-label="Zurück" >
                         &#8592; zurück
                     </button>
-                    <button
-                        class="quickCheck"
-                        type="button"
-                        title="Bearbeitungsstand aller Listen prüfen"
-                        aria-label="Bearbeitungsstand aller Listen prüfen"
-                    >
+                    <button class="quickCheck" type="button" title="Bearbeitungsstand aller Listen prüfen" aria-label="Bearbeitungsstand aller Listen prüfen" >
                         &#9432; Quick check
                     </button>
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
                 <div class="action-group action-group-center">
-                    <button
-                        class="commanderRoot"
-                        type="button"
-                        title="Öffnet CommanderRoot"
-                        aria-label="CommanderRoot öffnen"
-                    >
+                    <button class="commanderRoot" type="button" title="Öffnet CommanderRoot" aria-label="CommanderRoot öffnen" >
                         <img src="https://twitch-tools.rootonline.de/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
-                    <button
-                        class="chatstats"
-                        type="button"
-                        title="Öffnet SullyGnome-Kanalstatistiken"
-                        aria-label="SullyGnome-Kanalstatistiken öffnen"
-                    >
+                    <button class="chatstats" type="button" title="Öffnet SullyGnome-Kanalstatistiken" aria-label="SullyGnome-Kanalstatistiken öffnen" >
                         <img src="https://sullygnome.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
-                    <button
-                        class="modLogger"
-                        type="button"
-                        title="Öffnet ModLogger für den aktuellen Kanal"
-                        aria-label="ModLogger öffnen"
-                    >
+                    <button class="modLogger" type="button" title="Öffnet ModLogger für den aktuellen Kanal" aria-label="ModLogger öffnen" >
                         &#9783;
                     </button>
-                    <button
-                        class="chatDeepStats"
-                        type="button"
-                        title="Öffnet ChatStats für den aktuellen Kanal"
-                        aria-label="ChatStats öffnen"
-                    >
+                    <button class="chatDeepStats" type="button" title="Öffnet ChatStats für den aktuellen Kanal" aria-label="ChatStats öffnen" >
                         📈
                     </button>
                 </div>
                 <!-- Rechte Gruppe: Listenaktionen -->
                 <div class="action-group action-group-right">
-                    <button
-                        class="pause"
-                        id="pause"
-                        type="button"
-                        title="Pause/Play"
-                        aria-label="Pause oder Fortsetzen"
-                    >
+                    <button class="pause" id="pause" type="button" title="Pause/Play" aria-label="Pause oder Fortsetzen" >
                         &#9208; &#9655;
                     </button>
-                    <button
-                        class="ignoreAll"
-                        type="button"
-                        title="Liste leeren"
-                        aria-label="Liste leeren"
-                    >
+                    <button class="ignoreAll" type="button" title="Liste leeren" aria-label="Liste leeren" >
                         &#10005;
                     </button>
-                    <button
-                        class="unbanAll"
-                        type="button"
-                        title="Alle auf der Liste entbannen"
-                        aria-label="Alle auf der Liste entbannen"
-                    >
+                    <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen" >
                         👹
                     </button>
-                    <button
-                        class="banAll"
-                        type="button"
-                        title="Alle auf der Liste bannen"
-                        aria-label="Alle auf der Liste bannen"
-                    >
+                    <button class="banAll" type="button" title="Alle auf der Liste bannen" aria-label="Alle auf der Liste bannen" >
                         &#9876;
                     </button>
                 </div>
             </div>
             <!-- Status der aktuell geladenen Liste -->
-            <div
-                id="listStatus"
-                class="list-status"
-                aria-live="polite"
+            <div id="listStatus" class="list-status" aria-live="polite"
             ></div>
             <!-- Footer mit Versionsnummer -->
             <div id="footer" class="footer">
-                <a
-                    href="${urlBannlisten}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style="color: ${themeTextColor};"
-                    id="replaceFooter"
-                    title="Zur Liste"
-                >
+                <a href="${urlBannlisten}" target="_blank" rel="noopener noreferrer" style="color: ${themeTextColor};" id="replaceFooter" title="Zur Liste" >
                     MagicCleaningTool Listen
                 </a>
                 &nbsp;-&nbsp;
-                <a
-                    id="manoooo"
-                    href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
-                    title="Aktuelle Version installieren"
-                >
+                <a id="manupdate" href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js" title="Aktuelle Version installieren" >
                     ${updateText}
                 </a>
                 &nbsp;-&nbsp;&nbsp;
@@ -1734,12 +1192,7 @@
     // Aktivierungsbutton für das Twitch-Menü.
     const activateBtn = document.createElement('button');
     activateBtn.innerHTML = `
-        <img
-            src="${activateImage}"
-            alt="Aktivieren"
-            width="25"
-            height="25"
-        >
+        <img src="${activateImage}" alt="Aktivieren" width="25" height="25" >
     `;
     activateBtn.style.cssText = `
         display: inline-flex;
@@ -1871,10 +1324,7 @@
             if (button) {
                 button.textContent = 'already banned';
             }
-            console.log(
-                LOGPREFIX,
-                `${normalizedUser} already banned in ${activeChannel}`
-            );
+            console.log(LOGPREFIX, `${normalizedUser} already banned in ${activeChannel}`);
         }
         if (shouldRender) {
             renderList();
@@ -1899,10 +1349,7 @@
             if (button) {
                 button.textContent = 'already unbanned';
             }
-            console.log(
-                LOGPREFIX,
-                `${normalizedUser} already unbanned in ${activeChannel}`
-            );
+            console.log(LOGPREFIX, `${normalizedUser} already unbanned in ${activeChannel}`);
         }
         if (shouldRender) {
             renderList();
@@ -1913,18 +1360,12 @@
     function show() {
         const moderatedChannel = getModeratedChannel();
         if (!moderatedChannel) {
-            console.warn(
-                LOGPREFIX,
-                'Tool konnte nicht geöffnet werden: Kein moderierbarer Kanal aktiv.'
-            );
+            console.warn(LOGPREFIX, 'Tool konnte nicht geöffnet werden: Kein moderierbarer Kanal aktiv.');
             hide();
             return;
         }
         activeChannel = moderatedChannel;
-        console.log(
-            LOGPREFIX,
-            `Tool für moderierten Kanal ${activeChannel} geöffnet.`
-        );
+        console.log(LOGPREFIX, `Tool für moderierten Kanal ${activeChannel} geöffnet.`);
         appendToolToDocument();
         d.style.display = '';
         enabled = true;
@@ -2065,12 +1506,7 @@
             isModMenuVisible
         );
         applyModMenuVisibility();
-        console.log(
-            LOGPREFIX,
-            `Mod-Menü ist jetzt ${
-                isModMenuVisible ? 'sichtbar' : 'verborgen'
-            }.`
-        );
+        console.log(LOGPREFIX, `Mod-Menü ist jetzt ${ isModMenuVisible ? 'sichtbar' : 'verborgen' }.`);
     }
     // ############################################################################
     // ##### VERSIONS- UND EXTERNE FUNKTIONEN #####################################
@@ -2114,7 +1550,7 @@
     // Prüft die aktuelle Version gegen die Version im Repository.
     async function checkVersion() {
         const versionElement =
-            d.querySelector('#manoooo');
+            d.querySelector('#manupdate');
         if (!versionElement) {
             return;
         }
@@ -2150,11 +1586,7 @@
                 versionElement.textContent = updateText;
             }
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                'Versionsprüfung fehlgeschlagen:',
-                error
-            );
+            console.error(LOGPREFIX, 'Versionsprüfung fehlgeschlagen:', error);
             versionElement.textContent = updateText;
         }
     }
@@ -2231,8 +1663,7 @@
     setupButtonEvents();
     restoreListStatuses();
     // Markiert manuell eingegebene Banngründe als benutzerdefiniert.
-    const banReasonInput =
-        d.querySelector('#banReason');
+    const banReasonInput = d.querySelector('#banReason');
     if (
         banReasonInput &&
         banReasonInput.dataset.reasonListenerAttached !== 'true'
@@ -2297,17 +1728,11 @@
     function importListByNumber(number) {
         const listConfig = getListConfig(number);
         if (!listConfig) {
-            console.error(
-                LOGPREFIX,
-                `Keine Konfiguration für Liste ${number} gefunden.`
-            );
+            console.error(LOGPREFIX, `Keine Konfiguration für Liste ${number} gefunden.`);
             return;
         }
         if (listConfig.placeholder) {
-            console.warn(
-                LOGPREFIX,
-                `Liste ${listConfig.number} ist nur ein Platzhalter.`
-            );
+            console.warn(LOGPREFIX, `Liste ${listConfig.number} ist nur ein Platzhalter.`);
             return;
         }
         importMDGGeneric(listConfig);
@@ -2347,14 +1772,10 @@
                 );
             }
         }
-        const footerText =
-            `Geladene Liste '${fileName}' anzeigen`;
+        const footerText = `Geladene Liste '${fileName}' anzeigen`;
         const footerHref = url;
         if (!isCurrentChannelModerated()) {
-            console.warn(
-                LOGPREFIX,
-                'Listenimport blockiert: Kein moderierbarer Kanal aktiv.'
-            );
+            console.warn(LOGPREFIX, 'Listenimport blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
         const normalizedAction =
@@ -2369,15 +1790,10 @@
         updateListStatus();
         updateBulkActionButtons();
         const usersToProcess = [];
-        const banReasonInput =
-            d.querySelector('#banReason');
-        const currentBanReason =
-            banReasonInput?.value.trim() || '';
-        const reasonWasAutomaticallyFilled =
-            banReasonInput?.dataset.reasonSource === 'list';
-        const shouldUseListReason =
-            !currentBanReason ||
-            reasonWasAutomaticallyFilled;
+        const banReasonInput = d.querySelector('#banReason');
+        const currentBanReason = banReasonInput?.value.trim() || '';
+        const reasonWasAutomaticallyFilled = banReasonInput?.dataset.reasonSource === 'list';
+        const shouldUseListReason = !currentBanReason || reasonWasAutomaticallyFilled;
         if (
             normalizedAction === 'ban' &&
             banReasonInput &&
@@ -2396,9 +1812,7 @@
                     .replace(/[\r\n]+/g, ' ')
                     .slice(0, 500)
                 : '';
-        const sourceButton = d.querySelector(
-            `#${buttonId}`
-        );
+        const sourceButton = d.querySelector( `#${buttonId}` );
         if (sourceButton) {
             sourceButton.disabled = true;
             sourceButton.setAttribute(
@@ -2417,8 +1831,7 @@
                 return response.text();
             })
             .then((data) => {
-                const parsedUsers =
-                    parseUserList(data);
+                const parsedUsers = parseUserList(data);
                 activeListInfo = {
                     fileName,
                     action: normalizedAction,
@@ -2429,10 +1842,7 @@
                 };
                 usersToProcess.push(...parsedUsers);
                 if (!isCurrentChannelModerated()) {
-                    console.warn(
-                        LOGPREFIX,
-                        'Listenimport wegen eines Kanalwechsels verworfen.'
-                    );
+                    console.warn(LOGPREFIX, 'Listenimport wegen eines Kanalwechsels verworfen.');
                     activeListAction = null;
                     usersToProcess.length = 0;
                     queueList.clear();
@@ -2465,8 +1875,7 @@
                         );
                     }
                 }
-                const textField =
-                    d.querySelector('#textfield');
+                const textField = d.querySelector('#textfield');
                 if (textField) {
                     textField.value = '';
                 }
@@ -2489,19 +1898,14 @@
                 }
             })
             .catch((error) => {
-                console.error(
-                    LOGPREFIX,
-                    `Liste konnte nicht geladen werden: ${url}`,
-                    error
-                );
+                console.error(LOGPREFIX, `Liste konnte nicht geladen werden: ${url}`, error);
                 activeListAction = null;
                 queueList.clear();
                 queueListSources.clear();
                 activeListInfo = null;
                 actionDurationSamples = [];
                 updateListStatus();
-                const textField =
-                    d.querySelector('#textfield');
+                const textField = d.querySelector('#textfield');
                 if (textField) {
                     textField.value = '';
                 }
@@ -2516,8 +1920,7 @@
                         defaultButtonText;
                 }
             });
-        const footer =
-            d.querySelector('#replaceFooter');
+        const footer = d.querySelector('#replaceFooter');
         if (footer) {
             footer.innerHTML = footerText;
             footer.href = footerHref;
@@ -2556,27 +1959,18 @@
             fetchWhitelist(WHITELISTED_USER_URL)
         ])
             .then(([botsData, userData]) => {
-                const botWhitelist =
-                    parseWhitelist(botsData);
-                const userWhitelist =
-                    parseWhitelist(userData);
+                const botWhitelist = parseWhitelist(botsData);
+                const userWhitelist = parseWhitelist(userData);
                 // Beide Whitelists in einem gemeinsamen Set zusammenführen.
                 whitelistUsers = new Set([
                     ...botWhitelist,
                     ...userWhitelist
                 ]);
-                console.log(
-                    LOGPREFIX,
-                    `${whitelistUsers.size} Benutzer aus beiden Whitelists geladen.`
-                );
+                console.log(LOGPREFIX, `${whitelistUsers.size} Benutzer aus beiden Whitelists geladen.`);
                 return whitelistUsers;
             })
             .catch((error) => {
-                console.error(
-                    LOGPREFIX,
-                    'Whitelists konnten nicht geladen werden:',
-                    error
-                );
+                console.error(LOGPREFIX, 'Whitelists konnten nicht geladen werden:', error);
                 // Beim nächsten Versuch erneut laden.
                 whitelistPromise = null;
                 throw error;
@@ -2591,54 +1985,34 @@
     // ############################################################################
     // ##### EINZEL- UND MASSENAKTIONEN ###########################################
     function ignoreAll() {
-        console.log(
-            LOGPREFIX,
-            'Ignoring all...',
-            queueList
-        );
+        console.log(LOGPREFIX, 'Ignoring all...', queueList);
         for (const user of [...queueList]) {
             ignoreItem(user);
         }
     }
     async function banAll() {
         if (!isCurrentChannelModerated()) {
-            console.warn(
-                LOGPREFIX,
-                'Ban All blockiert: Kein moderierbarer Kanal aktiv.'
-            );
+            console.warn(LOGPREFIX, 'Ban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
         if (activeListAction === 'unban') {
-            console.warn(
-                LOGPREFIX,
-                'Ban All wurde für eine Unban-Liste blockiert.'
-            );
+            console.warn(LOGPREFIX, 'Ban All wurde für eine Unban-Liste blockiert.');
             return;
         }
-        console.log(
-            LOGPREFIX,
-            'Banning all...',
-            queueList
-        );
+        console.log(LOGPREFIX, 'Banning all...', queueList);
         for (const user of [...queueList]) {
             while (isPaused) {
                 await delay(DELAY_PAUSE_CHECK);
             }
             if (!isCurrentChannelModerated()) {
-                console.warn(
-                    LOGPREFIX,
-                    'Ban All wegen eines Kanalwechsels abgebrochen.'
-                );
+                console.warn(LOGPREFIX, 'Ban All wegen eines Kanalwechsels abgebrochen.');
                 break;
             }
-            const actionStartedAt =
-                performance.now();
-            const wasBanned =
-                await banItem(user);
+            const actionStartedAt = performance.now();
+            const wasBanned = await banItem(user);
             if (wasBanned) {
                 await delay(DELAY_BAN_ACTION);
-                const actionDuration =
-                    performance.now() - actionStartedAt;
+                const actionDuration = performance.now() - actionStartedAt;
                 addActionDurationSample(
                     actionDuration
                 );
@@ -2648,43 +2022,27 @@
     }
     async function unbanAll() {
         if (!isCurrentChannelModerated()) {
-            console.warn(
-                LOGPREFIX,
-                'Unban All blockiert: Kein moderierbarer Kanal aktiv.'
-            );
+            console.warn(LOGPREFIX, 'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
         if (activeListAction === 'ban') {
-            console.warn(
-                LOGPREFIX,
-                'Unban All wurde für eine Bannliste blockiert.'
-            );
+            console.warn(LOGPREFIX, 'Unban All wurde für eine Bannliste blockiert.');
             return;
         }
-        console.log(
-            LOGPREFIX,
-            'Unbanning all...',
-            queueList
-        );
+        console.log(LOGPREFIX, 'Unbanning all...', queueList);
         for (const user of [...queueList]) {
             while (isPaused) {
                 await delay(DELAY_PAUSE_CHECK);
             }
             if (!isCurrentChannelModerated()) {
-                console.warn(
-                    LOGPREFIX,
-                    'Unban All wegen eines Kanalwechsels abgebrochen.'
-                );
+                console.warn(LOGPREFIX, 'Unban All wegen eines Kanalwechsels abgebrochen.');
                 break;
             }
-            const actionStartedAt =
-                performance.now();
-            const wasUnbanned =
-                await unbanItem(user);
+            const actionStartedAt = performance.now();
+            const wasUnbanned = await unbanItem(user);
             if (wasUnbanned) {
                 await delay(DELAY_UNBAN_ACTION);
-                const actionDuration =
-                    performance.now() - actionStartedAt;
+                const actionDuration = performance.now() - actionStartedAt;
                 addActionDurationSample(
                     actionDuration
                 );
@@ -2698,29 +2056,16 @@
             !activeChannel ||
             !isValidUsername(normalizedUser)
         ) {
-            console.warn(
-                LOGPREFIX,
-                'Usercard konnte nicht geöffnet werden:',
-                normalizedUser
-            );
+            console.warn(LOGPREFIX, 'Usercard konnte nicht geöffnet werden:', normalizedUser);
             return;
         }
-        const usercardUrl =
-            `https://www.twitch.tv/popout/${encodeURIComponent(activeChannel)}/viewercard/${encodeURIComponent(normalizedUser)}`;
-        console.log(
-            LOGPREFIX,
-            'Öffne Usercard:',
-            usercardUrl
-        );
+        const usercardUrl = `https://www.twitch.tv/popout/${encodeURIComponent(activeChannel)}/viewercard/${encodeURIComponent(normalizedUser)}`;
+        console.log(LOGPREFIX, 'Öffne Usercard:', usercardUrl);
         openExternal(usercardUrl);
     }
     function ignoreItem(user) {
         const normalizedUser = normalizeUser(user);
-        console.log(
-            LOGPREFIX,
-            'Ignore user:',
-            normalizedUser
-        );
+        console.log(LOGPREFIX, 'Ignore user:', normalizedUser);
         queueList.delete(normalizedUser);
         queueListSources.delete(normalizedUser);
         ignoredList.add(normalizedUser);
@@ -2736,34 +2081,20 @@
     }
     function unbanItem(user) {
         if (!isCurrentChannelModerated()) {
-            console.warn(
-                LOGPREFIX,
-                'Unban blockiert: Der aktuelle Kanal ist nicht moderierbar.'
-            );
+            console.warn(LOGPREFIX, 'Unban blockiert: Der aktuelle Kanal ist nicht moderierbar.');
             return false;
         }
         const actionChannel = activeChannel;
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
-            console.warn(
-                LOGPREFIX,
-                `Ungültiger Benutzername für Unban ignoriert: ${normalizedUser}`
-            );
+            console.warn(LOGPREFIX, `Ungültiger Benutzername für Unban ignoriert: ${normalizedUser}`);
             return false;
         }
-        console.log(
-            LOGPREFIX,
-            'Unban user:',
-            normalizedUser
-        );
+        console.log(LOGPREFIX, 'Unban user:', normalizedUser);
         try {
             sendMessage(`/unban ${normalizedUser}`);
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
-                error
-            );
+            console.error(LOGPREFIX, `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
             return false;
         }
         if (
@@ -2771,10 +2102,7 @@
             activeChannel !== actionChannel ||
             getModeratedChannel() !== actionChannel
         ) {
-            console.warn(
-                LOGPREFIX,
-                `Unban von ${normalizedUser} wurde wegen eines Kanalwechsels nicht gespeichert.`
-            );
+            console.warn(LOGPREFIX, `Unban von ${normalizedUser} wurde wegen eines Kanalwechsels nicht gespeichert.`);
             return false;
         }
         queueList.delete(normalizedUser);
@@ -2807,17 +2135,10 @@
     function removeModChannel(user) {
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
-            console.warn(
-                LOGPREFIX,
-                `Ungültiger Mod-Kanal kann nicht entfernt werden: ${normalizedUser}`
-            );
+            console.warn(LOGPREFIX, `Ungültiger Mod-Kanal kann nicht entfernt werden: ${normalizedUser}`);
             return;
         }
-        console.log(
-            LOGPREFIX,
-            'Remove User from ModChannels:',
-            normalizedUser
-        );
+        console.log(LOGPREFIX, 'Remove User from ModChannels:', normalizedUser);
         queueList.delete(normalizedUser);
         queueListSources.delete(normalizedUser);
         QMD_modChannelStore =
@@ -2839,32 +2160,22 @@
     }
     async function banItem(user) {
         if (!isCurrentChannelModerated()) {
-            console.warn(
-                LOGPREFIX,
-                'Ban blockiert: Der aktuelle Kanal ist nicht moderierbar.'
-            );
+            console.warn( LOGPREFIX, 'Ban blockiert: Der aktuelle Kanal ist nicht moderierbar.' );
             return false;
         }
         const actionChannel = activeChannel;
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
-            console.warn(
-                LOGPREFIX,
-                `Ungültiger Benutzername ignoriert: ${normalizedUser}`
-            );
+            console.warn(LOGPREFIX, `Ungültiger Benutzername ignoriert: ${normalizedUser}`);
             queueList.delete(normalizedUser);
             queueListSources.delete(normalizedUser);
             renderList();
             return false;
         }
         try {
-            const whitelisted =
-                await isUserWhitelisted(normalizedUser);
+            const whitelisted = await isUserWhitelisted(normalizedUser);
             if (whitelisted) {
-                console.log(
-                    LOGPREFIX,
-                    `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`
-                );
+                console.log(LOGPREFIX, `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`);
                 const listSuffixes =
                     queueListSources.get(
                         normalizedUser
@@ -2894,41 +2205,28 @@
                 return false;
             }
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
-                error
-            );
+            console.error(LOGPREFIX, `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`, error);
             return false;
         }
         const storedBanReason =
             activeListInfo?.action === 'ban'
                 ? activeListInfo.banReason
                 : '';
-        const safeReason =
-            storedBanReason ||
-            defaultBanReason;
+        const safeReason = storedBanReason || defaultBanReason;
         try {
             if (
                 !actionChannel ||
                 activeChannel !== actionChannel ||
                 getModeratedChannel() !== actionChannel
             ) {
-                console.warn(
-                    LOGPREFIX,
-                    `Ban von ${normalizedUser} wurde wegen eines Kanalwechsels abgebrochen.`
-                );
+                console.warn(LOGPREFIX, `Ban von ${normalizedUser} wurde wegen eines Kanalwechsels abgebrochen.`);
                 return false;
             }
             sendMessage(
                 `/ban ${normalizedUser} ${safeReason}`
             );
         } catch (error) {
-            console.error(
-                LOGPREFIX,
-                `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
-                error
-            );
+            console.error(LOGPREFIX, `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
             return false;
         }
         if (
@@ -2936,10 +2234,7 @@
             activeChannel !== actionChannel ||
             getModeratedChannel() !== actionChannel
         ) {
-            console.warn(
-                LOGPREFIX,
-                `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.`
-            );
+            console.warn(LOGPREFIX, `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.`);
             return false;
         }
         const listSuffixes =
@@ -2975,10 +2270,7 @@
     function addModChannel(user) {
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
-            console.warn(
-                LOGPREFIX,
-                `Ungültiger Mod-Kanal wurde ignoriert: ${normalizedUser}`
-            );
+            console.warn(LOGPREFIX, `Ungültiger Mod-Kanal wurde ignoriert: ${normalizedUser}`);
             return;
         }
         if (
@@ -2986,10 +2278,7 @@
                 normalizedUser
             )
         ) {
-            console.log(
-                LOGPREFIX,
-                `${normalizedUser} zu ModChannels hinzugefügt`
-            );
+            console.log(LOGPREFIX, `${normalizedUser} zu ModChannels hinzugefügt`);
             queueList.delete(normalizedUser);
             QMD_modChannelStore.push(normalizedUser);
             QMD_modChannelStore =
@@ -3004,10 +2293,7 @@
             }
             renderList();
         } else {
-            console.log(
-                LOGPREFIX,
-                `Benutzer ${normalizedUser} ist bereits in den ModChannels.`
-            );
+            console.log(LOGPREFIX, `Benutzer ${normalizedUser} ist bereits in den ModChannels.`);
         }
     }
     // ############################################################################
@@ -3022,8 +2308,7 @@
     }
     // Sendet eine Nachricht über den Slate-Editor von Twitch.
     function sendMessageSlate(message) {
-        const normalizedMessage =
-            String(message ?? '').trim();
+        const normalizedMessage = String(message ?? '').trim();
         if (!normalizedMessage) {
             throw new Error(
                 'Leere Chat-Nachricht wurde blockiert.'
@@ -3084,12 +2369,9 @@
     }
     // Aktiviert oder deaktiviert die Sammelbuttons abhängig vom aktuellen Modus.
     function updateBulkActionButtons() {
-        const banAllButton =
-            d.querySelector('.banAll');
-        const unbanAllButton =
-            d.querySelector('.unbanAll');
-        const hasQueueItems =
-            queueList.size > 0;
+        const banAllButton = d.querySelector('.banAll');
+        const unbanAllButton = d.querySelector('.unbanAll');
+        const hasQueueItems = queueList.size > 0;
         if (banAllButton) {
             const shouldDisable =
                 !hasQueueItems ||
@@ -3123,10 +2405,8 @@
     function getEffectiveBanReason(
         fallbackReason = defaultBanReason
     ) {
-        const banReasonInput =
-            d.querySelector('#banReason');
-        const enteredReason =
-            banReasonInput?.value.trim();
+        const banReasonInput = d.querySelector('#banReason');
+        const enteredReason = banReasonInput?.value.trim();
         const reason =
             enteredReason ||
             fallbackReason ||
@@ -3145,18 +2425,10 @@
         ) {
             return 'weniger als 1 Minute';
         }
-        const totalSeconds = Math.max(
-            1,
-            Math.ceil(milliseconds / 1000)
-        );
-        const hours =
-            Math.floor(totalSeconds / 3600);
-        const minutes =
-            Math.floor(
-                (totalSeconds % 3600) / 60
-            );
-        const seconds =
-            totalSeconds % 60;
+        const totalSeconds = Math.max( 1, Math.ceil(milliseconds / 1000) );
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor( (totalSeconds % 3600) / 60 );
+        const seconds = totalSeconds % 60;
         const parts = [];
         if (hours > 0) {
             parts.push(
@@ -3217,8 +2489,7 @@
     }
     // Aktualisiert die Statusanzeige der aktuell geladenen Liste.
     function updateListStatus() {
-        const statusElement =
-            d.querySelector('#listStatus');
+        const statusElement = d.querySelector('#listStatus');
         if (!statusElement) {
             return;
         }
@@ -3284,9 +2555,7 @@
                 `Übersprungen: ${skippedCount.toLocaleString('de-DE')}. `;
         }
         if (remainingCount > 0) {
-            const estimatedDuration =
-                remainingCount *
-                getAverageActionDuration();
+            const estimatedDuration = remainingCount * getAverageActionDuration();
             progressText +=
                 `Verbleibend: ${remainingCount.toLocaleString('de-DE')} … `;
             progressText +=
@@ -3328,14 +2597,9 @@
         if (!listElement) {
             return;
         }
-        const isSelectionView =
-            importDiv &&
-            importDiv.style.display !== 'none';
-        const quickCheckButton =
-            d.querySelector('.quickCheck');
-        const hasActiveList =
-            queueList.size > 0 ||
-            Boolean(activeListInfo);
+        const isSelectionView = importDiv && importDiv.style.display !== 'none';
+        const quickCheckButton = d.querySelector('.quickCheck');
+        const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
         const buttonsToToggle = [
             '.ignoreAll',
             '.banAll',
@@ -3376,42 +2640,21 @@
         );
         const renderItem = (item) => `
             <li>
-                <button
-                    class="usercard"
-                    data-user="${escapeHtml(item)}"
-                    title="Öffnet die Viewer-Card von ${escapeHtml(item)}"
-                    aria-label="Viewer-Card von ${escapeHtml(item)} öffnen"
-                >
+                <button class="usercard" data-user="${escapeHtml(item)}" title="Öffnet die Viewer-Card von ${escapeHtml(item)}" aria-label="Viewer-Card von ${escapeHtml(item)} öffnen" >
                     ?
                 </button>
-                <button
-                    class="ignore"
-                    data-user="${escapeHtml(item)}"
-                    title="Benutzer aus Liste entfernen"
-                >
+                <button class="ignore" data-user="${escapeHtml(item)}" title="Benutzer aus Liste entfernen" >
                     ❌
                 </button>
-                <button
-                    class="unban"
-                    data-user="${escapeHtml(item)}"
-                    title="Benutzer entbannen"
-                >
+                <button class="unban" data-user="${escapeHtml(item)}" title="Benutzer entbannen" >
                     Unban
                 </button>
-                <button
-                    class="ban"
-                    data-user="${escapeHtml(item)}"
-                    title="Benutzer bannen"
-                >
+                <button class="ban" data-user="${escapeHtml(item)}" title="Benutzer bannen" >
                     Ban
                 </button>
                 <span>
-                    <a
-                        href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
-                        title="Dieser User folgt … Weiterleitung zu CommanderRoot"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
+                    <a href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
+                        title="Dieser User folgt … Weiterleitung zu CommanderRoot" target="_blank" rel="noopener noreferrer" >
                         ${escapeHtml(item)}
                     </a>
                 </span>
@@ -3426,9 +2669,7 @@
                 inner += `
                     <li class="list-limit-info">
                         ${hiddenItemCount.toLocaleString('de-DE')}
-                        weitere Namen sind geladen, werden aber nicht
-                        gleichzeitig angezeigt.
-                        <br>
+                        weitere Namen sind geladen, werden aber nicht gleichzeitig angezeigt. <br>
                         Verwende „Alle bannen“ für die vollständige Liste.
                     </li>
                 `;
@@ -3436,14 +2677,8 @@
         } else {
             inner = `
                 <div id="empty" class="empty">
-                    <img
-                        class="toggleImport"
-                        src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
-                        title="Start Magic Cleaning Tool"
-                        alt="Magic Cleaning Tool starten"
-                        width="580"
-                        style="cursor: pointer; max-height: 270px; min-height: 270px"
-                    >
+                    <img class="toggleImport" src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
+                        title="Start Magic Cleaning Tool" alt="Magic Cleaning Tool starten" width="580" style="cursor: pointer; max-height: 270px; min-height: 270px" >
                 </div>
             `;
         }
@@ -3505,9 +2740,7 @@
     // Speichert den aktuell moderierten Kanal automatisch.
     function addCurrentModChannel() {
         const modButton = getModViewButton();
-        const chatButton = document.querySelector(
-            '[data-a-target="chat-send-button"]'
-        );
+        const chatButton = document.querySelector( '[data-a-target="chat-send-button"]' );
         const isModeratorPage =
             window.location.pathname
                 .toLowerCase()
@@ -3542,10 +2775,7 @@
                 sortAndStoreModChannels(
                     storedChannels
                 );
-            console.log(
-                LOGPREFIX,
-                `${currentChannel} wurde automatisch zu den ModChannels hinzugefügt`
-            );
+            console.log(LOGPREFIX, `${currentChannel} wurde automatisch zu den ModChannels hinzugefügt`);
             if (
                 typeof window.refreshQMDModMenu ===
                 'function'
@@ -3596,14 +2826,10 @@
                     processStoredModChannels()
                 );
             if (storedChannels.length === 0) {
-                const listItem =
-                    document.createElement('li');
-                const linkItem =
-                    document.createElement('a');
-                linkItem.innerText =
-                    'Bitte lies die Anleitung hier';
-                linkItem.href =
-                    'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.innerText = 'Bitte lies die Anleitung hier';
+                linkItem.href = 'https://github.com/QueerModsDACH/MagicCleaningTool/tree/main/Instructions';
                 linkItem.target = '_blank';
                 linkItem.rel = 'noopener noreferrer';
                 linkItem.title = 'Anleitung lesen';
@@ -3612,17 +2838,13 @@
                 return;
             }
             storedChannels.forEach((channel) => {
-                const listItem =
-                    document.createElement('li');
-                const linkItem =
-                    document.createElement('a');
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
                 linkItem.innerText = channel;
-                linkItem.href =
-                    `https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
+                linkItem.href = `https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
                 linkItem.target = '_blank';
                 linkItem.rel = 'noopener noreferrer';
-                linkItem.title =
-                    `Mod-View für den Kanal ${channel}`;
+                linkItem.title = `Mod-View für den Kanal ${channel}`;
                 linkItem.style.display = 'block';
                 linkItem.style.padding = '4px 8px';
                 linkItem.style.whiteSpace = 'nowrap';
@@ -3648,13 +2870,11 @@
                 applyModMenuVisibility();
                 return true;
             }
-            const logoContainer =
-                referenceButton.parentElement;
+            const logoContainer = referenceButton.parentElement;
             logoContainer.style.position = 'relative';
             logoContainer.style.display = 'flex';
             logoContainer.style.alignItems = 'center';
-            const dropdownButton =
-                document.createElement('button');
+            const dropdownButton = document.createElement('button');
             dropdownButton.id = 'modMenu';
             dropdownButton.type = 'button';
             dropdownButton.title = 'Mod-Kanäle';
@@ -3663,44 +2883,19 @@
                 'Mod-Kanäle öffnen'
             );
             dropdownButton.innerHTML = `
-                <img
-                    src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_axt.png"
-                    width="25"
-                    height="25"
-                    alt="Mod-Kanäle"
-                >
+                <img src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_axt.png"
+                    width="25" height="25" alt="Mod-Kanäle" >
             `;
             dropdownButton.style.cssText = `
-                width: 25px;
-                height: 25px;
-                padding: 0;
-                margin-left: 8px;
-                margin-top: 12px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                border: none;
-                color: #9146FF;
-                background-color: transparent;
-                cursor: pointer;
+                width: 25px; height: 25px; padding: 0; margin-left: 8px; margin-top: 12px; display: inline-flex;
+                align-items: center; justify-content: center; border: none; color: #9146FF; background-color: transparent; cursor: pointer;
             `;
             const dropdownList =
                 document.createElement('ul');
             dropdownList.style.cssText = `
-                display: none;
-                position: absolute;
-                top: 38px;
-                left: 38px;
-                z-index: 99999999;
-                min-width: 180px;
-                max-height: 70vh;
-                overflow-y: auto;
-                margin: 0;
-                padding: 8px;
-                list-style: none;
-                background-color: #000;
-                border: 1px solid #9146FF;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                display: none; position: absolute; top: 38px; left: 38px; z-index: 99999999;
+                min-width: 180px; max-height: 70vh; overflow-y: auto; margin: 0; padding: 8px;
+                list-style: none; background-color: #000; border: 1px solid #9146FF; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
             `;
             dropdownButton.addEventListener(
                 'click',
@@ -3718,8 +2913,7 @@
             dropdownList.addEventListener(
                 'click',
                 (event) => {
-                    const selectedLink =
-                        event.target.closest('a');
+                    const selectedLink = event.target.closest('a');
                     if (selectedLink) {
                         dropdownList.style.display = 'none';
                     }
@@ -3730,28 +2924,21 @@
                     const clickedInsideMenu =
                         (
                             state.logoContainer &&
-                            state.logoContainer.contains(
-                                event.target
-                            )
+                            state.logoContainer.contains( event.target )
                         ) ||
                         (
                             state.dropdownButton &&
-                            state.dropdownButton.contains(
-                                event.target
-                            )
+                            state.dropdownButton.contains( event.target )
                         ) ||
                         (
                             state.dropdownList &&
-                            state.dropdownList.contains(
-                                event.target
-                            )
+                            state.dropdownList.contains( event.target )
                         );
                     if (
                         !clickedInsideMenu &&
                         state.dropdownList
                     ) {
-                        state.dropdownList.style.display =
-                            'none';
+                        state.dropdownList.style.display = 'none';
                     }
                 };
                 document.addEventListener(
@@ -3774,24 +2961,20 @@
             return true;
         }
         function appendModMenuButton() {
-            const menuCreated =
-                createDropdownMenu();
+            const menuCreated = createDropdownMenu();
             if (!menuCreated) {
                 return;
             }
-            const modToolsAvailable =
-                hasModeratorTools();
+            const modToolsAvailable = hasModeratorTools();
             // Auf nicht moderierten Seiten werden Button und Liste entfernt.
             if (!modToolsAvailable) {
                 if (
-                    state.dropdownButton &&
-                    state.dropdownButton.isConnected
+                    state.dropdownButton && state.dropdownButton.isConnected
                 ) {
                     state.dropdownButton.remove();
                 }
                 if (
-                    state.dropdownList &&
-                    state.dropdownList.isConnected
+                    state.dropdownList && state.dropdownList.isConnected
                 ) {
                     state.dropdownList.remove();
                 }
@@ -3806,17 +2989,14 @@
             ) {
                 return;
             }
-            const logoContainer =
-                twitchLogo.parentElement;
+            const logoContainer = twitchLogo.parentElement;
             state.logoContainer = logoContainer;
             logoContainer.style.position = 'relative';
             logoContainer.style.display = 'flex';
             logoContainer.style.alignItems = 'center';
             // Button direkt neben dem Twitch-Logo einfügen.
             if (
-                !logoContainer.contains(
-                    state.dropdownButton
-                )
+                !logoContainer.contains( state.dropdownButton )
             ) {
                 if (twitchLogo.nextSibling) {
                     logoContainer.insertBefore(
@@ -3845,8 +3025,7 @@
         state.run = appendModMenuButton;
         // CSS für die Animation nur einmal hinzufügen.
         if (!document.getElementById('mod-menu-style')) {
-            const style =
-                document.createElement('style');
+            const style = document.createElement('style');
             style.id = 'mod-menu-style';
             style.textContent = `
                 @keyframes qmdModMenuPulse {
@@ -3872,23 +3051,17 @@
     // ############################################################################
     // ##### AKTIVIERUNGSBUTTON IM TWITCH-MENÜ ###################################
     function appendActivatorBtn() {
-        const moderatedChannel =
-            getModeratedChannel();
+        const moderatedChannel = getModeratedChannel();
         // Ohne nachweisbaren Moderationskontext wird der Button nicht angezeigt.
         if (!moderatedChannel) {
             if (enabled) {
-                console.log(
-                    LOGPREFIX,
-                    'Moderationskontext nicht mehr vorhanden. Tool wird ausgeblendet.'
-                );
+                console.log(LOGPREFIX, 'Moderationskontext nicht mehr vorhanden. Tool wird ausgeblendet.');
                 enabled = false;
                 hide();
             }
             return;
         }
-        const modBtn = document.querySelector(
-            '[data-test-selector="mod-view-link"], [data-a-target="mod-view-link"]'
-        );
+        const modBtn = document.querySelector( '[data-test-selector="mod-view-link"], [data-a-target="mod-view-link"]' );
         let anchorElement = modBtn;
         // Im Twitch-Mod-View gibt es möglicherweise keinen klassischen Mod-Link.
         if (!anchorElement) {
@@ -3907,10 +3080,7 @@
             twitchBar &&
             !twitchBar.contains(activateBtn)
         ) {
-            console.log(
-                LOGPREFIX,
-                `Moderationswerkzeuge für ${moderatedChannel} erkannt.`
-            );
+            console.log(LOGPREFIX, `Moderationswerkzeuge für ${moderatedChannel} erkannt.`);
             twitchBar.insertBefore(
                 activateBtn,
                 twitchBar.firstChild
@@ -3923,19 +3093,11 @@
         getModeratedChannel();
     // Reagiert auf Änderungen des aktuellen Moderationskanals.
     function refreshActiveChannel() {
-        const detectedChannel =
-            getModeratedChannel();
+        const detectedChannel = getModeratedChannel();
         if (detectedChannel === lastKnownChannel) {
             return;
         }
-        console.log(
-            LOGPREFIX,
-            `Moderationskontext geändert: ${
-                lastKnownChannel || '(kein Kanal)'
-            } → ${
-                detectedChannel || '(kein moderierbarer Kanal)'
-            }`
-        );
+        console.log(LOGPREFIX, `Moderationskontext geändert: ${lastKnownChannel || '(kein Kanal)'} → ${detectedChannel || '(kein moderierbarer Kanal)'}`);
         lastKnownChannel = detectedChannel;
         activeChannel = detectedChannel;
         restoreListStatuses();
@@ -3981,11 +3143,7 @@
                 appendActivatorBtn();
                 modMenu();
             } catch (error) {
-                console.error(
-                    LOGPREFIX,
-                    'Fehler im Twitch-Watchdog:',
-                    error
-                );
+                console.error(LOGPREFIX, 'Fehler im Twitch-Watchdog:', error);
             }
         },
         1000
