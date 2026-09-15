@@ -1060,10 +1060,10 @@
     let QMD_unbannedUsersStore = [];
     // Informationen zur aktuell geladenen externen Liste.
     let activeListInfo = null;
-    // Dauer der zuletzt ausgeführten Ban-/Unban-Aktionen. Die letzten zehn Werte werden für die Schätzung verwendet.
+    // Dauer der zuletzt ausgeführten Bann-/Unbann-Aktionen. Die letzten zehn Werte werden für die Schätzung verwendet.
     const ACTION_DURATION_SAMPLE_SIZE = 10;
     let actionDurationSamples = [];
-    // Lädt Bann- und Unbanlisten nur für einen moderierbaren Kanal.
+    // Lädt Bann- und Unbannlisten nur für einen moderierbaren Kanal.
     if (activeChannel) {
         QMD_bannedUsersStore = normalizeUserList(
             readStorageValue(
@@ -1325,9 +1325,9 @@
                 ${listButtonsHtml}
 
                 <div style=" display: flex; align-items: center; gap: 8px; margin-left: 16px; margin-top: 16px; text-align: left; font-size: 12px;" >
-                    <label for="banReason">Bangrund:</label>
+                    <label for="banReason">Banngrund:</label>
                     <input type="text" id="banReason" style="width: 66%;"
-                        placeholder=" Hier OPTIONAL einen eigenen Ban-Grund angeben"
+                        placeholder=" Hier OPTIONAL einen eigenen Bann-Grund angeben"
                     >
                 </div>
             </div>
@@ -2841,7 +2841,7 @@
         const reasonText =
             activeListInfo.action === 'unban'
                 ? 'Bei dieser Liste wird kein Banngrund angewandt.'
-                : `Es wird bei jedem Ban der Grund: \u25B6 ${
+                : `Es wird bei jedem Bann der Grund: \u25B6 ${
                     activeListInfo.banReason ||
                     defaultBanReason
                 } \u25C0 hinterlegt.`;
@@ -2953,10 +2953,10 @@
                     ❌
                 </button>
                 <button class="unban" data-user="${escapeHtml(item)}" title="Benutzer entbannen" >
-                    Unban
+                    unban
                 </button>
                 <button class="ban" data-user="${escapeHtml(item)}" title="Benutzer bannen" >
-                    Ban
+                    ban
                 </button>
                 <span>
                     <a href="https://twitch-tools.rootonline.de/followinglist_viewer.php?username=${encodeURIComponent(item)}"
