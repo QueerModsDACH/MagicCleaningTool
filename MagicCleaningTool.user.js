@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.7
+// @version      1.9.7.71
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.7';
+    const myVersion = '1.9.7.71';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -1245,7 +1245,6 @@
                 /* Listenaktionen */
                 .magicMorningStar .action-bar .pause { min-width: 48px; background: #d99a00; color: #ffffff; }
                 .magicMorningStar .action-bar .pause.is-paused { background: #b77900; }
-                .magicMorningStar .action-bar .ignoreAll { min-width: 48px; background: #6c757d; color: #ffffff; }
                 .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff; }
                 .magicMorningStar .action-bar .banAll { min-width: 48px; background: #f44336; color: #ffffff; }
                 /* Einheitliches Hover-Verhalten */
@@ -1369,9 +1368,6 @@
                 <div class="action-group action-group-right">
                     <button class="pause" id="pause" type="button" title="Pause/Play" aria-label="Pause oder Fortsetzen" >
                         &#9208; &#9655;
-                    </button>
-                    <button class="ignoreAll" type="button" title="Liste leeren" aria-label="Liste leeren" >
-                        &#10006;
                     </button>
                     <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen" >
                         &#128519;
@@ -1838,7 +1834,6 @@
     // ############################################################################
     // ##### BUTTON-EVENTS EINRICHTEN ############################################
     function setupButtonEvents() {
-        d.querySelector('.ignoreAll').onclick = ignoreAll;
         d.querySelector('.banAll').onclick = banAll;
         d.querySelector('.closeBtn').onclick = hide;
         d.querySelector('.unbanAll').onclick = unbanAll;
@@ -2225,12 +2220,6 @@
     }
     // ############################################################################
     // ##### EINZEL- UND MASSENAKTIONEN ###########################################
-    function ignoreAll() {
-        console.log(LOGPREFIX, 'Ignoring all...', queueList);
-        for (const user of [...queueList]) {
-            ignoreItem(user);
-        }
-    }
     async function banAll() {
         if (!isCurrentChannelModerated()) {
             console.warn(LOGPREFIX, 'Ban All blockiert: Kein moderierbarer Kanal aktiv.');
@@ -2904,7 +2893,6 @@
         const quickCheckButton = d.querySelector('.quickCheck');
         const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
         const buttonsToToggle = [
-            '.ignoreAll',
             '.banAll',
             '.pause',
             '.unbanAll'
