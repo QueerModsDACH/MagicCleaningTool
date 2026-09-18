@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.71
+// @version      1.9.7.72
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -15,7 +15,7 @@
     'use strict';
     // ############################################################################
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.71';
+    const myVersion = '1.9.7.72';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -215,10 +215,8 @@
         { number: '16', saveSuffix: Button_16_ListSaveSuffix, id: Button_16_IdClass, className: Button_16_IdClass, text: Button_16_Text, altText: Button_16_AltText,
             fileName: Button_16_FileName, url: Button_16_URL, banReason: Button_16_BanReason, action: Button_16_Action, placeholder: false }
     ];
-    // Laufzeitstatus der Listenaktionen.
-    const listPauseStates = new Map();
-    const pausedActionResumes = new Map();
-    const listRunningActions = new Map();
+    // Laufzeitstatus der aktuellen Sammelaktion.
+    let activeBulkAction = null;
     const queueList = new Set();
     let activeListAction = null;
     const queueListSources = new Map();
@@ -271,118 +269,124 @@
     );
     // ############################################################################
     // ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN ####################################
-    const delay = (time) => new Promise((resolve) => setTimeout(resolve, time));
-    function getListPauseKey(listInfo = activeListInfo) {
-        if (!listInfo) {
-            return null;
-        }
-        const channel =
-            listInfo.channel ||
-            activeChannel ||
-            '';
-        const listIdentifier =
-            listInfo.listSuffix ||
-            listInfo.fileName ||
-            'manual';
-        return [
-            channel,
-            listInfo.action || 'ban',
-            listIdentifier
-        ].join('|');
+const delay = (time) => new Promise((resolve) => setTimeout(resolve, time));
+function createBulkAction(action) {
+    if (
+        !activeListInfo ||
+        !activeChannel ||
+        queueList.size === 0
+    ) {
+        return null;
     }
-    function isListPaused(pauseKey) {
-        return Boolean(
-            pauseKey &&
-            listPauseStates.get(pauseKey) === true
+    const users = [...queueList];
+    const sources = new Map();
+    for (const user of users) {
+        sources.set(
+            user,
+            new Set(
+                queueListSources.get(user) || []
+            )
         );
+    }
+    return {
+        action,
+        channel: activeChannel,
+        listInfo: {
+            ...activeListInfo,
+            users: new Set(activeListInfo.users),
+            skippedUsers: new Set(
+                activeListInfo.skippedUsers || []
+            )
+        },
+        users,
+        sources,
+        cancelled: false,
+        cancelReason: '',
+        completed: 0,
+        successful: 0,
+        skipped: 0,
+        failed: 0,
+        startedAt: Date.now()
+    };
+}
+function isBulkActionActive(action) {
+    return Boolean(
+        action &&
+        activeBulkAction === action &&
+        !action.cancelled
+    );
+}
+function isBulkActionCancelled(action) {
+    if (!action) {
+        return false;
+    }
+    return Boolean(
+        action.cancelled ||
+        activeBulkAction !== action ||
+        activeChannel !== action.channel ||
+        !isCurrentChannelModerated()
+    );
+}
+function cancelActiveBulkAction(reason = 'manuell') {
+    if (!activeBulkAction) {
+        return false;
+    }
+    activeBulkAction.cancelled = true;
+    activeBulkAction.cancelReason = reason;
+    updateBulkActionControls();
+    updateListStatus();
+    return true;
+}
+
+function finishBulkAction(action) {
+    if (activeBulkAction !== action) {
+        return;
     }
 
-    function isListActionRunning(pauseKey) {
-        return Boolean(
-            pauseKey &&
-            listRunningActions.get(pauseKey) === true
-        );
+    activeBulkAction = null;
+
+    updateBulkActionControls();
+    renderList();
+    updateListStatus();
+
+    console.info(
+        LOGPREFIX,
+        action.cancelled
+            ? 'Sammelaktion abgebrochen.'
+            : 'Sammelaktion abgeschlossen.'
+    );
+}
+
+
+function getBulkActionStatusText(action) {
+    if (!action) {
+        return '';
     }
-    function updatePauseButton() {
-        const button = d.querySelector('.pause');
-        if (!button) {
-            return;
-        }
-        const pauseKey = getListPauseKey();
-        const actionRunning = isListActionRunning(pauseKey);
-        const listPaused = isListPaused(pauseKey);
-        button.disabled = !actionRunning;
-        button.setAttribute(
-            'aria-disabled',
-            String(!actionRunning)
-        );
-        if (!actionRunning) {
-            button.value = 'pause';
-            button.textContent = '\u23F8';
-            button.title = 'Keine laufende Aktion';
-            button.setAttribute(
-                'aria-label',
-                'Keine laufende Aktion'
-            );
-            button.classList.remove(
-                'is-paused'
-            );
-            return;
-        }
-        if (listPaused) {
-            button.value = 'play';
-            button.textContent = '\u25B6';
-            button.title = 'Fortsetzen';
-            button.setAttribute(
-                'aria-label',
-                'Aktionen fortsetzen'
-            );
-            button.classList.add('is-paused');
-        } else {
-            button.value = 'pause';
-            button.textContent = '\u23F8';
-            button.title = 'Pausieren';
-            button.setAttribute(
-                'aria-label',
-                'Aktionen pausieren'
-            );
-            button.classList.remove(
-                'is-paused'
-            );
-        }
+    const total = action.users.length;
+    const completed = action.completed;
+    const remaining = Math.max(
+        0,
+        total - completed
+    );
+    if (action.cancelled) {
+        return [
+            'Sammelaktion abgebrochen.',
+            `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
+            `${remaining.toLocaleString('de-DE')} Einträge verbleiben.`
+        ].join(' ');
     }
-    function waitForActionResume(pauseKey) {
-        if (!isListPaused(pauseKey)) {
-            return Promise.resolve();
-        }
-        return new Promise((resolve) => {
-            pausedActionResumes.set(
-                pauseKey,
-                resolve
-            );
-        });
+    if (completed >= total) {
+        return [
+            'Sammelaktion abgeschlossen.',
+            `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`
+        ].join(' ');
     }
-    function setListPauseState(
-        pauseKey,
-        shouldPause
-    ) {
-        if (!pauseKey) {
-            return;
-        }
-        listPauseStates.set(
-            pauseKey,
-            shouldPause
-        );
-        if (!shouldPause) {
-            const resumeAction = pausedActionResumes.get(pauseKey);
-            if (resumeAction) {
-                pausedActionResumes.delete(
-                    pauseKey
-                );
-                resumeAction();
-            }
-        }
-    }
+    return [
+        'Sammelaktion läuft.',
+        `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
+        `${remaining.toLocaleString('de-DE')} Einträge verbleiben.`
+    ].join(' ');
+}
     // Führt einen Fetch-Aufruf mit einem Zeitlimit aus.
     async function fetchWithTimeout(
         url,
@@ -1051,8 +1055,19 @@
         // Nur wenn Twitch keine sichtbare Mischschreibweise liefert, wird die Kleinschreibweise verwendet.
         return lowercaseFallback || normalizedChannel;
     }
-    activeChannel = getModeratedChannel();
-    activeChannelDisplay = getDisplayChannelName();
+const detectedChannel = getModeratedChannel();
+if (
+    activeBulkAction &&
+    detectedChannel !== activeBulkAction.channel
+) {
+    cancelActiveBulkAction(
+        'Kanalwechsel'
+    );
+}
+activeChannel =
+    detectedChannel;
+activeChannelDisplay =
+    getDisplayChannelName();
     console.log(LOGPREFIX, 'Aktiv moderierbarer Kanal:', activeChannel || '(kein moderierbarer Kanal)');
     // ############################################################################
     // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
@@ -1243,10 +1258,9 @@
                 .magicMorningStar .action-bar .modLogger,
                 .magicMorningStar .action-bar .chatDeepStats { min-width: 48px; background: #2878b5; color: #ffffff; }
                 /* Listenaktionen */
-                .magicMorningStar .action-bar .pause { min-width: 48px; background: #d99a00; color: #ffffff; }
-                .magicMorningStar .action-bar .pause.is-paused { background: #b77900; }
-                .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff; }
-                .magicMorningStar .action-bar .banAll { min-width: 48px; background: #f44336; color: #ffffff; }
+                .magicMorningStar .action-bar .cancelAction { min-width: 92px; background: #8f1d1d; color: #ffffff;}
+                .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff;}
+                .magicMorningStar .action-bar .banAll { min-width: 48px; background: #f44336; color: #ffffff;}
                 /* Einheitliches Hover-Verhalten */
                 .magicMorningStar .action-bar button:not(:disabled):hover { filter: brightness(1.12); transform: translateY(-1px); }
                 .magicMorningStar .action-bar button:not(:disabled):active { filter: brightness(0.95); transform: translateY(0); }
@@ -1262,7 +1276,8 @@
                     text-align: center; font-size: 0.9em; line-height: 1.4; }
                 .magicMorningStar .list-status.incomplete { color: #ff9a9a; }
                 .magicMorningStar .list-status.complete { color: #9be7a1; }
-                .magicMorningStar .list-status.paused { color: #f4d35e; }
+                .magicMorningStar .list-status.running { color: #f4d35e;}
+                .magicMorningStar .list-status.cancelled { color: #ff9a9a;}
                 .magicMorningStar .list-button-row { display: flex; justify-content: center; align-items: center; }
                 .magicMorningStar .list-button-row button { box-sizing: border-box; overflow: visible; text-overflow: clip; white-space: pre-line;
                     min-height: 40px; height: auto; padding: 4px 4px; font-size: 12px; line-height: 1.2; text-align: center;
@@ -1366,9 +1381,9 @@
 
                 <!-- Rechte Gruppe: Listenaktionen -->
                 <div class="action-group action-group-right">
-                    <button class="pause" id="pause" type="button" title="Pause/Play" aria-label="Pause oder Fortsetzen" >
-                        &#9208; &#9655;
-                    </button>
+                <button class="cancelAction" type="button" title="Keine weiteren Aktionen ausführen" aria-label="Laufende Sammelaktion abbrechen" hidden>
+                    &#10005; Abbrechen
+                </button>
                     <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen" >
                         &#128519;
                     </button>
@@ -1610,11 +1625,11 @@
         makeToolDraggable();
         renderList();
     }
-    function hide() {
-        console.log(LOGPREFIX, 'Hide');
-        d.style.display = 'none';
-        enabled = false;
-    }
+        function hide() {
+            console.log(LOGPREFIX, 'Hide');
+            d.style.display = 'none';
+            enabled = false;
+        }
     function toggle() {
         if (d.style.display !== 'none') {
             hide();
@@ -1642,6 +1657,9 @@
         renderList();
     }
     function toggleBack() {
+        if (activeBulkAction) {
+            return;
+        }
         queueList.clear();
         queueListSources.clear();
         activeListAction = null;
@@ -1672,22 +1690,6 @@
             loadedList.style.display = 'none';
         }
         renderList();
-    }
-    function togglePause() {
-        const pauseKey = getListPauseKey();
-        if (
-            !pauseKey ||
-            !isListActionRunning(pauseKey)
-        ) {
-            return;
-        }
-        const shouldPause = !isListPaused(pauseKey);
-        setListPauseState(
-            pauseKey,
-            shouldPause
-        );
-        updatePauseButton();
-        updateListStatus();
     }
     // ############################################################################
     // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
@@ -1838,7 +1840,9 @@
         d.querySelector('.closeBtn').onclick = hide;
         d.querySelector('.unbanAll').onclick = unbanAll;
         d.querySelector('.back').onclick = toggleBack;
-        d.querySelector('.pause').onclick = togglePause;
+        d.querySelector('.cancelAction').onclick = () => {
+            cancelActiveBulkAction('manuell');
+        };
         d.querySelector('.quickCheck').onclick = quickCheckLists;
         d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
         d.querySelector('.importBtn').onclick = importList;
@@ -1867,14 +1871,21 @@
             if (!target) {
                 return;
             }
-            if (target.matches('.ignore')) {
+            if (
+                target.matches('.ignore') &&
+                !activeBulkAction
+            ) {
                 ignoreItem(target.dataset.user);
             }
             if (target.matches('.ban')) {
-                banItem(target.dataset.user);
+                if (!activeBulkAction) {
+                    banItem(target.dataset.user);
+                }
             }
             if (target.matches('.unban')) {
-                unbanItem(target.dataset.user);
+                if (!activeBulkAction) {
+                    unbanItem(target.dataset.user);
+                }
             }
             if (target.matches('.usercard')) {
                 usercard(target.dataset.user);
@@ -1920,6 +1931,14 @@
     }
     // Übernimmt Benutzer aus der manuellen Eingabe in die Warteschlange.
     function importList() {
+        if (activeBulkAction) {
+            console.warn(
+                LOGPREFIX,
+                'Manueller Import während einer Sammelaktion blockiert.'
+            );
+            return;
+        }
+
         activeListAction = 'ban';
         const importTextarea =
             d.querySelector('.import textarea');
@@ -1948,6 +1967,7 @@
         }
         importTextarea.value = '';
         toggleImport();
+        updateBulkActionControls();
         renderList();
     }
     // Ermittelt eine Listen-Konfiguration anhand ihrer Nummer.
@@ -1973,6 +1993,13 @@
     }
     // Allgemeine Importfunktion für externe Listen.
     function importMDGGeneric(listConfig) {
+        if (activeBulkAction) {
+            console.warn(
+                LOGPREFIX,
+                'Listenimport während einer Sammelaktion blockiert.'
+            );
+            return;
+        }
         const {
             url,
             id: buttonId,
@@ -2022,7 +2049,7 @@
         actionDurationSamples = [];
         activeListInfo = null;
         updateListStatus();
-        updateBulkActionButtons();
+        updateBulkActionControls();
         const usersToProcess = [];
         const banReasonInput = d.querySelector('#banReason');
         const currentBanReason = banReasonInput?.value.trim() || '';
@@ -2082,7 +2109,7 @@
                     usersToProcess.length = 0;
                     queueList.clear();
                     queueListSources.clear();
-                    updateBulkActionButtons();
+                    updateBulkActionControls();
                     renderList();
                     if (sourceButton) {
                         sourceButton.disabled = false;
@@ -2144,7 +2171,7 @@
                 if (textField) {
                     textField.value = '';
                 }
-                updateBulkActionButtons();
+                updateBulkActionControls();
                 renderList();
                 if (sourceButton) {
                     sourceButton.disabled = false;
@@ -2220,118 +2247,138 @@
     }
     // ############################################################################
     // ##### EINZEL- UND MASSENAKTIONEN ###########################################
-    async function banAll() {
-        if (!isCurrentChannelModerated()) {
-            console.warn(LOGPREFIX, 'Ban All blockiert: Kein moderierbarer Kanal aktiv.');
-            return;
-        }
-        if (activeListAction === 'unban') {
-            console.warn(LOGPREFIX, 'Ban All wurde für eine Unban-Liste blockiert.');
-            return;
-        }
-        const actionPauseKey = getListPauseKey(activeListInfo);
-        if (
-            !actionPauseKey ||
-            isListActionRunning(actionPauseKey)
-        ) {
-            return;
-        }
-        listRunningActions.set(
-            actionPauseKey,
-            true
-        );
-        updatePauseButton();
-        console.log(LOGPREFIX, 'Banning all...', queueList);
-        try {
-            for (const user of [...queueList]) {
-                await waitForActionResume(
-                    actionPauseKey
-                );
-                if (!isCurrentChannelModerated()) {
-                    console.warn(LOGPREFIX, 'Ban All wegen eines Kanalwechsels abgebrochen.');
-                    break;
-                }
-                const actionStartedAt = performance.now();
-                const wasBanned = await banItem(user);
-                if (wasBanned) {
-                    await delay(
-                        DELAY_BAN_ACTION
-                    );
-                    const actionDuration = performance.now() - actionStartedAt;
-                    addActionDurationSample(
-                        actionDuration
-                    );
-                    updateListStatus();
-                }
-            }
-        } finally {
-            listRunningActions.delete(
-                actionPauseKey
-            );
-            setListPauseState(
-                actionPauseKey,
-                false
-            );
-            updatePauseButton();
-            updateListStatus();
-        }
+async function banAll() {
+    if (!isCurrentChannelModerated()) {
+        console.warn(LOGPREFIX,'Ban All blockiert: Kein moderierbarer Kanal aktiv.');
+        return;
     }
-    async function unbanAll() {
-        if (!isCurrentChannelModerated()) {
-            console.warn(LOGPREFIX, 'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
-            return;
-        }
-        if (activeListAction === 'ban') {
-            console.warn(LOGPREFIX, 'Unban All wurde für eine Bannliste blockiert.');
-            return;
-        }
-        const actionPauseKey = getListPauseKey(activeListInfo);
-        if (
-            !actionPauseKey ||
-            isListActionRunning(actionPauseKey)
-        ) {
-            return;
-        }
-        listRunningActions.set(
-            actionPauseKey,
-            true
-        );
-        updatePauseButton();
-        console.log(LOGPREFIX, 'Unbanning all...', queueList);
-        try {
-            for (const user of [...queueList]) {
-                await waitForActionResume(
-                    actionPauseKey
-                );
-                if (!isCurrentChannelModerated()) {
-                    console.warn(LOGPREFIX, 'Unban All wegen eines Kanalwechsels abgebrochen.');
-                    break;
-                }
-                const actionStartedAt = performance.now();
-                const wasUnbanned = await unbanItem(user);
-                if (wasUnbanned) {
-                    await delay(
-                        DELAY_UNBAN_ACTION
-                    );
-                    const actionDuration = performance.now() - actionStartedAt;
-                    addActionDurationSample(
-                        actionDuration
-                    );
-                    updateListStatus();
-                }
-            }
-        } finally {
-            listRunningActions.delete(
-                actionPauseKey
-            );
-            setListPauseState(
-                actionPauseKey,
-                false
-            );
-            updatePauseButton();
-            updateListStatus();
-        }
+    if (activeListAction === 'unban') {
+        console.warn(LOGPREFIX,'Ban All wurde für eine Unban-Liste blockiert.');
+        return;
     }
+    if (
+        activeBulkAction ||
+        queueList.size === 0 ||
+        !activeListInfo
+    ) {
+        return;
+    }
+    const action = createBulkAction('ban');
+    if (!action) {
+        return;
+    }
+    activeBulkAction = action;
+    updateBulkActionControls();
+    updateListStatus();
+    console.log(LOGPREFIX,'Banning all...', action.users);
+    try {
+        for (const user of action.users) {
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            const actionStartedAt = performance.now();
+            const wasBanned = await banItem(
+                user,
+                action
+            );
+            action.completed++;
+
+if (wasBanned) {
+    action.successful++;
+
+    addActionDurationSample(
+        performance.now() - actionStartedAt
+    );
+} else if (
+    action.cancelled
+) {
+    break;
+} else {
+    action.skipped++;
+}
+
+
+            updateListStatus();
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            await delay(DELAY_BAN_ACTION);
+        }
+    } catch (error) {
+        action.cancelled = true;
+        action.cancelReason = 'Fehler';
+        console.error(LOGPREFIX,'Ban-All-Aktion wurde wegen eines Fehlers beendet:', error);
+    } finally {
+        updateListStatus();
+        finishBulkAction(action);
+    }
+}
+async function unbanAll() {
+    if (!isCurrentChannelModerated()) {
+        console.warn(LOGPREFIX,'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
+        return;
+    }
+    if (activeListAction === 'ban') {
+        console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
+        return;
+    }
+    if (
+        activeBulkAction ||
+        queueList.size === 0 ||
+        !activeListInfo
+    ) {
+        return;
+    }
+    const action = createBulkAction('unban');
+    if (!action) {
+        return;
+    }
+    activeBulkAction = action;
+    updateBulkActionControls();
+    updateListStatus();
+    console.log(LOGPREFIX,'Unbanning all...', action.users);
+    try {
+        for (const user of action.users) {
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            const actionStartedAt = performance.now();
+            const wasUnbanned = await unbanItem(
+                user,
+                action
+            );
+            action.completed++;
+
+if (wasUnbanned) {
+    action.successful++;
+
+    addActionDurationSample(
+        performance.now() - actionStartedAt
+    );
+} else if (
+    action.cancelled
+) {
+    break;
+} else {
+    action.skipped++;
+}
+
+
+            updateListStatus();
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            await delay(DELAY_UNBAN_ACTION);
+        }
+    } catch (error) {
+        action.cancelled = true;
+        action.cancelReason = 'Fehler';
+        console.error(LOGPREFIX,'Unban-All-Aktion wurde wegen eines Fehlers beendet:', error);
+    } finally {
+        updateListStatus();
+        finishBulkAction(action);
+    }
+}
     function usercard(user) {
         const normalizedUser = normalizeUser(user);
         if (
@@ -2361,24 +2408,56 @@
         }
         renderList();
     }
-    function unbanItem(user) {
+    function unbanItem(
+        user,
+        action = null
+    ) {
+        if (
+            action &&
+            isBulkActionCancelled(action)
+        ) {
+            return false;
+        }
         if (!isCurrentChannelModerated()) {
             console.warn(LOGPREFIX, 'Unban blockiert: Der aktuelle Kanal ist nicht moderierbar.');
             return false;
         }
-        const actionChannel = activeChannel;
+        const actionChannel = action?.channel || activeChannel;
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
             console.warn(LOGPREFIX, `Ungültiger Benutzername für Unban ignoriert: ${normalizedUser}`);
             return false;
         }
         console.log(LOGPREFIX, 'Unban user:', normalizedUser);
-        try {
-            sendMessage(`/unban ${normalizedUser}`);
-        } catch (error) {
-            console.error(LOGPREFIX, `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
-            return false;
-        }
+
+if (
+    !actionChannel ||
+    activeChannel !== actionChannel ||
+    getModeratedChannel() !== actionChannel ||
+    (
+        action &&
+        isBulkActionCancelled(action)
+    )
+) {
+    console.warn(
+        LOGPREFIX,
+        `Unban von ${normalizedUser} wurde vor dem Senden abgebrochen.`
+    );
+    return false;
+}
+
+try {
+    sendMessage(`/unban ${normalizedUser}`);
+} catch (error) {
+    console.error(
+        LOGPREFIX,
+        `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+        error
+    );
+    return false;
+}
+
+
         if (
             !actionChannel ||
             activeChannel !== actionChannel ||
@@ -2387,8 +2466,20 @@
             console.warn(LOGPREFIX, `Unban von ${normalizedUser} wurde wegen eines Kanalwechsels nicht gespeichert.`);
             return false;
         }
-        queueList.delete(normalizedUser);
-        queueListSources.delete(normalizedUser);
+        if (
+            action &&
+            isBulkActionCancelled(action)
+        ) {
+            return false;
+        }
+if (
+    !action ||
+    activeBulkAction === action
+) {
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
+}
+
         if (
             !QMD_unbannedUsersStore.includes(
                 normalizedUser
@@ -2441,116 +2532,199 @@
         }
         renderList();
     }
-    async function banItem(user) {
-        if (!isCurrentChannelModerated()) {
-            console.warn( LOGPREFIX, 'Ban blockiert: Der aktuelle Kanal ist nicht moderierbar.' );
-            return false;
-        }
-        const actionChannel = activeChannel;
-        const normalizedUser = normalizeUser(user);
-        if (!isValidUsername(normalizedUser)) {
-            console.warn(LOGPREFIX, `Ungültiger Benutzername ignoriert: ${normalizedUser}`);
+async function banItem(
+    user,
+    action = null
+) {
+    if (
+        action &&
+        isBulkActionCancelled(action)
+    ) {
+        return false;
+    }
+    if (!isCurrentChannelModerated()) {
+        console.warn(
+            LOGPREFIX,
+            'Ban blockiert: Der aktuelle Kanal ist nicht moderierbar.'
+        );
+        return false;
+    }
+    const actionChannel =
+        action?.channel ||
+        activeChannel;
+    const normalizedUser =
+        normalizeUser(user);
+    if (!isValidUsername(normalizedUser)) {
+        console.warn(
+            LOGPREFIX,
+            `Ungültiger Benutzername ignoriert: ${normalizedUser}`
+        );
+        if (!action) {
             queueList.delete(normalizedUser);
             queueListSources.delete(normalizedUser);
             renderList();
+        }
+        return false;
+    }
+    const listInfo =
+        action?.listInfo ||
+        activeListInfo;
+    const sourceMap =
+        action?.sources ||
+        queueListSources;
+    const listSuffixes =
+        sourceMap.get(normalizedUser) ||
+        new Set();
+    try {
+        const whitelisted =
+            await isUserWhitelisted(normalizedUser);
+        if (
+            action &&
+            isBulkActionCancelled(action)
+        ) {
             return false;
         }
-        try {
-            const whitelisted = await isUserWhitelisted(normalizedUser);
-            if (whitelisted) {
-                console.log(LOGPREFIX, `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`);
-                const listSuffixes =
-                    queueListSources.get(
-                        normalizedUser
-                    ) || new Set();
-                for (const listSuffix of listSuffixes) {
-                    addUserToListStorage(
-                        actionChannel,
-                        'ban',
-                        listSuffix,
-                        normalizedUser,
-                        '_skipped'
-                    );
-                }
-                queueList.delete(normalizedUser);
-                queueListSources.delete(normalizedUser);
-                if (
-                    activeListInfo &&
-                    activeListInfo.users.has(
-                        normalizedUser
-                    )
-                ) {
-                    activeListInfo.skippedUsers.add(
-                        normalizedUser
-                    );
-                }
-                renderList();
-                return false;
-            }
-        } catch (error) {
-            console.error(LOGPREFIX, `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`, error);
-            return false;
-        }
-        const storedBanReason =
-            activeListInfo?.action === 'ban'
-                ? activeListInfo.banReason
-                : '';
-        const safeReason = storedBanReason || defaultBanReason;
-        try {
-            if (
-                !actionChannel ||
-                activeChannel !== actionChannel ||
-                getModeratedChannel() !== actionChannel
-            ) {
-                console.warn(LOGPREFIX, `Ban von ${normalizedUser} wurde wegen eines Kanalwechsels abgebrochen.`);
-                return false;
-            }
-            sendMessage(
-                `/ban ${normalizedUser} ${safeReason}`
+        if (whitelisted) {
+            console.log(
+                LOGPREFIX,
+                `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`
             );
-        } catch (error) {
-            console.error(LOGPREFIX, `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
+            for (const listSuffix of listSuffixes) {
+                addUserToListStorage(
+                    actionChannel,
+                    'ban',
+                    listSuffix,
+                    normalizedUser,
+                    '_skipped'
+                );
+            }
+
+if (
+    !action ||
+    activeBulkAction === action
+) {
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
+
+    if (
+        activeListInfo &&
+        activeListInfo.users.has(normalizedUser)
+    ) {
+        activeListInfo.skippedUsers.add(
+            normalizedUser
+        );
+    }
+
+    renderList();
+}
+
+
             return false;
         }
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
+            error
+        );
+        return false;
+    }
+    const storedBanReason =
+        listInfo?.action === 'ban'
+            ? listInfo.banReason
+            : '';
+    const safeReason =
+        storedBanReason ||
+        defaultBanReason;
+    if (
+        action &&
+        isBulkActionCancelled(action)
+    ) {
+        return false;
+    }
+    try {
         if (
             !actionChannel ||
             activeChannel !== actionChannel ||
             getModeratedChannel() !== actionChannel
         ) {
-            console.warn(LOGPREFIX, `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.`);
+            console.warn(
+                LOGPREFIX,
+                `Ban von ${normalizedUser} wurde wegen eines Kanalwechsels abgebrochen.`
+            );
             return false;
         }
-        const listSuffixes =
-            queueListSources.get(
-                normalizedUser
-            ) || new Set();
-        queueList.delete(normalizedUser);
-        queueListSources.delete(normalizedUser);
-        if (
-            !QMD_bannedUsersStore.includes(
-                normalizedUser
-            )
-        ) {
-            QMD_bannedUsersStore.push(
-                normalizedUser
-            );
-        }
-        writeStorageValue(
-            `${actionChannel}_banlist`,
-            QMD_bannedUsersStore
+        sendMessage(
+            `/ban ${normalizedUser} ${safeReason}`
         );
-        for (const listSuffix of listSuffixes) {
-            addUserToListStorage(
-                actionChannel,
-                'ban',
-                listSuffix,
-                normalizedUser
-            );
-        }
-        renderList();
-        return true;
+    } catch (error) {
+        console.error(
+            LOGPREFIX,
+            `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+            error
+        );
+        return false;
+    }
+    if (
+        action &&
+        isBulkActionCancelled(action)
+    ) {
+        return false;
+    }
+    if (
+        !actionChannel ||
+        activeChannel !== actionChannel ||
+        getModeratedChannel() !== actionChannel
+    ) {
+        console.warn(
+            LOGPREFIX,
+            `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.`
+        );
+        return false;
     }
 
+if (
+    !action ||
+    activeBulkAction === action
+) {
+    queueList.delete(normalizedUser);
+    queueListSources.delete(normalizedUser);
+}
+
+
+    if (
+        !QMD_bannedUsersStore.includes(
+            normalizedUser
+        )
+    ) {
+        QMD_bannedUsersStore.push(
+            normalizedUser
+        );
+    }
+    writeStorageValue(
+        `${actionChannel}_banlist`,
+        QMD_bannedUsersStore
+    );
+    for (const listSuffix of listSuffixes) {
+        addUserToListStorage(
+            actionChannel,
+            'ban',
+            listSuffix,
+            normalizedUser
+        );
+    }
+    if (
+        !action &&
+        activeListInfo &&
+        activeListInfo.users.has(normalizedUser)
+    ) {
+        activeListInfo.skippedUsers.delete(
+            normalizedUser
+        );
+    }
+    renderList();
+    return true;
+}
     function addModChannel(user) {
         const displayUser =
             String(user ?? '').trim();
@@ -2659,39 +2833,101 @@
         );
     }
     // Aktiviert oder deaktiviert die Sammelbuttons abhängig vom aktuellen Modus.
-    function updateBulkActionButtons() {
-        const banAllButton = d.querySelector('.banAll');
-        const unbanAllButton = d.querySelector('.unbanAll');
-        const hasQueueItems = queueList.size > 0;
-        if (banAllButton) {
-            const shouldDisable =
-                !hasQueueItems ||
-                activeListAction === 'unban';
-            banAllButton.disabled = shouldDisable;
-            banAllButton.setAttribute(
-                'aria-disabled',
-                String(shouldDisable)
-            );
-            banAllButton.title =
-                activeListAction === 'unban'
-                    ? 'Für eine Unban-Liste deaktiviert'
-                    : 'Alle auf der Liste bannen';
-        }
-        if (unbanAllButton) {
-            const shouldDisable =
-                !hasQueueItems ||
-                activeListAction === 'ban';
-            unbanAllButton.disabled = shouldDisable;
-            unbanAllButton.setAttribute(
-                'aria-disabled',
-                String(shouldDisable)
-            );
-            unbanAllButton.title =
-                activeListAction === 'ban'
-                    ? 'Für eine Bannliste deaktiviert'
-                    : 'Alle auf der Liste entbannen';
-        }
+function updateBulkActionControls() {
+    const isRunning =
+        activeBulkAction !== null;
+    const banAllButton =
+        d.querySelector('.banAll');
+    const unbanAllButton =
+        d.querySelector('.unbanAll');
+    const cancelButton =
+        d.querySelector('.cancelAction');
+    const backButton =
+        d.querySelector('.back');
+    const importButton =
+        d.querySelector('.importBtn');
+    const quickCheckButton =
+        d.querySelector('.quickCheck');
+    const hasQueueItems =
+        queueList.size > 0;
+    if (banAllButton) {
+        const shouldDisable =
+            isRunning ||
+            !hasQueueItems ||
+            activeListAction === 'unban';
+        banAllButton.disabled =
+            shouldDisable;
+        banAllButton.setAttribute(
+            'aria-disabled',
+            String(shouldDisable)
+        );
     }
+    if (unbanAllButton) {
+        const shouldDisable =
+            isRunning ||
+            !hasQueueItems ||
+            activeListAction === 'ban';
+        unbanAllButton.disabled =
+            shouldDisable;
+        unbanAllButton.setAttribute(
+            'aria-disabled',
+            String(shouldDisable)
+        );
+    }
+
+
+LIST_BUTTONS.forEach((listConfig) => {
+    const button = d.querySelector(
+        `#${listConfig.id}`
+    );
+
+    if (!button || listConfig.placeholder) {
+        return;
+    }
+
+    button.disabled =
+        isRunning;
+
+    button.setAttribute(
+        'aria-disabled',
+        String(isRunning)
+    );
+});
+
+
+    if (cancelButton) {
+        cancelButton.hidden =
+            !isRunning;
+        cancelButton.disabled =
+            !isRunning;
+        cancelButton.textContent =
+            '✕ Abbrechen';
+    }
+    if (backButton) {
+        backButton.disabled =
+            isRunning;
+        backButton.setAttribute(
+            'aria-disabled',
+            String(isRunning)
+        );
+    }
+    if (importButton) {
+        importButton.disabled =
+            isRunning;
+        importButton.setAttribute(
+            'aria-disabled',
+            String(isRunning)
+        );
+    }
+    if (quickCheckButton) {
+        quickCheckButton.disabled =
+            isRunning;
+        quickCheckButton.setAttribute(
+            'aria-disabled',
+            String(isRunning)
+        );
+    }
+}
     // Ermittelt den wirksamen Banngrund für eine Aktion.
     function getEffectiveBanReason(
         fallbackReason = defaultBanReason
@@ -2777,8 +3013,6 @@
             actionDurationSamples.shift();
         }
     }
-
-
     // Aktualisiert die Statusanzeige der aktuell geladenen Liste.
     function updateListStatus() {
         const statusElement = d.querySelector('#listStatus');
@@ -2867,19 +3101,19 @@
                     ? 'complete'
                     : 'incomplete'
             }`;
-        const activePauseKey = getListPauseKey(activeListInfo);
-        if (
-            isListPaused(activePauseKey) &&
-            remainingCount > 0
-        ) {
-            statusElement.classList.remove(
-                'incomplete'
-            );
-            statusElement.classList.add('paused');
-            statusElement.textContent +=
-                ' Status: pausiert.';
-        }
-        statusElement.style.display = 'block';
+if (activeBulkAction) {
+    statusElement.textContent =
+        getBulkActionStatusText(
+            activeBulkAction
+        );
+    statusElement.className =
+        activeBulkAction.cancelled
+            ? 'list-status cancelled'
+            : 'list-status running';
+    statusElement.style.display =
+        'block';
+    return;
+}
     }
     // ############################################################################
     // ##### LISTENANZEIGE UND RENDERING ##########################################
@@ -2894,21 +3128,40 @@
         const isSelectionView = importDiv && importDiv.style.display !== 'none';
         const quickCheckButton = d.querySelector('.quickCheck');
         const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
-        const buttonsToToggle = [
-            '.banAll',
-            '.pause',
-            '.unbanAll'
-        ];
-        buttonsToToggle.forEach((selector) => {
-            const button = d.querySelector(selector);
-            if (!button) {
-                return;
-            }
-            button.style.display =
-                queueList.size > 0
-                    ? ''
-                    : 'none';
-        });
+
+
+const buttonsToToggle = [
+    '.banAll',
+    '.unbanAll'
+];
+
+buttonsToToggle.forEach((selector) => {
+    const button = d.querySelector(selector);
+
+    if (!button) {
+        return;
+    }
+
+    button.style.display =
+        queueList.size > 0
+            ? ''
+            : 'none';
+});
+
+const cancelButton =
+    d.querySelector('.cancelAction');
+
+if (cancelButton) {
+    cancelButton.style.display =
+        activeBulkAction
+            ? ''
+            : 'none';
+
+    cancelButton.hidden =
+        !activeBulkAction;
+}
+
+
         const navigationDisplay =
             isSelectionView || hasActiveList
                 ? ''
@@ -2923,8 +3176,7 @@
                     ? ''
                     : 'none';
         }
-        updateBulkActionButtons();
-        updatePauseButton();
+        updateBulkActionControls();
         const allItems = Array.from(queueList);
         const visibleItems = allItems.slice(
             0,
@@ -3430,18 +3682,37 @@
             return;
         }
         console.log(LOGPREFIX, `Moderationskontext geändert: ${lastKnownChannel || '(kein Kanal)'} → ${detectedChannel || '(kein moderierbarer Kanal)'}`);
-        lastKnownChannel = detectedChannel;
-        activeChannel = detectedChannel;
-        activeChannelDisplay = getDisplayChannelName();
-        updateChannelInfo();
-        restoreListStatuses();
-        queueList.clear();
-        queueListSources.clear();
-        ignoredList.clear();
-        bannedList.clear();
-        activeListAction = null;
-        activeListInfo = null;
-        actionDurationSamples = [];
+
+lastKnownChannel =
+    detectedChannel;
+
+if (
+    activeBulkAction &&
+    detectedChannel !== activeBulkAction.channel
+) {
+    cancelActiveBulkAction(
+        'Kanalwechsel'
+    );
+}
+
+activeChannel =
+    detectedChannel;
+
+activeChannelDisplay =
+    getDisplayChannelName();
+
+updateChannelInfo();
+restoreListStatuses();
+
+queueList.clear();
+queueListSources.clear();
+ignoredList.clear();
+bannedList.clear();
+activeListAction = null;
+activeListInfo = null;
+actionDurationSamples = [];
+
+
         QMD_bannedUsersStore = [];
         QMD_unbannedUsersStore = [];
         if (activeChannel) {
@@ -3465,7 +3736,7 @@
         }
         updateListStatus();
         renderList();
-        updateBulkActionButtons();
+        updateBulkActionControls();
     }
     // ############################################################################
     // ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG ###############################
