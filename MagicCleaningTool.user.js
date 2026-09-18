@@ -73,7 +73,7 @@
     const Button_04_Action = 'ban';
     // Button 05
     const Button_05_IdClass = 'Button_05';
-    const Button_05_Text = '5B2Z Bots (a-m)\n…list currently being compiled…';
+    const Button_05_Text = '5B2Z Bots (a-q)\n…list currently being compiled…';
     const Button_05_BanReason = '5B2Z-Bot Account created on 5 May 2024 (QMD-List)';
     const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
     const Button_05_AltText = 'Importiert die 5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
@@ -2777,6 +2777,8 @@
             actionDurationSamples.shift();
         }
     }
+
+
     // Aktualisiert die Statusanzeige der aktuell geladenen Liste.
     function updateListStatus() {
         const statusElement = d.querySelector('#listStatus');
