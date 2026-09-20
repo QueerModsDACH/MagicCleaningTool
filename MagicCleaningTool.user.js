@@ -35,7 +35,7 @@
     // Button 01
     const Button_01_IdClass = 'Button_01';
     const Button_01_Text = 'follow bot\n( QMD-List )';
-    const Button_01_BanReason = 'follow bot (QMD-List)';
+    const Button_01_BanReason = 'follow BOT (QMD-List)';
     const Button_01_ListSaveSuffix = '_follow_bot_List';
     const Button_01_AltText = 'Importiert die follow_bot-Liste';
     const Button_01_FileName = 'follow_bot.txt';
@@ -71,7 +71,7 @@
     // Button 05
     const Button_05_IdClass = 'Button_05';
     const Button_05_Text = '5B2Z Bots (a-r)\n…list currently being compiled…';
-    const Button_05_BanReason = '5B2Z-Bot Account created on 5 May 2024 (QMD-List)';
+    const Button_05_BanReason = '5B2Z-BOT @240505 (QMD-List)';
     const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
     const Button_05_AltText = 'Importiert die 5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
     const Button_05_FileName = 'API_5B2Z_20240505_completely.txt';
@@ -80,7 +80,7 @@
     // Button 06
     const Button_06_IdClass = 'Button_06';
     const Button_06_Text = 'placeholder 06';
-    const Button_06_BanReason = defaultBanReason;
+    const Button_06_BanReason = '  (QMD-List)';
     const Button_06_ListSaveSuffix = '_List06';
     const Button_06_AltText = 'Importiert die 06-Liste';
     const Button_06_FileName = 'list06.txt';
@@ -89,7 +89,7 @@
     // Button 07
     const Button_07_IdClass = 'Button_07';
     const Button_07_Text = 'placeholder 07';
-    const Button_07_BanReason = defaultBanReason;
+    const Button_07_BanReason = '  (QMD-List)';
     const Button_07_ListSaveSuffix = '_List07';
     const Button_07_AltText = 'Importiert die 07-Liste';
     const Button_07_FileName = 'list07.txt';
@@ -98,7 +98,7 @@
     // Button 08
     const Button_08_IdClass = 'Button_08';
     const Button_08_Text = 'well known bots\n( from ti list )';
-    const Button_08_BanReason = 'LIST well known bots (QMD-List)';
+    const Button_08_BanReason = 'well known BOT (QMD-List by TI)';
     const Button_08_ListSaveSuffix = '_LIST_well_known_bots';
     const Button_08_AltText = 'Importiert die LIST_well_known_bots-Liste';
     const Button_08_FileName = 'LIST_well_known_ti_bots.txt';
@@ -107,7 +107,7 @@
     // Button 09
     const Button_09_IdClass = 'Button_09';
     const Button_09_Text = 'follower bot\n( from isds list )';
-    const Button_09_BanReason = 'LIST follower bot (QMD-List)';
+    const Button_09_BanReason = 'follower BOT (QMD-List by isds)';
     const Button_09_ListSaveSuffix = '_LIST_follower_bot';
     const Button_09_AltText = 'Importiert die LIST_follower_bot-Liste';
     const Button_09_FileName = 'LIST_follower_bot.txt';
@@ -116,7 +116,7 @@
     // Button 10
     const Button_10_IdClass = 'Button_10';
     const Button_10_Text = 'troll\n( from isds list )';
-    const Button_10_BanReason = 'LIST troll (QMD-List)';
+    const Button_10_BanReason = 'troll (QMD-List by isds)';
     const Button_10_ListSaveSuffix = '_LIST_troll';
     const Button_10_AltText = 'Importiert die LIST_troll-Liste';
     const Button_10_FileName = 'LIST_troll.txt';
@@ -125,7 +125,7 @@
     // Button 11
     const Button_11_IdClass = 'Button_11';
     const Button_11_Text = 'viewer bot\n( from isds list )';
-    const Button_11_BanReason = 'LIST viewer bot (QMD-List)';
+    const Button_11_BanReason = 'viewer BOT (QMD-List by isds)';
     const Button_11_ListSaveSuffix = '_LIST_viewer_bot';
     const Button_11_AltText = 'Importiert die LIST_viewer_bot-Liste';
     const Button_11_FileName = 'LIST_viewer_bot.txt';
@@ -134,7 +134,7 @@
     // Button 12
     const Button_12_IdClass = 'Button_12';
     const Button_12_Text = 'unwanted bots\n( from isds list )';
-    const Button_12_BanReason = 'LIST unwanted bots (QMD-List)';
+    const Button_12_BanReason = 'unwanted BOT (QMD-List by isds)';
     const Button_12_ListSaveSuffix = '_LIST_unwanted_bots';
     const Button_12_AltText = 'Importiert die LIST_mad_tos_porn_seller_spam_bot-Liste';
     const Button_12_FileName = 'LIST_mad_tos_porn_seller_spam_bot.txt';
