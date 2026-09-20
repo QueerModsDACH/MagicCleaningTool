@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.78
+// @version      1.9.7.79
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.78';
+    const myVersion = '1.9.7.79';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -1194,10 +1194,12 @@
                 .magicMorningStar .list-button-row button.qmd-status-complete { background: #218838 !important; color: #ffffff !important; }
                 .magicMorningStar .list-button-row button.qmd-status-error { background: #5b3f8c !important; color: #ffffff !important; }
                 /* Cache und externe Werkzeuge */
-                .magicMorningStar .action-bar .commanderRoot { min-width: 58px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .chatstats,
-                .magicMorningStar .action-bar .modLogger,
-                .magicMorningStar .action-bar .chatDeepStats { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .commanderRoot { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .chatstats { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .nightBot { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .mooBot { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .streamelements { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .streamlabs { min-width: 48px; background: #2878b5; color: #ffffff; }
                 /* Listenaktionen */
                 .magicMorningStar .action-bar .cancelAction { min-width: 92px; background: #8f1d1d; color: #ffffff;}
                 .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff;}
@@ -1297,13 +1299,19 @@
                         <img src="https://twitch-tools.rootonline.de/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
                     <button class="chatstats" type="button" title="Öffnet SullyGnome-Kanalstatistiken" aria-label="SullyGnome-Kanalstatistiken öffnen" >
-                        <img src="https://sullygnome.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
+                        <img src="https://sullygnome.com/Images/gnome.png" alt="" width="24" height="24" aria-hidden="true">
                     </button>
-                    <button class="modLogger" type="button" title="Öffnet ModLogger für den aktuellen Kanal" aria-label="ModLogger öffnen" >
-                        &#9783;
+                    <button class="nightBot" type="button" title="Öffnet NightBot" aria-label="NightBot öffnen" >
+                        <img src="https://logodix.com/logo/1909520.jpg" alt="" width="24" height="24" aria-hidden="true">
                     </button>
-                    <button class="chatDeepStats" type="button" title="Öffnet ChatStats für den aktuellen Kanal" aria-label="ChatStats öffnen" >
-                        &#128200;
+                    <button class="mooBot" type="button" title="Öffnet MooBot" aria-label="MooBot öffnen" >
+                        <img src="https://moo.bot/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
+                    </button>
+                    <button class="streamelements" type="button" title="Öffnet StreamElements" aria-label="StreamElements öffnen" >
+                        <img src="https://streamelements.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
+                    </button>
+                    <button class="streamlabs" type="button" title="Öffnet Streamlabs" aria-label="Streamlabs öffnen" >
+                        <img src="https://streamlabs.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
                     </button>
                 </div>
                 <!-- Rechte Gruppe: Listenaktionen -->
@@ -1857,8 +1865,10 @@
         d.querySelector('.importBtn').onclick = importList;
         d.querySelector('.commanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
         d.querySelector('.chatstats').onclick = () => openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.modLogger').onclick = () => openExternal(`https://jvpeek.github.io/twitchmodlogger/?channel=${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.chatDeepStats').onclick = () => openExternal(`https://echtkpvl.github.io/echt-twitch/chat-stats.html?channel=${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.nightBot').onclick = () => openExternal(`https://nightbot.tv/dashboard/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.mooBot').onclick = () => openExternal(`https://moo.bot/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.streamelements').onclick = () => openExternal(`https://streamelements.com/dashboard/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.streamlabs').onclick = () => openExternal(`https://streamlabs.com/dashboard/${encodeURIComponent(activeChannel)}`);
         // Verbindet alle verfügbaren Listenbuttons zentral mit ihrem Import.
         LIST_BUTTONS.forEach((listConfig) => {
             const button = d.querySelector(`#${listConfig.id}`);
