@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.76
+// @version      1.9.7.77
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.76';
+    const myVersion = '1.9.7.77';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -1127,7 +1127,7 @@
     const html = /* html */ `
         <div id="magicMorningStar" class="magicMorningStar">
             <style>
-                .magicMorningStar {z-index: 99999999; position: absolute; top: 250px; left: 350px; width: 900px; min-width: 820px;
+                .magicMorningStar {z-index: 99999999; position: absolute; top: 110px; left: 350px; width: 860px; min-width: 820px;
                     max-width: calc(100vw - 24px); box-sizing: border-box; padding: 8px;
                     background-color: var(--color-background-base); color: var(--color-text-base);
                     border: var(--border-width-default) solid var(--color-border-base);
@@ -1140,8 +1140,12 @@
                 .magicMorningStar .logo { min-height: 30px; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
                 .magicMorningStar .info-bar { display: flex; flex-direction: column; align-items: center; width: 100%; margin: 4px 0 8px; padding: 4px 8px 6px;
                     box-sizing: border-box; border-bottom: 1px solid var(--color-border-base); text-align: center; }
+
                 .magicMorningStar .channel-name { color: ${themeTextColor}; font-size: 20px; font-weight: var(--font-weight-semibold);
                     line-height: 1.3; letter-spacing: 0.2px; }
+                .magicMorningStar .moderator-name { color: ${themeTextColor}; font-size: 14px; font-weight: var(--font-weight-normal);
+                    line-height: 1.2; opacity: 0.85;}
+
                 .magicMorningStar #loadedList { color: var(--color-text-base); font-size: 9pt; line-height: 1.4; }
                 .magicMorningStar .list { min-height: 8em; max-height: 350px; padding: 8px; margin: 4px 0; overflow-y: auto;
                     background-color: var(--color-background-body); color: var(--color-text-base);
@@ -1210,6 +1214,7 @@
                 .magicMorningStar .list-status.incomplete {color: #ff9a9a;}
                 .magicMorningStar .list-status.partial {color: #f4d35e;}
                 .magicMorningStar .list-status.complete {color: #9be7a1;}
+                .magicMorningStar .list-status-complete-message { font-size: 26px; font-weight: bold; }
                 .magicMorningStar .list-status.running {color: #f4d35e;}
                 .magicMorningStar .list-status.cancelled {color: #ffa500;}
 
@@ -1244,6 +1249,7 @@
             <!-- Informationsbereich unterhalb des Headers -->
             <div class="info-bar" aria-live="polite">
                 <div id="channelName" class="channel-name"></div>
+                <div id="moderatorName" class="moderator-name"></div>
                 <a id="loadedList" href="#" target="_blank" rel="noopener noreferrer" style="display: none;" title="Geladene Liste anzeigen" ></a>
             </div>
             <!-- Importbereich -->
@@ -1523,9 +1529,53 @@
             renderList();
         }
     }
+    // Ermittelt den aktuell bei Twitch eingeloggten Account.
+    function getCurrentUserName() {
+        const cookieNames = [
+            'name',
+            'login'
+        ];
+        for (const cookieName of cookieNames) {
+            const cookiePrefix = `${cookieName}=`;
+            const cookie =
+                document.cookie
+                    .split('; ')
+                    .find((entry) =>
+                        entry.startsWith(
+                            cookiePrefix
+                        )
+                    );
+            if (!cookie) {
+                continue;
+            }
+            const cookieValue = cookie.slice( cookiePrefix.length );
+            const userName = decodeURIComponent( cookieValue ).trim();
+            if (userName) {
+                return userName;
+            }
+        }
+        return '';
+    }
+    function getModeratorDisplayName() {
+        const loginName = getCurrentUserName();
+        if (!loginName) {
+            return '';
+        }
+        const currentChannelName = activeChannel || '';
+        const currentChannelDisplayName = activeChannelDisplay || '';
+        if (
+            currentChannelName.toLowerCase() ===
+            loginName.toLowerCase() &&
+            currentChannelDisplayName
+        ) {
+            return currentChannelDisplayName;
+        }
+        return loginName;
+    }
     // Aktualisiert den Kanalnamen im Informationsbereich.
     function updateChannelInfo() {
         const channelElement = d.querySelector('#channelName');
+        const moderatorElement = d.querySelector('#moderatorName');
         if (!channelElement) {
             return;
         }
@@ -1533,6 +1583,35 @@
             activeChannelDisplay ||
             activeChannel ||
             'Kein moderierbarer Kanal';
+        if (moderatorElement) {
+            const currentUserName = getModeratorDisplayName();
+            if (currentUserName) {
+                moderatorElement.textContent =
+                    `moderiert von ${currentUserName}`;
+                delete moderatorElement.dataset
+                    .userNameRetries;
+            } else {
+                const retryCount =
+                    Number(
+                        moderatorElement.dataset
+                            .userNameRetries || 0
+                    );
+                if (retryCount < 20) {
+                    moderatorElement.dataset
+                        .userNameRetries =
+                        String(retryCount + 1);
+                    moderatorElement.textContent =
+                        'Account wird ermittelt …';
+                    window.setTimeout(
+                        updateChannelInfo,
+                        1000
+                    );
+                } else {
+                    moderatorElement.textContent =
+                        'Account konnte nicht ermittelt werden';
+                }
+            }
+        }
     }
     // ##### BENUTZEROBERFLÄCHE UND FENSTERSTEUERUNG #############################
     function show() {
@@ -2086,6 +2165,14 @@
                     toggleImport();
                     renderList();
                 } else {
+                    if (normalizedAction === 'unban') {
+                        const banReasonInput = d.querySelector('#banReason');
+                        if (banReasonInput) {
+                            banReasonInput.value = '';
+                            banReasonInput.dataset.reasonSource =
+                                'empty';
+                        }
+                    }
                     renderList();
                 }
                 if (sourceButton) {
@@ -2994,12 +3081,10 @@ function updateListStatus() {
             progressText +=
                 `Übersprungen: ${skippedCount.toLocaleString('de-DE')}. `;
         }
+
         if (remainingCount > 0) {
-            const estimatedDuration =
-                remainingCount *
-                getAverageActionDuration();
-            progressText +=
-                `Verbleibend: ${remainingCount.toLocaleString('de-DE')} … `;
+            const estimatedDuration = remainingCount * getAverageActionDuration();
+            progressText += `Verbleibend: ${remainingCount.toLocaleString('de-DE')} … `;
             progressText +=
                 `Voraussichtliche Dauer: ca. ${
                     formatEstimatedDuration(
@@ -3007,8 +3092,7 @@ function updateListStatus() {
                     )
                 }.`;
         } else {
-            progressText +=
-                'Liste vollständig abgearbeitet.';
+            progressText += 'Liste vollständig abgearbeitet.';
         }
         statusText += `\n${progressText}`;
         statusText += `\n${reasonText}`;
@@ -3020,9 +3104,45 @@ function updateListStatus() {
             listStatusClass = 'partial';
         }
         statusElement.textContent = statusText;
-        statusElement.className =
-            `list-status ${listStatusClass}`;
+        statusElement.className = `list-status ${listStatusClass}`;
         statusElement.style.display = 'block';
+        if (remainingCount === 0) {
+            const completeText = 'Liste vollständig abgearbeitet.';
+            const textNode = statusElement.firstChild;
+            if (
+                textNode && textNode.nodeType === Node.TEXT_NODE
+            ) {
+                const textValue = textNode.nodeValue;
+                const textIndex = textValue.indexOf(completeText);
+                if (textIndex !== -1) {
+                    const fragment = document.createDocumentFragment();
+                    fragment.appendChild(
+                        document.createTextNode(
+                            textValue.slice(
+                                0,
+                                textIndex
+                            )
+                        )
+                    );
+                    const completeMessage = document.createElement('span');
+                    completeMessage.className = 'list-status-complete-message';
+                    completeMessage.textContent = completeText;
+                    fragment.appendChild( completeMessage );
+                    fragment.appendChild(
+                        document.createTextNode(
+                            textValue.slice(
+                                textIndex +
+                                completeText.length
+                            )
+                        )
+                    );
+                    statusElement.replaceChild(
+                        fragment,
+                        textNode
+                    );
+                }
+            }
+        }
     }
     // ##### LISTENANZEIGE UND RENDERING ##########################################
     function renderList() {
