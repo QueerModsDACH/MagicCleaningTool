@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.77
+// @version      1.9.7.78
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.77';
+    const myVersion = '1.9.7.78';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -3007,18 +3007,13 @@ function updateListStatus() {
         if (!statusElement) {
             return;
         }
-        const bulkStatusAction = activeBulkAction || lastBulkActionResult;
-        if (bulkStatusAction) {
-            statusElement.textContent =
-                getBulkActionStatusText(
-                    bulkStatusAction
-                );
-            statusElement.className =
-                bulkStatusAction.cancelled
-                    ? 'list-status cancelled'
-                    : activeBulkAction
-                        ? 'list-status running'
-                        : 'list-status complete';
+        if (
+            lastBulkActionResult &&
+            !activeBulkAction &&
+            !lastBulkActionResult.cancelled
+        ) {
+            statusElement.textContent = getBulkActionStatusText( lastBulkActionResult );
+            statusElement.className = 'list-status complete';
             statusElement.style.display = 'block';
             return;
         }
@@ -3098,7 +3093,14 @@ function updateListStatus() {
         statusText += `\n${reasonText}`;
         const handledCount = processedCount + skippedCount;
         let listStatusClass = 'incomplete';
-        if (remainingCount === 0) {
+        if (activeBulkAction) {
+            listStatusClass = 'running';
+        } else if (
+            lastBulkActionResult &&
+            lastBulkActionResult.cancelled
+        ) {
+            listStatusClass = 'cancelled';
+        } else if (remainingCount === 0) {
             listStatusClass = 'complete';
         } else if (handledCount > 0) {
             listStatusClass = 'partial';
