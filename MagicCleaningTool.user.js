@@ -1197,6 +1197,7 @@
                 .magicMorningStar .action-bar .commanderRoot { min-width: 48px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .chatstats { min-width: 48px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .nightBot { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .fossabot { min-width: 48px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .mooBot { min-width: 48px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .streamelements { min-width: 48px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .streamlabs { min-width: 48px; background: #2878b5; color: #ffffff; }
@@ -1303,6 +1304,9 @@
                     </button>
                     <button class="nightBot" type="button" title="Öffnet NightBot" aria-label="NightBot öffnen" >
                         <img src="https://logodix.com/logo/1909520.jpg" alt="" width="24" height="24" aria-hidden="true">
+                    </button>
+                    <button class="fossabot" type="button" title="Öffnet FOSSABOT" aria-label="FOSSABOT öffnen" >
+                        <img src="https://docs.fossabot.com/img/logo.svg" alt="" width="24" height="24" aria-hidden="true">
                     </button>
                     <button class="mooBot" type="button" title="Öffnet MooBot" aria-label="MooBot öffnen" >
                         <img src="https://moo.bot/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
@@ -1866,6 +1870,7 @@
         d.querySelector('.commanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
         d.querySelector('.chatstats').onclick = () => openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
         d.querySelector('.nightBot').onclick = () => openExternal(`https://nightbot.tv/dashboard/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.fossabot').onclick = () => openExternal(`https://fossabot.com/${encodeURIComponent(activeChannel)}`);
         d.querySelector('.mooBot').onclick = () => openExternal(`https://moo.bot/${encodeURIComponent(activeChannel)}`);
         d.querySelector('.streamelements').onclick = () => openExternal(`https://streamelements.com/dashboard/${encodeURIComponent(activeChannel)}`);
         d.querySelector('.streamlabs').onclick = () => openExternal(`https://streamlabs.com/dashboard/${encodeURIComponent(activeChannel)}`);
