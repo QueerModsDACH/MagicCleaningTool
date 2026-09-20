@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      1.9.7.79
+// @version      26.9.20.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '1.9.7.79';
+    const myVersion = '26.9.20.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
