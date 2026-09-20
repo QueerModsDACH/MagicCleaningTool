@@ -1869,11 +1869,11 @@
         d.querySelector('.importBtn').onclick = importList;
         d.querySelector('.commanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
         d.querySelector('.chatstats').onclick = () => openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.nightBot').onclick = () => openExternal(`https://nightbot.tv/dashboard/${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.fossabot').onclick = () => openExternal(`https://fossabot.com/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.nightBot').onclick = () => openExternal('https://nightbot.tv/dashboard');
+        d.querySelector('.fossabot').onclick = () => openExternal('https://fossabot.com/');
         d.querySelector('.mooBot').onclick = () => openExternal(`https://moo.bot/${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.streamelements').onclick = () => openExternal(`https://streamelements.com/dashboard/${encodeURIComponent(activeChannel)}`);
-        d.querySelector('.streamlabs').onclick = () => openExternal(`https://streamlabs.com/dashboard/${encodeURIComponent(activeChannel)}`);
+        d.querySelector('.streamelements').onclick = () => openExternal('https://streamelements.com/dashboard');
+        d.querySelector('.streamlabs').onclick = () => openExternal('https://streamlabs.com/dashboard');
         // Verbindet alle verfügbaren Listenbuttons zentral mit ihrem Import.
         LIST_BUTTONS.forEach((listConfig) => {
             const button = d.querySelector(`#${listConfig.id}`);
