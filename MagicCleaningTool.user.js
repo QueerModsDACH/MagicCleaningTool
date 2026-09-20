@@ -1137,9 +1137,14 @@
                 .magicMorningStar h6 { color: var(--color-hinted-grey-7); }
                 .magicMorningStar h6 button { height: auto; background: none; }
                 .magicMorningStar .header { display: flex; align-items: center; }
+
+                .magicMorningStar .header-divider { width: 92%; height: 1px; margin: 4px auto 2px;
+                    background: linear-gradient( 90deg, transparent, ${themeTextColor}, transparent ); opacity: 0.75;}
+                .magicMorningStar .footer-divider { margin: 8px auto 2px;}
+
                 .magicMorningStar .logo { min-height: 30px; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
                 .magicMorningStar .info-bar { display: flex; flex-direction: column; align-items: center; width: 100%; margin: 4px 0 8px; padding: 4px 8px 6px;
-                    box-sizing: border-box; border-bottom: 1px solid var(--color-border-base); text-align: center; }
+                    box-sizing: border-box; text-align: center; }
 
                 .magicMorningStar .channel-name { color: ${themeTextColor}; font-size: 20px; font-weight: var(--font-weight-semibold);
                     line-height: 1.3; letter-spacing: 0.2px; }
@@ -1205,7 +1210,7 @@
                 .magicMorningStar textarea { width: 100%; min-height: 8em; padding: 0.5em; background: var(--color-background-base);
                     color: var(--color-text-base); font-size: 10pt; }
                 .magicMorningStar .footer { display: block; width: 100%; margin-top: 6px; padding-top: 4px;
-                    border-top: 1px solid var(--color-border-base); font-size: 7pt; line-height: 1.4; text-align: center; }
+                    font-size: 7pt; line-height: 1.4; text-align: center; }
                 .magicMorningStar .list-status { display: none; width: 100%; margin-top: 2px; margin-bottom: 6px; padding: 0 8px;
                     box-sizing: border-box; font-size: 9pt; line-height: 1.45; text-align: center; white-space: pre-line; }
                 .magicMorningStar .list-limit-info { padding: 12px; color: var(--color-hinted-grey-7);
@@ -1246,6 +1251,9 @@
                     <img src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png" alt="Tool minimieren" width="18" height="18" >
                 </button>
             </div>
+
+            <div class="header-divider"></div>
+
             <!-- Informationsbereich unterhalb des Headers -->
             <div class="info-bar" aria-live="polite">
                 <div id="channelName" class="channel-name"></div>
@@ -1314,6 +1322,9 @@
             <!-- Status der aktuell geladenen Liste -->
             <div id="listStatus" class="list-status" aria-live="polite"
             ></div>
+
+            <div class="header-divider footer-divider"></div>
+
             <!-- Footer mit Versionsnummer -->
             <div id="footer" class="footer">
                 <a id="manupdate" href="https://github.com/QueerModsDACH/MagicCleaningTool/raw/main/MagicCleaningTool.user.js"
