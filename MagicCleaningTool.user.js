@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.21.1
+// @version      26.9.21.2
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.21.1';
+    const myVersion = '26.9.21.2';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -70,7 +70,7 @@
     const Button_04_Action = 'ban';
     // Button 05
     const Button_05_IdClass = 'Button_05';
-    const Button_05_Text = '5B2Z Bots (a-r)\n…list currently being compiled…';
+    const Button_05_Text = '5B2Z Bots (a-t)\n…list currently being compiled…';
     const Button_05_BanReason = '5B2Z-BOT @240505 (QMD-List)';
     const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
     const Button_05_AltText = 'Importiert die 5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
@@ -257,6 +257,14 @@
     const activateImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/activate.png';
     const modMenuOnImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_on.png';
     const modMenuOffImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/modmenu_off.png';
+    const minimierenImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png';
+    const buttonCommanderRootImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_CommanderRoot_Icon.png';
+    const buttonSullyGnomeImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_SullyGnome_Icon.png';
+    const buttonNightBotImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_NightBot_Icon.png';
+    const buttonFossabotImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_Fossabot_Icon.png';
+    const buttonMooBotImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_MooBot_Icon.png';
+    const buttonStreamElementsImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_StreamElements_Icon.png';
+    const buttonStreamlabsImage = 'https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/My_Streamlabs_Icon.png';
     const themeNormal = '#9146FF';
     const themeTextColor = themeNormal;
     const updateText = 'die Version ist aktuell ツ';
@@ -1300,20 +1308,113 @@ QMD_unbannedUsersSet = new Set(
                 .magicMorningStar .list-button-row button.qmd-status-partial { background: #d99000 !important; color: #ffffff !important; }
                 .magicMorningStar .list-button-row button.qmd-status-complete { background: #218838 !important; color: #ffffff !important; }
                 .magicMorningStar .list-button-row button.qmd-status-error { background: #5b3f8c !important; color: #ffffff !important; }
+
                 /* Cache und externe Werkzeuge */
-                .magicMorningStar .action-bar .commanderRoot { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .chatstats { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .nightBot { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .fossabot { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .mooBot { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .streamelements { min-width: 48px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .streamlabs { min-width: 48px; background: #2878b5; color: #ffffff; }
+                .magicMorningStar .action-bar .commanderRoot,
+                .magicMorningStar .action-bar .chatstats,
+                .magicMorningStar .action-bar .nightBot,
+                .magicMorningStar .action-bar .fossabot,
+                .magicMorningStar .action-bar .mooBot,
+                .magicMorningStar .action-bar .streamelements,
+                .magicMorningStar .action-bar .streamlabs {
+                    position: relative;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 50px;
+                    min-width: 50px;
+                    height: 50px;
+                    min-height: 50px;
+                    padding: 3px;
+                    border: 1px solid transparent;
+                    border-radius: 50%;
+                    background: transparent;
+                    color: inherit;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    appearance: none;
+                    transition:
+                        background-color 180ms ease,
+                        border-color 180ms ease,
+                        box-shadow 180ms ease,
+                        transform 180ms ease;
+                }
+
+                .magicMorningStar .action-bar .commanderRoot img,
+                .magicMorningStar .action-bar .chatstats img,
+                .magicMorningStar .action-bar .nightBot img,
+                .magicMorningStar .action-bar .fossabot img,
+                .magicMorningStar .action-bar .mooBot img,
+                .magicMorningStar .action-bar .streamelements img,
+                .magicMorningStar .action-bar .streamlabs img {
+                    display: block;
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    transition:
+                        transform 180ms ease,
+                        filter 180ms ease;
+                }
+
+                .magicMorningStar .action-bar .commanderRoot:not(:disabled):hover,
+                .magicMorningStar .action-bar .chatstats:not(:disabled):hover,
+                .magicMorningStar .action-bar .nightBot:not(:disabled):hover,
+                .magicMorningStar .action-bar .fossabot:not(:disabled):hover,
+                .magicMorningStar .action-bar .mooBot:not(:disabled):hover,
+                .magicMorningStar .action-bar .streamelements:not(:disabled):hover,
+                .magicMorningStar .action-bar .streamlabs:not(:disabled):hover {
+                    background: rgba(145, 70, 255, 0.18);
+                    border-color: rgba(145, 70, 255, 0.65);
+                    box-shadow:
+                        0 0 10px rgba(145, 70, 255, 0.35),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+                    backdrop-filter: blur(6px);
+                    -webkit-backdrop-filter: blur(6px);
+                    transform: translateY(-1px) scale(1.03);
+                }
+
+                .magicMorningStar .action-bar .commanderRoot:not(:disabled):hover img,
+                .magicMorningStar .action-bar .chatstats:not(:disabled):hover img,
+                .magicMorningStar .action-bar .nightBot:not(:disabled):hover img,
+                .magicMorningStar .action-bar .fossabot:not(:disabled):hover img,
+                .magicMorningStar .action-bar .mooBot:not(:disabled):hover img,
+                .magicMorningStar .action-bar .streamelements:not(:disabled):hover img,
+                .magicMorningStar .action-bar .streamlabs:not(:disabled):hover img {
+                    transform: scale(1.04);
+                    filter: brightness(1.08) saturate(1.08);
+                }
+
+                .magicMorningStar .action-bar .commanderRoot:not(:disabled):active,
+                .magicMorningStar .action-bar .chatstats:not(:disabled):active,
+                .magicMorningStar .action-bar .nightBot:not(:disabled):active,
+                .magicMorningStar .action-bar .fossabot:not(:disabled):active,
+                .magicMorningStar .action-bar .mooBot:not(:disabled):active,
+                .magicMorningStar .action-bar .streamelements:not(:disabled):active,
+                .magicMorningStar .action-bar .streamlabs:not(:disabled):active {
+                    transform: translateY(0) scale(0.98);
+                }
+
+                .magicMorningStar .action-bar .commanderRoot:focus-visible,
+                .magicMorningStar .action-bar .chatstats:focus-visible,
+                .magicMorningStar .action-bar .nightBot:focus-visible,
+                .magicMorningStar .action-bar .fossabot:focus-visible,
+                .magicMorningStar .action-bar .mooBot:focus-visible,
+                .magicMorningStar .action-bar .streamelements:focus-visible,
+                .magicMorningStar .action-bar .streamlabs:focus-visible {
+                    outline: 2px solid rgba(145, 70, 255, 0.9);
+                    outline-offset: 3px;
+                }
+
+
+
+
                 /* Listenaktionen */
                 .magicMorningStar .action-bar .cancelAction { min-width: 92px; background: #8f1d1d; color: #ffffff;}
                 .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff;}
                 .magicMorningStar .action-bar .banAll { min-width: 48px; background: #f44336; color: #ffffff;}
                 /* Einheitliches Hover-Verhalten */
-                .magicMorningStar .action-bar button:not(:disabled):hover { filter: brightness(1.12); transform: translateY(-1px); }
+                .magicMorningStar .action-bar button:not(:disabled):hover { cursor: pointer;}
                 .magicMorningStar .action-bar button:not(:disabled):active { filter: brightness(0.95); transform: translateY(0); }
                 .magicMorningStar .import { min-height: 20px; padding: 3px; background: var(--color-background-body);
                     border: var(--border-width-default) solid var(--color-border-base); }
@@ -1358,7 +1459,7 @@ QMD_unbannedUsersSet = new Set(
                 <span style="flex-grow: 1;"></span>
                 <!-- Fenster schließen beziehungsweise minimieren -->
                 <button class="closeBtn" type="button" title="Tool minimieren" aria-label="Tool minimieren" >
-                    <img src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/minimieren.png" alt="Tool minimieren" width="18" height="18" >
+                    <img src="${minimierenImage}" alt="Tool minimieren" width="18" height="18" >
                 </button>
             </div>
 
@@ -1403,27 +1504,76 @@ QMD_unbannedUsersSet = new Set(
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
                 <div class="action-group action-group-center">
-                    <button class="commanderRoot" type="button" title="Öffnet CommanderRoot" aria-label="CommanderRoot öffnen" >
-                        <img src="https://twitch-tools.rootonline.de/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="chatstats" type="button" title="Öffnet SullyGnome-Kanalstatistiken" aria-label="SullyGnome-Kanalstatistiken öffnen" >
-                        <img src="https://sullygnome.com/Images/gnome.png" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="nightBot" type="button" title="Öffnet NightBot" aria-label="NightBot öffnen" >
-                        <img src="https://logodix.com/logo/1909520.jpg" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="fossabot" type="button" title="Öffnet FOSSABOT" aria-label="FOSSABOT öffnen" >
-                        <img src="https://docs.fossabot.com/img/logo.svg" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="mooBot" type="button" title="Öffnet MooBot" aria-label="MooBot öffnen" >
-                        <img src="https://moo.bot/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="streamelements" type="button" title="Öffnet StreamElements" aria-label="StreamElements öffnen" >
-                        <img src="https://streamelements.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
-                    <button class="streamlabs" type="button" title="Öffnet Streamlabs" aria-label="Streamlabs öffnen" >
-                        <img src="https://streamlabs.com/favicon.ico" alt="" width="24" height="24" aria-hidden="true">
-                    </button>
+                        <button class="commanderRoot" type="button"
+                            title="Öffnet CommanderRoot"
+                            aria-label="CommanderRoot öffnen">
+                            <img src="${buttonCommanderRootImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="chatstats" type="button"
+                            title="Öffnet SullyGnome-Kanalstatistiken"
+                            aria-label="SullyGnome-Kanalstatistiken öffnen">
+                            <img src="${buttonSullyGnomeImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="nightBot" type="button"
+                            title="Öffnet NightBot"
+                            aria-label="NightBot öffnen">
+                            <img src="${buttonNightBotImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="fossabot" type="button"
+                            title="Öffnet FOSSABOT"
+                            aria-label="FOSSABOT öffnen">
+                            <img src="${buttonFossabotImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="mooBot" type="button"
+                            title="Öffnet MooBot"
+                            aria-label="MooBot öffnen">
+                            <img src="${buttonMooBotImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="streamelements" type="button"
+                            title="Öffnet StreamElements"
+                            aria-label="StreamElements öffnen">
+                            <img src="${buttonStreamElementsImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
+                        <button class="streamlabs" type="button"
+                            title="Öffnet Streamlabs"
+                            aria-label="Streamlabs öffnen">
+                            <img src="${buttonStreamlabsImage}"
+                                alt=""
+                                width="42"
+                                height="42"
+                                aria-hidden="true">
+                        </button>
+
                 </div>
                 <!-- Rechte Gruppe: Listenaktionen -->
                 <div class="action-group action-group-right">
