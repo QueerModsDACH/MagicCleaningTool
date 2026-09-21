@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.20.1
+// @version      26.9.21.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.20.1';
+    const myVersion = '26.9.21.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -285,24 +285,31 @@
                 )
             );
         }
-        return {
-            action,
-            channel: activeChannel,
-            listInfo: {
-                ...activeListInfo,
-                users: new Set(activeListInfo.users),
-                skippedUsers: new Set(
-                    activeListInfo.skippedUsers || []
-                )
-            },
-            users,
-            sources,
-            cancelled: false,
+
+return {
+    action,
+    channel: activeChannel,
+    total: users.length,
+    listInfo: {
+        ...activeListInfo,
+        users: new Set(activeListInfo.users),
+        skippedUsers: new Set(
+            activeListInfo.skippedUsers || []
+        )
+    },
+    users,
+    sources,
+    cancelled: false,
+
+
             cancelReason: '',
             completed: 0,
             successful: 0,
             skipped: 0,
             failed: 0,
+            storageChanges: 0,
+            processedUsers: new Set(),
+            skippedUsers: new Set(),
             startedAt: Date.now()
         };
     }
@@ -334,20 +341,103 @@
         updateListStatus();
         return true;
     }
+
+function flushBulkActionStorage(action) {
+    if (!action || action.storageChanges === 0) {
+        return;
+    }
+
+    const actionChannel = action.channel;
+    const listInfo = action.listInfo;
+
+    if (action.action === 'ban') {
+        writeStorageValue(
+            `${actionChannel}_banlist`,
+            QMD_bannedUsersStore
+        );
+    }
+
+    if (action.action === 'unban') {
+        writeStorageValue(
+            `${actionChannel}_unbanlist`,
+            QMD_unbannedUsersStore
+        );
+
+        writeStorageValue(
+            `${actionChannel}_banlist`,
+            QMD_bannedUsersStore
+        );
+    }
+
+    if (!listInfo || !listInfo.listSuffix) {
+        return;
+    }
+
+    const storageKeyName = getListProcessedStorageKey(
+        actionChannel,
+        listInfo
+    );
+
+    const storedUsers = new Set(
+        normalizeUserList(
+            readStorageValue(storageKeyName, [])
+        )
+    );
+
+    for (const user of action.processedUsers) {
+        storedUsers.add(user);
+    }
+
+    writeStorageValue(
+        storageKeyName,
+        [...storedUsers]
+    );
+
+    if (
+        action.action === 'ban' &&
+        action.skippedUsers.size > 0
+    ) {
+        const skippedStorageKey = getListSkippedStorageKey(
+            actionChannel,
+            listInfo
+        );
+
+        const skippedUsers = new Set(
+            normalizeUserList(
+                readStorageValue(skippedStorageKey, [])
+            )
+        );
+
+        for (const user of action.skippedUsers) {
+            skippedUsers.add(user);
+        }
+
+        writeStorageValue(
+            skippedStorageKey,
+            [...skippedUsers]
+        );
+    }
+}
+
+
     function finishBulkAction(action) {
         if (activeBulkAction !== action) {
             return;
         }
-        lastBulkActionResult = {
-            users: [...action.users],
-            cancelled: action.cancelled,
-            cancelReason: action.cancelReason,
-            completed: action.completed,
-            successful: action.successful,
-            skipped: action.skipped,
-            failed: action.failed,
-            finishedAt: Date.now()
-        };
+        flushBulkActionStorage(action);
+
+lastBulkActionResult = {
+    total: action.users.length,
+    cancelled: action.cancelled,
+    cancelReason: action.cancelReason,
+    completed: action.completed,
+    successful: action.successful,
+    skipped: action.skipped,
+    failed: action.failed,
+    finishedAt: Date.now()
+};
+
+
         activeBulkAction = null;
         updateBulkActionControls();
         renderList();
@@ -362,7 +452,7 @@
         if (!action) {
             return '';
         }
-        const total = action.users.length;
+        const total = action.total ?? action.users.length;
         const completed = action.completed;
         const remaining = Math.max(0, total - completed);
         if (action.cancelled) {
@@ -1032,10 +1122,13 @@
     // ##### LOCALSTORAGE-SCHLÜSSEL FÜR BANN- UND UNBANLISTEN ####################
     let QMD_bannedUsersStore = [];
     let QMD_unbannedUsersStore = [];
+    let QMD_bannedUsersSet = new Set();
+    let QMD_unbannedUsersSet = new Set();
     // Informationen zur aktuell geladenen externen Liste.
     let activeListInfo = null;
     // Dauer der zuletzt ausgeführten Bann-/Unbann-Aktionen. Die letzten zehn Werte werden für die Schätzung verwendet.
     const ACTION_DURATION_SAMPLE_SIZE = 10;
+//    const BULK_STORAGE_FLUSH_INTERVAL = 250;
     let actionDurationSamples = [];
     // Lädt Bann- und Unbannlisten nur für einen moderierbaren Kanal.
     if (activeChannel) {
@@ -1045,12 +1138,26 @@
                 []
             )
         );
+
+QMD_bannedUsersSet = new Set(
+    QMD_bannedUsersStore
+);
+
+
         QMD_unbannedUsersStore = normalizeUserList(
             readStorageValue(
                 `${activeChannel}_unbanlist`,
                 []
             )
+
+
+
         );
+
+QMD_unbannedUsersSet = new Set(
+    QMD_unbannedUsersStore
+);
+
         // Bereits vorhandene beziehungsweise benötigte Schlüssel normalisieren.
         writeStorageValue(
             `${activeChannel}_banlist`,
@@ -1484,7 +1591,7 @@
         if (!isValidUsername(normalizedUser)) {
             return;
         }
-        if (!QMD_bannedUsersStore.includes(normalizedUser)) {
+        if (!QMD_bannedUsersSet.has(normalizedUser)) {
             addUsersToQueue(
                 [normalizedUser],
                 listSuffix,
@@ -1516,11 +1623,13 @@
                 (list) =>
                     list.id === buttonId
             );
+
         if (
-            !QMD_unbannedUsersStore.includes(
+            !QMD_unbannedUsersSet.has(
                 normalizedUser
             )
         ) {
+
             queueList.add(normalizedUser);
             if (
                 listConfig &&
@@ -2184,9 +2293,10 @@
                 if (textField) {
                     textField.value = '';
                 }
-                insertText(Array.from(queueList));
-                updateListStatus();
-                renderList();
+
+updateListStatus();
+renderList();
+
                 if (queueList.size !== 0) {
                     toggleImport();
                     renderList();
@@ -2328,11 +2438,32 @@
         updateBulkActionControls();
         updateListStatus();
         console.log(LOGPREFIX,'Banning all...', action.users);
+        let channelCheckCounter = 0;
         try {
-            for (const user of action.users) {
-                if (isBulkActionCancelled(action)) {
-                    break;
-                }
+
+for (const user of action.users) {
+    if (isBulkActionCancelled(action)) {
+        break;
+    }
+
+    channelCheckCounter++;
+
+    if (
+        channelCheckCounter >= 250
+    ) {
+        channelCheckCounter = 0;
+
+        if (
+            !isCurrentChannelModerated()
+        ) {
+            cancelActiveBulkAction(
+                'Moderationskanal nicht mehr verfügbar'
+            );
+            break;
+        }
+    }
+
+
                 const actionStartedAt = performance.now();
                 const wasBanned = await banItem(user, action);
                 action.completed++;
@@ -2392,11 +2523,32 @@
         updateBulkActionControls();
         updateListStatus();
         console.log(LOGPREFIX,'Unbanning all...', action.users);
+        let channelCheckCounter = 0;
         try {
-            for (const user of action.users) {
-                if (isBulkActionCancelled(action)) {
-                    break;
-                }
+
+for (const user of action.users) {
+    if (isBulkActionCancelled(action)) {
+        break;
+    }
+
+    channelCheckCounter++;
+
+    if (
+        channelCheckCounter >= 250
+    ) {
+        channelCheckCounter = 0;
+
+        if (
+            !isCurrentChannelModerated()
+        ) {
+            cancelActiveBulkAction(
+                'Moderationskanal nicht mehr verfügbar'
+            );
+            break;
+        }
+    }
+
+
                 const actionStartedAt = performance.now();
                 const wasUnbanned = await unbanItem(user, action);
                 action.completed++;
@@ -2553,43 +2705,76 @@
             queueList.delete(normalizedUser);
             queueListSources.delete(normalizedUser);
         }
-        if (
-            !QMD_unbannedUsersStore.includes(
-                normalizedUser
-            )
-        ) {
-            QMD_unbannedUsersStore.push(
-                normalizedUser
-            );
-        }
-        QMD_bannedUsersStore =
-            QMD_bannedUsersStore.filter(
-                (storedUser) =>
-                    storedUser !== normalizedUser
-            );
-        const processedListInfo = action?.listInfo || activeListInfo;
-        if (
-            processedListInfo &&
-            processedListInfo.listSuffix
-        ) {
-            addUserToListStorage(
-                actionChannel,
-                'unban',
-                processedListInfo.listSuffix,
-                normalizedUser
-            );
-        }
-        writeStorageValue(
-            `${actionChannel}_unbanlist`,
-            QMD_unbannedUsersStore
+
+
+
+if (
+    !QMD_unbannedUsersSet.has(
+        normalizedUser
+    )
+) {
+    QMD_unbannedUsersSet.add(
+        normalizedUser
+    );
+    QMD_unbannedUsersStore.push(
+        normalizedUser
+    );
+}
+
+if (
+    QMD_bannedUsersSet.delete(
+        normalizedUser
+    )
+) {
+    QMD_bannedUsersStore =
+        QMD_bannedUsersStore.filter(
+            (storedUser) =>
+                storedUser !== normalizedUser
         );
-        writeStorageValue(
-            `${actionChannel}_banlist`,
-            QMD_bannedUsersStore
-        );
-        renderList();
-        return true;
-    }
+}
+
+const processedListInfo =
+    action?.listInfo || activeListInfo;
+
+if (
+    action
+) {
+    action.processedUsers.add(
+        normalizedUser
+    );
+    action.storageChanges++;
+}
+
+if (
+    !action &&
+    processedListInfo &&
+    processedListInfo.listSuffix
+) {
+    addUserToListStorage(
+        actionChannel,
+        'unban',
+        processedListInfo.listSuffix,
+        normalizedUser
+    );
+
+    writeStorageValue(
+        `${actionChannel}_unbanlist`,
+        QMD_unbannedUsersStore
+    );
+
+    writeStorageValue(
+        `${actionChannel}_banlist`,
+        QMD_bannedUsersStore
+    );
+}
+
+renderList();
+return true;
+}
+
+
+
+
     function removeModChannel(user) {
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
@@ -2653,17 +2838,29 @@
             ) {
                 return false;
             }
+
             if (whitelisted) {
                 console.log(LOGPREFIX, `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`);
-                for (const listSuffix of listSuffixes) {
-                    addUserToListStorage(
-                        actionChannel,
-                        'ban',
-                        listSuffix,
-                        normalizedUser,
-                        '_skipped'
-                    );
+
+                if (action) {
+                    action.skippedUsers.add(normalizedUser);
                 }
+
+                if (action) {
+                    action.storageChanges++;
+                } else {
+                    for (const listSuffix of listSuffixes) {
+                        addUserToListStorage(
+                            actionChannel,
+                            'ban',
+                            listSuffix,
+                            normalizedUser,
+                            '_skipped'
+                        );
+                    }
+                }
+
+
                 if (
                     !action ||
                     activeBulkAction === action
@@ -2719,6 +2916,7 @@
         ) {
             return false;
         }
+
         if (
             !actionChannel ||
             activeChannel !== actionChannel ||
@@ -2727,6 +2925,11 @@
             console.warn(LOGPREFIX, `Ban von ${normalizedUser} wurde nach dem Senden nicht gespeichert, weil der Moderationskanal gewechselt wurde.` );
             return false;
         }
+
+        if (action) {
+            action.processedUsers.add(normalizedUser);
+        }
+
         if (
             !action ||
             activeBulkAction === action
@@ -2734,27 +2937,41 @@
             queueList.delete(normalizedUser);
             queueListSources.delete(normalizedUser);
         }
-        if (
-            !QMD_bannedUsersStore.includes(
-                normalizedUser
-            )
-        ) {
-            QMD_bannedUsersStore.push(
-                normalizedUser
-            );
-        }
-        writeStorageValue(
-            `${actionChannel}_banlist`,
-            QMD_bannedUsersStore
+
+if (
+    !QMD_bannedUsersSet.has(
+        normalizedUser
+    )
+) {
+    QMD_bannedUsersSet.add(
+        normalizedUser
+    );
+    QMD_bannedUsersStore.push(
+        normalizedUser
+    );
+}
+
+
+
+
+if (action) {
+    action.storageChanges++;
+} else {
+    writeStorageValue(
+        `${actionChannel}_banlist`,
+        QMD_bannedUsersStore
+    );
+
+    for (const listSuffix of listSuffixes) {
+        addUserToListStorage(
+            actionChannel,
+            'ban',
+            listSuffix,
+            normalizedUser
         );
-        for (const listSuffix of listSuffixes) {
-            addUserToListStorage(
-                actionChannel,
-                'ban',
-                listSuffix,
-                normalizedUser
-            );
-        }
+    }
+}
+
         if (
             !action &&
             activeListInfo &&
@@ -3053,28 +3270,20 @@ function updateListStatus() {
             statusElement.style.display = 'none';
             return;
         }
-        const listUsers = activeListInfo.users;
-        const processedStore =
-            activeListInfo.action === 'unban'
-                ? QMD_unbannedUsersStore
-                : QMD_bannedUsersStore;
-        const processedUsers =
-            [...listUsers].filter(
-                (user) =>
-                    processedStore.includes(user)
-            );
-        const skippedUsers =
-            [...listUsers].filter(
-                (user) =>
-                    activeListInfo.skippedUsers.has(user)
-            );
-        const totalCount = listUsers.size;
-        const processedCount = processedUsers.length;
-        const skippedCount = skippedUsers.length;
-        const remainingCount = Math.max(
-            0,
-            totalCount - processedCount - skippedCount
-        );
+
+const listUsers = activeListInfo.users;
+const totalCount = listUsers.size;
+const skippedCount = activeListInfo.skippedUsers.size;
+const remainingCount = Math.min(
+    totalCount,
+    queueList.size
+);
+const processedCount = Math.max(
+    0,
+    totalCount - remainingCount - skippedCount
+);
+
+
         const actionWord =
             activeListInfo.action === 'unban'
                 ? 'entbannt'
@@ -3222,15 +3431,25 @@ function updateListStatus() {
                     : 'none';
         }
         updateBulkActionControls();
-        const allItems = Array.from(queueList);
-        const visibleItems = allItems.slice(
-            0,
-            MAX_VISIBLE_LIST_ITEMS
-        );
-        const hiddenItemCount = Math.max(
-            0,
-            allItems.length - visibleItems.length
-        );
+
+const visibleItems = [];
+let visibleItemIndex = 0;
+
+for (const item of queueList) {
+    if (visibleItemIndex >= MAX_VISIBLE_LIST_ITEMS) {
+        break;
+    }
+
+    visibleItems.push(item);
+    visibleItemIndex++;
+}
+
+const hiddenItemCount = Math.max(
+    0,
+    queueList.size - visibleItems.length
+);
+
+
         const renderItem = (item) => `
             <li>
                 <button class="usercard" data-user="${escapeHtml(item)}" title="Öffnet die Viewer-Card von ${escapeHtml(item)}" aria-label="Viewer-Card von ${escapeHtml(item)} öffnen" >
@@ -3740,27 +3959,40 @@ function updateListStatus() {
         activeListAction = null;
         activeListInfo = null;
         actionDurationSamples = [];
-        QMD_bannedUsersStore = [];
-        QMD_unbannedUsersStore = [];
-        if (activeChannel) {
-            QMD_bannedUsersStore =
-                normalizeUserList(
-                    readStorageValue(
-                        `${activeChannel}_banlist`,
-                        []
-                    )
-                );
-            QMD_unbannedUsersStore =
-                normalizeUserList(
-                    readStorageValue(
-                        `${activeChannel}_unbanlist`,
-                        []
-                    )
-                );
-        } else {
-            // Beim Verlassen des Mod-Kontexts darf das Tool nichts anzeigen und keine Aktionen mehr ausführen.
-            hide();
-        }
+
+QMD_bannedUsersStore = [];
+QMD_unbannedUsersStore = [];
+QMD_bannedUsersSet = new Set();
+QMD_unbannedUsersSet = new Set();
+
+if (activeChannel) {
+    QMD_bannedUsersStore =
+        normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_banlist`,
+                []
+            )
+        );
+
+    QMD_unbannedUsersStore =
+        normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_unbanlist`,
+                []
+            )
+        );
+
+    QMD_bannedUsersSet = new Set(
+        QMD_bannedUsersStore
+    );
+
+    QMD_unbannedUsersSet = new Set(
+        QMD_unbannedUsersStore
+    );
+} else {
+    // Beim Verlassen des Mod-Kontexts darf das Tool nichts anzeigen und keine Aktionen mehr ausführen.
+    hide();
+}
         updateListStatus();
         renderList();
         updateBulkActionControls();
