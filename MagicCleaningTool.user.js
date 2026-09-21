@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.21.3
+// @version      26.9.21.4
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.21.3';
+    const myVersion = '26.9.21.4';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -1113,9 +1113,15 @@
     let QMD_unbannedUsersSet = new Set();
     // Informationen zur aktuell geladenen externen Liste.
     let activeListInfo = null;
-    // Dauer der zuletzt ausgeführten Bann-/Unbann-Aktionen. Die letzten zehn Werte werden für die Schätzung verwendet.
-    const ACTION_DURATION_SAMPLE_SIZE = 10;
+    // Laufzeitmessung für Bann- und Unban-Aktionen.
+    // Die Schätzung verwendet mehrere Werte und wird geglättet, damit einzelne Ausreißer nicht sofort sichtbar durchschlagen.
+    const ACTION_DURATION_SAMPLE_SIZE = 20;
+    const ACTION_DURATION_FALLBACK = 900;
+    const ACTION_DURATION_EWMA_ALPHA = 0.15;
+    const ACTION_DURATION_MIN = 100;
+    const ACTION_DURATION_MAX = 30000;
     let actionDurationSamples = [];
+    let smoothedActionDuration = null;
     // Lädt Bann- und Unbannlisten nur für einen moderierbaren Kanal.
     if (activeChannel) {
         QMD_bannedUsersStore = normalizeUserList(
@@ -1832,7 +1838,7 @@
         queueListSources.clear();
         activeListAction = null;
         activeListInfo = null;
-        actionDurationSamples = [];
+        resetActionDurationEstimate();
         updateListStatus();
         d.querySelector('#textfield').value = '';
         const body = d.querySelector('.body');
@@ -2195,7 +2201,7 @@
         activeListAction = normalizedAction;
         queueList.clear();
         queueListSources.clear();
-        actionDurationSamples = [];
+        resetActionDurationEstimate();
         activeListInfo = null;
         const statusElement = d.querySelector('#listStatus');
         if (statusElement) {
@@ -2353,7 +2359,7 @@
                 queueList.clear();
                 queueListSources.clear();
                 activeListInfo = null;
-                actionDurationSamples = [];
+                resetActionDurationEstimate();
                 const statusElement = d.querySelector('#listStatus');
                 if (statusElement) {
                     statusElement.textContent =
@@ -2485,38 +2491,42 @@
                         break;
                     }
                 }
-                const actionStartedAt = performance.now();
-                const wasBanned = await banItem(user, action);
-                action.completed++;
-                if (wasBanned) {
-                    action.successful++;
-                    addActionDurationSample(
-                        performance.now() - actionStartedAt
-                    );
-                } else if (
-                    action.cancelled
-                ) {
-                    break;
-                } else {
-                    action.skipped++;
-                }
-                updateListStatus();
-                if (isBulkActionCancelled(action)) {
-                    break;
-                }
-                await delay(DELAY_BAN_ACTION);
-                if (
-                    isBulkActionCancelled(action)
-                ) {
+            const actionStartedAt = performance.now();
+            const wasBanned = await banItem(user, action);
+            action.completed++;
+            if (wasBanned) {
+                action.successful++;
+            } else if (
+                action.cancelled
+            ) {
                 break;
-                }
+            } else {
+                action.skipped++;
+            }
+                updateListStatus();
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            await delay(DELAY_BAN_ACTION);
+            // Die Wartezeit gehört zur tatsächlichen Dauer eines vollständigen Aktionsdurchlaufs dazu.
+            addActionDurationSample(
+                performance.now() - actionStartedAt
+            );
+            if (
+                isBulkActionCancelled(action)
+            ) {
+                break;
+            }
+            // updateListStatus();
+            updateListStatusThrottled();
             }
         } catch (error) {
             action.cancelled = true;
             action.cancelReason = 'Fehler';
             console.error(LOGPREFIX,'Ban-All-Aktion wurde wegen eines Fehlers beendet:', error);
         } finally {
-            updateListStatus();
+            // updateListStatus();
+            updateListStatusThrottled(true);
             finishBulkAction(action);
         }
     }
@@ -2542,7 +2552,8 @@
         }
         activeBulkAction = action;
         updateBulkActionControls();
-        updateListStatus();
+        // updateListStatus();
+        updateListStatusThrottled();
         console.log(LOGPREFIX,'Unbanning all...', action.users);
         let channelCheckCounter = 0;
         try {
@@ -2564,31 +2575,34 @@
                         break;
                     }
                 }
-                const actionStartedAt = performance.now();
-                const wasUnbanned = await unbanItem(user, action);
-                action.completed++;
-                if (wasUnbanned) {
-                    action.successful++;
-                    addActionDurationSample(
-                        performance.now() - actionStartedAt
-                    );
-                } else if (
-                    action.cancelled
-                ) {
-                    break;
-                } else {
-                    action.skipped++;
-                }
-                updateListStatus();
-                if (isBulkActionCancelled(action)) {
-                    break;
-                }
-                await delay(DELAY_UNBAN_ACTION);
-                if (
-                    isBulkActionCancelled(action)
-                ) {
-                    break;
-                }
+            const actionStartedAt = performance.now();
+            const wasUnbanned = await unbanItem(user, action);
+            action.completed++;
+            if (wasUnbanned) {
+                action.successful++;
+            } else if (
+                action.cancelled
+            ) {
+                break;
+            } else {
+                action.skipped++;
+            }
+            // updateListStatus();
+            updateListStatusThrottled(true);
+            if (isBulkActionCancelled(action)) {
+                break;
+            }
+            await delay(DELAY_UNBAN_ACTION);
+            // Auch die Unban-Verzögerung wird in die Messung einbezogen.
+            addActionDurationSample(
+                performance.now() - actionStartedAt
+            );
+            if (
+                isBulkActionCancelled(action)
+            ) {
+                break;
+            }
+            updateListStatus();
             }
         } catch (error) {
             action.cancelled = true;
@@ -3122,7 +3136,7 @@
             cancelButton.disabled =
                 !isRunning;
             cancelButton.textContent =
-                '✕ Abbrechen';
+                'x Abbrechen';
         }
         if (backButton) {
             backButton.disabled =
@@ -3201,19 +3215,46 @@
         }
         return parts.join(' ');
     }
+    function resetActionDurationEstimate() {
+        actionDurationSamples = [];
+        smoothedActionDuration = null;
+    }
+    function getMedian(values) {
+        if (!Array.isArray(values) || values.length === 0) {
+            return ACTION_DURATION_FALLBACK;
+        }
+        const sortedValues = [...values].sort(
+            (first, second) =>
+                first - second
+        );
+        const middleIndex = Math.floor(
+            sortedValues.length / 2
+        );
+        if (sortedValues.length % 2 === 0) {
+            return (
+                sortedValues[middleIndex - 1] +
+                sortedValues[middleIndex]
+            ) / 2;
+        }
+        return sortedValues[middleIndex];
+    }
     function getAverageActionDuration() {
         if (actionDurationSamples.length === 0) {
-            // Konservativer Anfangswert, bis echte Messwerte vorliegen.
-            return 600;
+            return ACTION_DURATION_FALLBACK;
         }
-        const totalDuration =
-            actionDurationSamples.reduce(
-                (sum, duration) =>
-                    sum + duration,
-                0
-            );
-        return totalDuration /
-            actionDurationSamples.length;
+        const medianDuration = getMedian(actionDurationSamples);
+        if (
+            !Number.isFinite(smoothedActionDuration) ||
+            smoothedActionDuration <= 0
+        ) {
+            smoothedActionDuration =
+                medianDuration;
+        }
+        // Der Median verhindert, dass einzelne sehr langsame oder sehr schnelle Aktionen die Schätzung verfälschen. Der geglättete Wert sorgt zusätzlich für eine ruhige Anzeige.
+        return (
+            smoothedActionDuration * 0.65 +
+            medianDuration * 0.35
+        );
     }
     function addActionDurationSample(duration) {
         if (
@@ -3222,13 +3263,50 @@
         ) {
             return;
         }
-        actionDurationSamples.push(duration);
+        const limitedDuration = Math.min(
+            Math.max(
+                duration,
+                ACTION_DURATION_MIN
+            ),
+            ACTION_DURATION_MAX
+        );
+        actionDurationSamples.push(
+            limitedDuration
+        );
         if (
             actionDurationSamples.length >
             ACTION_DURATION_SAMPLE_SIZE
         ) {
             actionDurationSamples.shift();
         }
+        if (
+            !Number.isFinite(smoothedActionDuration) ||
+            smoothedActionDuration <= 0
+        ) {
+            smoothedActionDuration =
+                limitedDuration;
+            return;
+        }
+        // Exponentiell gewichteter gleitender Durchschnitt. Neue Werte werden berücksichtigt, ohne die Anzeige springen zu lassen.
+        smoothedActionDuration =
+            smoothedActionDuration *
+            (1 - ACTION_DURATION_EWMA_ALPHA) +
+            limitedDuration *
+            ACTION_DURATION_EWMA_ALPHA;
+    }
+    let lastStatusUpdateAt = 0;
+    const STATUS_UPDATE_INTERVAL = 200;
+    function updateListStatusThrottled(force = false) {
+        const now = performance.now();
+        if (
+            !force &&
+            now - lastStatusUpdateAt <
+            STATUS_UPDATE_INTERVAL
+        ) {
+            return;
+        }
+        lastStatusUpdateAt = now;
+        updateListStatus();
     }
     // Aktualisiert die Statusanzeige der aktuell geladenen Liste.
     function updateListStatus() {
@@ -3289,8 +3367,13 @@
                 `Übersprungen: ${skippedCount.toLocaleString('de-DE')}. `;
         }
         if (remainingCount > 0) {
-            const estimatedDuration = remainingCount * getAverageActionDuration();
-            progressText += `Verbleibend: ${remainingCount.toLocaleString('de-DE')} … `;
+            const averageActionDuration =
+                getAverageActionDuration();
+            const estimatedDuration = remainingCount * averageActionDuration;
+            progressText +=
+                `Verbleibend: ${
+                    remainingCount.toLocaleString('de-DE')
+                } … `;
             progressText +=
                 `Voraussichtliche Dauer: ca. ${
                     formatEstimatedDuration(
@@ -3925,7 +4008,7 @@
         bannedList.clear();
         activeListAction = null;
         activeListInfo = null;
-        actionDurationSamples = [];
+        resetActionDurationEstimate();
         QMD_bannedUsersStore = [];
         QMD_unbannedUsersStore = [];
         QMD_bannedUsersSet = new Set();
