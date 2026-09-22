@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.21.4
+// @version      26.9.22.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.21.4';
+    const myVersion = '26.9.22.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -300,6 +300,9 @@
             listInfo: {
                 ...activeListInfo,
                 users: new Set(activeListInfo.users),
+                completedUsers: new Set(
+                    activeListInfo.completedUsers || []
+                ),
                 skippedUsers: new Set(
                     activeListInfo.skippedUsers || []
                 )
@@ -313,7 +316,9 @@
             skipped: 0,
             failed: 0,
             storageChanges: 0,
-            processedUsers: new Set(),
+            processedUsers: new Set(
+                activeListInfo.completedUsers || []
+            ),
             skippedUsers: new Set(),
             startedAt: Date.now()
         };
@@ -346,7 +351,6 @@
         updateListStatus();
         return true;
     }
-
     function flushBulkActionStorage(action) {
         if (!action || action.storageChanges === 0) {
             return;
@@ -410,11 +414,90 @@
             );
         }
     }
+
+    function saveBulkActionListStatus(action) {
+        if (
+            !action ||
+            !action.listInfo ||
+            !action.listInfo.listSuffix ||
+            !action.listInfo.users
+        ) {
+            return;
+        }
+        const listInfo = action.listInfo;
+        const sourceUsers = listInfo.users;
+        const completedUsers = new Set([
+            ...(action.processedUsers || []),
+            ...(listInfo.completedUsers || [])
+        ]);
+        const skippedUsers = new Set([
+            ...(action.skippedUsers || []),
+            ...(listInfo.skippedUsers || [])
+        ]);
+        let processedCount = 0;
+        let skippedCount = 0;
+        for (const user of sourceUsers) {
+            if (completedUsers.has(user)) {
+                processedCount++;
+                continue;
+            }
+            if (skippedUsers.has(user)) {
+                skippedCount++;
+            }
+        }
+        const total = sourceUsers.size;
+        const handled = processedCount + skippedCount;
+        const remaining = Math.max(0, total - handled);
+        const percentage = total === 0
+            ? 100
+            : (handled / total) * 100;
+        const status = {
+            status: total === 0
+                ? 'empty'
+                : remaining === 0
+                ? 'complete'
+                : handled > 0
+                ? 'partial'
+                : 'open',
+            total,
+            processed: handled,
+            remaining,
+            percentage,
+            action: listInfo.action,
+            listSuffix: listInfo.listSuffix,
+            fileName: listInfo.fileName,
+            checkedAt: new Date().toISOString()
+        };
+        writeStorageValue(
+            getListStatusStorageKey(
+                action.channel,
+                {
+                    action: listInfo.action,
+                    saveSuffix: listInfo.listSuffix
+                }
+            ),
+            status
+        );
+        applyListStatusToButton(
+            {
+                id: LIST_BUTTONS.find(
+                    (listConfig) =>
+                        listConfig.saveSuffix === listInfo.listSuffix &&
+                        listConfig.action === listInfo.action
+                )?.id || '',
+                altText: listInfo.fileName || 'Liste',
+                text: listInfo.fileName || 'Liste',
+                placeholder: false
+            },
+            status
+        );
+    }
     function finishBulkAction(action) {
         if (activeBulkAction !== action) {
             return;
         }
         flushBulkActionStorage(action);
+        saveBulkActionListStatus(action);
         lastBulkActionResult = {
             total: action.users.length,
             cancelled: action.cancelled,
@@ -785,7 +868,8 @@
     // Prüft eine einzelne externe Liste auf ihren Bearbeitungsstand.
     async function checkSingleListStatus(
         listConfig,
-        channel
+        channel,
+        channelProcessedUsers
     ) {
         const checkedAt = new Date().toISOString();
         try {
@@ -826,9 +910,15 @@
                     )
                     : []
             );
+            const channelUsers =
+                channelProcessedUsers &&
+                channelProcessedUsers[listConfig.action]
+                    ? channelProcessedUsers[listConfig.action]
+                    : new Set();
             const completedUsers = new Set([
                 ...processedUsers,
-                ...skippedUsers
+                ...skippedUsers,
+                ...channelUsers
             ]);
             const total = sourceUsers.size;
             const processed = [...sourceUsers].filter(
@@ -914,12 +1004,31 @@
         button.setAttribute('aria-busy', 'true');
         try {
             const checkedChannel = activeChannel;
+            const channelProcessedUsers = {
+                ban: new Set(
+                    normalizeUserList(
+                        readStorageValue(
+                            `${checkedChannel}_banlist`,
+                            []
+                        )
+                    )
+                ),
+                unban: new Set(
+                    normalizeUserList(
+                        readStorageValue(
+                            `${checkedChannel}_unbanlist`,
+                            []
+                        )
+                    )
+                )
+            };
             const results = await Promise.all(
                 activeLists.map(
                     (listConfig) =>
                         checkSingleListStatus(
                             listConfig,
-                            checkedChannel
+                            checkedChannel,
+                            channelProcessedUsers
                         )
                 )
             );
@@ -1639,6 +1748,13 @@
             if (button) {
                 button.textContent = 'already banned';
             }
+            if (
+                activeListInfo &&
+                activeListInfo.action === 'ban' &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(normalizedUser);
+            }
             console.log(LOGPREFIX, `${normalizedUser} already banned in ${activeChannel}`);
         }
         if (shouldRender) {
@@ -1689,6 +1805,13 @@
             if (button) {
                 button.textContent =
                     'already unbanned';
+            }
+            if (
+                activeListInfo &&
+                activeListInfo.action === 'unban' &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(normalizedUser);
             }
             console.log(LOGPREFIX,`${normalizedUser} already unbanned in ${activeChannel}`);
         }
@@ -2005,9 +2128,7 @@
         d.querySelector('.closeBtn').onclick = hide;
         d.querySelector('.unbanAll').onclick = unbanAll;
         d.querySelector('.back').onclick = toggleBack;
-        d.querySelector('.cancelAction').onclick = () => {
-            cancelActiveBulkAction('manuell');
-        };
+        d.querySelector('.cancelAction').onclick = () => { cancelActiveBulkAction('manuell'); };
         d.querySelector('.quickCheck').onclick = quickCheckLists;
         d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
         d.querySelector('.importBtn').onclick = importList;
@@ -2116,6 +2237,7 @@
                 defaultBanReason
             ),
             users: new Set(users),
+            completedUsers: new Set(),
             skippedUsers: new Set()
         };
         for (const user of users) {
@@ -2287,6 +2409,7 @@
                     channel: activeChannel,
                     banReason: effectiveBanReason,
                     users: new Set(parsedUsers),
+                    completedUsers: new Set(),
                     skippedUsers: new Set()
                 };
                 usersToProcess.push(...parsedUsers);
@@ -2757,15 +2880,23 @@
                         storedUser !== normalizedUser
                 );
         }
-        const processedListInfo =
-            action?.listInfo || activeListInfo;
-        if (
-            action
-        ) {
+        const processedListInfo = action?.listInfo || activeListInfo;
+        if (action) {
             action.processedUsers.add(
                 normalizedUser
             );
+            action.listInfo.completedUsers.add(
+                normalizedUser
+            );
             action.storageChanges++;
+        } else if (
+            activeListInfo &&
+            activeListInfo.action === 'unban' &&
+            activeListInfo.users.has(normalizedUser)
+        ) {
+            activeListInfo.completedUsers.add(
+                normalizedUser
+            );
         }
         if (
             !action &&
@@ -2857,6 +2988,7 @@
                 console.log(LOGPREFIX, `${normalizedUser} steht auf der Whitelist und wird nicht gebannt.`);
                 if (action) {
                     action.skippedUsers.add(normalizedUser);
+                    action.listInfo.skippedUsers.add(normalizedUser);
                 }
                 if (action) {
                     action.storageChanges++;
@@ -2936,6 +3068,13 @@
         }
         if (action) {
             action.processedUsers.add(normalizedUser);
+            action.listInfo.completedUsers.add(normalizedUser);
+        } else if (
+            activeListInfo &&
+            activeListInfo.action === 'ban' &&
+            activeListInfo.users.has(normalizedUser)
+        ) {
+            activeListInfo.completedUsers.add(normalizedUser);
         }
         if (
             !action ||
@@ -3337,8 +3476,14 @@
         const listUsers = activeListInfo.users;
         const totalCount = listUsers.size;
         const skippedCount = activeListInfo.skippedUsers.size;
-        const remainingCount = Math.min(totalCount, queueList.size);
-        const processedCount = Math.max(0, totalCount - remainingCount - skippedCount);
+        const completedCount = activeListInfo.completedUsers
+            ? activeListInfo.completedUsers.size
+            : 0;
+        const remainingCount = Math.max(
+            0,
+            totalCount - completedCount - skippedCount
+        );
+        const processedCount = completedCount;
         const actionWord =
             activeListInfo.action === 'unban'
                 ? 'entbannt'
