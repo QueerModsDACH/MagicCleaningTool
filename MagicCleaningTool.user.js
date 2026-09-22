@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.22.3
+// @version      26.9.22.5
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,10 +14,11 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.22.3';
+    const myVersion = '26.9.22.5';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
+    const QUICK_CHECK_AUTO_STORAGE_KEY = 'quick_check_auto';
     const defaultBanReason = 'Ban by QMD list';
     const urlBannlisten = 'https://github.com/QueerModsDACH/Listen';
     const WHITELISTED_BOTS_URL = 'https://raw.githubusercontent.com/QueerModsDACH/Listen/refs/heads/main/WHITELISTED_bots.txt';
@@ -70,7 +71,7 @@
     const Button_04_Action = 'ban';
     // Button 05
     const Button_05_IdClass = 'Button_05';
-    const Button_05_Text = '5B2Z Bots (a-t)\n…list currently being compiled…';
+    const Button_05_Text = '5B2Z Bots (a-u)\n…list currently being compiled…';
     const Button_05_BanReason = '5B2Z-BOT @240505 (QMD-List)';
     const Button_05_ListSaveSuffix = '_5B2Z_20240505_completely';
     const Button_05_AltText = 'Importiert die 5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
@@ -274,6 +275,11 @@
     // Der gespeicherte Sichtbarkeitszustand wird standardmäßig auf "sichtbar" gesetzt.
     let isModMenuVisible = readStorageValue(
         MOD_MENU_VISIBILITY_STORAGE_KEY,
+        true
+    );
+    // Der gespeicherte Quick-Check-Zustand wird standardmäßig auf "automatisch" gesetzt.
+    let isQuickCheckAuto = readStorageValue(
+        QUICK_CHECK_AUTO_STORAGE_KEY,
         true
     );
     // ##### VERZÖGERUNGEN FÜR TWITCH-AKTIONEN ####################################
@@ -512,8 +518,8 @@
             finishedAt: Date.now()
         };
         activeBulkAction = null;
+        showListSelectionView();
         updateBulkActionControls();
-        renderList();
         updateListStatus();
         requestAutomaticQuickCheck();
         console.info(LOGPREFIX,
@@ -1065,6 +1071,10 @@
         return quickCheckPromise;
     }
     function runPendingAutomaticQuickCheck() {
+        if (!isQuickCheckAuto) {
+            automaticQuickCheckPending = false;
+            return;
+        }
         if (
             !automaticQuickCheckPending ||
             activeBulkAction ||
@@ -1084,6 +1094,16 @@
         quickCheckLists();
     }
     function requestAutomaticQuickCheck() {
+        if (!isQuickCheckAuto) {
+            automaticQuickCheckPending = false;
+            if (automaticQuickCheckTimer !== null) {
+                window.clearTimeout(
+                    automaticQuickCheckTimer
+                );
+                automaticQuickCheckTimer = null;
+            }
+            return;
+        }
         automaticQuickCheckPending = true;
         if (automaticQuickCheckTimer !== null) {
             return;
@@ -1431,6 +1451,14 @@
                 .magicMorningStar .action-bar .back { min-width: 78px; background: #5f6368; color: #ffffff; }
                 .magicMorningStar .action-bar .quickCheck { min-width: 96px; background: #2878b5; color: #ffffff; }
                 .magicMorningStar .action-bar .quickCheck.is-checking { background: #6c757d; cursor: wait; }
+
+                /* Umschalter für automatische Quick Checks */
+                .magicMorningStar .quickCheckAutoToggle { width: 48px; min-width: 48px; height: 32px; min-height: 32px; margin-left: 4px; padding: 0;
+                    border: 1px solid transparent; background: transparent; color: var(--color-text-base); font-size: 11px; line-height: 1;}
+                .magicMorningStar .quickCheckAutoToggle.is-auto { color: #34ae0c;}
+                .magicMorningStar .quickCheckAutoToggle.is-off { color: #c0392b;}
+                .magicMorningStar .quickCheckAutoToggle:not(:disabled):hover { border-color: ${themeTextColor}; cursor: pointer;}
+
                 .magicMorningStar .list-button-row button.qmd-list-status { border: 2px solid rgba(255, 255, 255, 0.55);
                     transition: background-color 160ms ease, border-color 160ms ease, filter 160ms ease; }
                 .magicMorningStar .list-button-row button.qmd-status-unknown { background: #6c757d !important; color: #ffffff !important; }
@@ -1537,6 +1565,12 @@
                     <img class="modMenuToggleImage" src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
                         title="Mod-Menü ein- oder ausblenden" alt="Mod-Menü" width="32" height="32" >
                 </button>
+
+                <!-- Umschalter für automatische Quick Checks -->
+                <button class="quickCheckAutoToggle" type="button" title="Automatische Quick Checks ein- oder ausschalten" aria-label="Automatische Quick Checks ein- oder ausschalten" style="display: inline-flex;" >
+                    <span class="quickCheckAutoToggleSymbol" aria-hidden="true"></span>
+                </button>
+
                 <span style="flex-grow: 1;"></span>
                 <!-- Repository-Link und Tool-Titel -->
                 <h5 id="header" class="logo">
@@ -1999,6 +2033,17 @@
         }
         renderList();
     }
+    // Zeigt die Übersicht mit den verfügbaren Listenbuttons an.
+    function showListSelectionView() {
+        const importDiv = d.querySelector('.import');
+        const body = d.querySelector('.body');
+        if (!importDiv || !body) {
+            return;
+        }
+        importDiv.style.display = '';
+        body.style.display = 'none';
+        renderList();
+    }
     function toggleBack() {
         if (activeBulkAction) {
             return;
@@ -2034,6 +2079,59 @@
             loadedList.style.display = 'none';
         }
         renderList();
+    }
+    // ##### AUTOMATISCHE QUICK CHECKS ############################################
+    // Aktualisiert die Anzeige und Beschriftung des Quick-Check-Automatikschalters.
+    function updateQuickCheckAutoToggle() {
+        const button = d.querySelector('.quickCheckAutoToggle');
+        const symbol = d.querySelector('.quickCheckAutoToggleSymbol');
+        if (!button || !symbol) {
+            return;
+        }
+        button.classList.toggle('is-auto', isQuickCheckAuto);
+        button.classList.toggle('is-off', !isQuickCheckAuto);
+        symbol.textContent = isQuickCheckAuto
+            ? '✓ Auto'
+            : '× Aus';
+        const title = isQuickCheckAuto
+            ? 'Automatische Quick Checks ausschalten'
+            : 'Automatische Quick Checks einschalten';
+        button.title = title;
+        button.setAttribute(
+            'aria-label',
+            title
+        );
+    }
+    // Schaltet automatische Quick Checks um und speichert den Zustand.
+    function toggleQuickCheckAuto() {
+        isQuickCheckAuto = !isQuickCheckAuto;
+        writeStorageValue(
+            QUICK_CHECK_AUTO_STORAGE_KEY,
+            isQuickCheckAuto
+        );
+        // Bereits vorgemerkte automatische Prüfungen dürfen beim Ausschalten weder später noch bei einem Kanalwechsel ausgeführt werden.
+        if (!isQuickCheckAuto) {
+            automaticQuickCheckPending = false;
+            if (automaticQuickCheckTimer !== null) {
+                window.clearTimeout(
+                    automaticQuickCheckTimer
+                );
+                automaticQuickCheckTimer = null;
+            }
+        }
+        updateQuickCheckAutoToggle();
+        // Falls die Automatik wieder eingeschaltet wird und inzwischen eine neue automatische Prüfung angefordert wurde, wird sie normal geplant.
+        if (isQuickCheckAuto) {
+            runPendingAutomaticQuickCheck();
+        }
+        console.info(
+            LOGPREFIX,
+            `Automatische Quick Checks sind jetzt ${
+                isQuickCheckAuto
+                    ? 'aktiviert'
+                    : 'deaktiviert'
+            }.`
+        );
     }
     // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
     // Aktualisiert das Bild und die Beschriftung des Umschalters.
@@ -2178,6 +2276,7 @@
         d.querySelector('.cancelAction').onclick = () => { cancelActiveBulkAction('manuell'); };
         d.querySelector('.quickCheck').onclick = quickCheckLists;
         d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
+        d.querySelector('.quickCheckAutoToggle').onclick = toggleQuickCheckAuto;
         d.querySelector('.importBtn').onclick = importList;
         d.querySelector('.commanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
         d.querySelector('.chatstats').onclick = () => openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
@@ -2498,11 +2597,16 @@
                 if (textField) {
                     textField.value = '';
                 }
-                const importDiv = d.querySelector('.import');
-                const body = d.querySelector('.body');
-                if (importDiv && body) {
-                    importDiv.style.display = 'none';
-                    body.style.display = '';
+                if (queueList.size > 0) {
+                    const importDiv = d.querySelector('.import');
+                    const body = d.querySelector('.body');
+                    if (importDiv && body) {
+                        importDiv.style.display = 'none';
+                        body.style.display = '';
+                    }
+                } else {
+                    // Die Liste ist vollständig abgearbeitet oder enthält keine neuen Benutzer. Deshalb zurück zur Listenübersicht.
+                    showListSelectionView();
                 }
                 if (
                     queueList.size === 0 &&
@@ -3766,12 +3870,18 @@
                     </li>
                 `;
             }
+        } else if (!isSelectionView) {
+            inner = `
+            <div id="empty" class="empty">
+            <img class="toggleImport" src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
+            title="Start Magic Cleaning Tool" alt="Magic Cleaning Tool starten" width="580" style="cursor: pointer; max-height: 270px; min-height: 270px" >
+            </div>
+            `;
         } else {
             inner = `
-                <div id="empty" class="empty">
-                    <img class="toggleImport" src="https://raw.githubusercontent.com/QueerModsDACH/MagicCleaningTool/main/pix/Queermodsdach_Banner_1920x960.png"
-                        title="Start Magic Cleaning Tool" alt="Magic Cleaning Tool starten" width="580" style="cursor: pointer; max-height: 270px; min-height: 270px" >
-                </div>
+            <div id="empty" class="empty">
+            Listenübersicht geöffnet.
+            </div>
             `;
         }
         listElement.innerHTML = `
@@ -4292,4 +4402,6 @@
     renderList();
     // Initiales Bild des Mod-Menü-Umschalters.
     updateModMenuToggleImage();
+    // Initiale Anzeige des Quick-Check-Automatikschalters.
+    updateQuickCheckAutoToggle();
 })();
