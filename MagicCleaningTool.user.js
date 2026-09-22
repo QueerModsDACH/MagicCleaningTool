@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.22.1
+// @version      26.9.22.3
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.22.1';
+    const myVersion = '26.9.22.3';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
@@ -215,6 +215,9 @@
     // Laufzeitstatus der aktuellen Sammelaktion.
     let activeBulkAction = null;
     let lastBulkActionResult = null;
+    let automaticQuickCheckPending = false;
+    let automaticQuickCheckTimer = null;
+    let quickCheckPromise = null;
     const queueList = new Set();
     let activeListAction = null;
     const queueListSources = new Map();
@@ -347,6 +350,7 @@
         }
         activeBulkAction.cancelled = true;
         activeBulkAction.cancelReason = reason;
+        requestAutomaticQuickCheck();
         updateBulkActionControls();
         updateListStatus();
         return true;
@@ -414,7 +418,6 @@
             );
         }
     }
-
     function saveBulkActionListStatus(action) {
         if (
             !action ||
@@ -512,6 +515,7 @@
         updateBulkActionControls();
         renderList();
         updateListStatus();
+        requestAutomaticQuickCheck();
         console.info(LOGPREFIX,
             action.cancelled
                 ? `Sammelaktion abgebrochen: ${action.cancelReason || 'unbekannter Grund'}.`
@@ -993,62 +997,104 @@
             console.warn(LOGPREFIX, 'Quick check blockiert: Kein aktiver Kanal.');
             return;
         }
-        const activeLists = LIST_BUTTONS.filter( (listConfig) => !listConfig.placeholder );
+        if (quickCheckPromise) {
+            return quickCheckPromise;
+        }
+        const activeLists = LIST_BUTTONS.filter(
+            (listConfig) =>
+                !listConfig.placeholder
+        );
         if (activeLists.length === 0) {
             return;
         }
         const originalText = button.textContent;
-        button.disabled = true;
-        button.classList.add('is-checking');
-        button.textContent = 'Prüfe …';
-        button.setAttribute('aria-busy', 'true');
-        try {
-            const checkedChannel = activeChannel;
-            const channelProcessedUsers = {
-                ban: new Set(
-                    normalizeUserList(
-                        readStorageValue(
-                            `${checkedChannel}_banlist`,
-                            []
+        quickCheckPromise = (async () => {
+            button.disabled = true;
+            button.classList.add('is-checking');
+            button.textContent = 'Prüfe …';
+            button.setAttribute('aria-busy', 'true');
+            try {
+                const checkedChannel = activeChannel;
+                const channelProcessedUsers = {
+                    ban: new Set(
+                        normalizeUserList(
+                            readStorageValue(
+                                `${checkedChannel}_banlist`,
+                                []
+                            )
+                        )
+                    ),
+                    unban: new Set(
+                        normalizeUserList(
+                            readStorageValue(
+                                `${checkedChannel}_unbanlist`,
+                                []
+                            )
                         )
                     )
-                ),
-                unban: new Set(
-                    normalizeUserList(
-                        readStorageValue(
-                            `${checkedChannel}_unbanlist`,
-                            []
-                        )
+                };
+                const results = await Promise.all(
+                    activeLists.map(
+                        (listConfig) =>
+                            checkSingleListStatus(
+                                listConfig,
+                                checkedChannel,
+                                channelProcessedUsers
+                            )
                     )
-                )
-            };
-            const results = await Promise.all(
-                activeLists.map(
-                    (listConfig) =>
-                        checkSingleListStatus(
-                            listConfig,
-                            checkedChannel,
-                            channelProcessedUsers
-                        )
-                )
-            );
-            if (activeChannel !== checkedChannel) {
-                return;
-            }
-            results.forEach(
-                ({ listConfig, status }) => {
-                    applyListStatusToButton(
-                        listConfig,
-                        status
-                    );
+                );
+                if (activeChannel !== checkedChannel) {
+                    return;
                 }
-            );
-        } finally {
-            button.disabled = false;
-            button.classList.remove('is-checking');
-            button.textContent = originalText;
-            button.removeAttribute('aria-busy');
+                results.forEach(
+                    ({ listConfig, status }) => {
+                        applyListStatusToButton(
+                            listConfig,
+                            status
+                        );
+                    }
+                );
+            } finally {
+                button.disabled = false;
+                button.classList.remove('is-checking');
+                button.textContent = originalText;
+                button.removeAttribute('aria-busy');
+                quickCheckPromise = null;
+            }
+        })();
+        return quickCheckPromise;
+    }
+    function runPendingAutomaticQuickCheck() {
+        if (
+            !automaticQuickCheckPending ||
+            activeBulkAction ||
+            !activeChannel ||
+            !isCurrentChannelModerated()
+        ) {
+            return;
         }
+        const quickCheckButton = d.querySelector('.quickCheck');
+        if (
+            !quickCheckButton ||
+            quickCheckButton.disabled
+        ) {
+            return;
+        }
+        automaticQuickCheckPending = false;
+        quickCheckLists();
+    }
+    function requestAutomaticQuickCheck() {
+        automaticQuickCheckPending = true;
+        if (automaticQuickCheckTimer !== null) {
+            return;
+        }
+        automaticQuickCheckTimer = window.setTimeout(
+            () => {
+                automaticQuickCheckTimer = null;
+                runPendingAutomaticQuickCheck();
+            },
+            0
+        );
     }
     // ##### AKTUELLEN KANAL AUS DER URL ERMITTELN ###############################
     function getActiveChannel() {
@@ -1920,6 +1966,7 @@
         updateChannelInfo();
         makeToolDraggable();
         renderList();
+        requestAutomaticQuickCheck();
     }
         function hide() {
             console.log(LOGPREFIX, 'Hide');
@@ -2451,22 +2498,25 @@
                 if (textField) {
                     textField.value = '';
                 }
+                const importDiv = d.querySelector('.import');
+                const body = d.querySelector('.body');
+                if (importDiv && body) {
+                    importDiv.style.display = 'none';
+                    body.style.display = '';
+                }
+                if (
+                    queueList.size === 0 &&
+                    normalizedAction === 'unban'
+                ) {
+                    const banReasonInput = d.querySelector('#banReason');
+                    if (banReasonInput) {
+                        banReasonInput.value = '';
+                        banReasonInput.dataset.reasonSource =
+                            'empty';
+                    }
+                }
                 updateListStatus();
                 renderList();
-                if (queueList.size !== 0) {
-                    toggleImport();
-                    renderList();
-                } else {
-                    if (normalizedAction === 'unban') {
-                        const banReasonInput = d.querySelector('#banReason');
-                        if (banReasonInput) {
-                            banReasonInput.value = '';
-                            banReasonInput.dataset.reasonSource =
-                                'empty';
-                        }
-                    }
-                    renderList();
-                }
                 if (sourceButton) {
                     sourceButton.disabled = false;
                     sourceButton.removeAttribute(
@@ -2646,6 +2696,7 @@
         } catch (error) {
             action.cancelled = true;
             action.cancelReason = 'Fehler';
+            requestAutomaticQuickCheck();
             console.error(LOGPREFIX,'Ban-All-Aktion wurde wegen eines Fehlers beendet:', error);
         } finally {
             // updateListStatus();
@@ -2730,6 +2781,7 @@
         } catch (error) {
             action.cancelled = true;
             action.cancelReason = 'Fehler';
+            requestAutomaticQuickCheck();
             console.error(LOGPREFIX,'Unban-All-Aktion wurde wegen eines Fehlers beendet:', error);
         } finally {
             updateListStatus();
@@ -2834,6 +2886,11 @@
             sendMessage(`/unban ${normalizedUser}`);
         } catch (error) {
             console.error(LOGPREFIX, `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
+            if (action) {
+                action.cancelled = true;
+                action.cancelReason = 'Fehler beim Senden';
+            }
+            requestAutomaticQuickCheck();
             return false;
         }
         if (
@@ -2888,6 +2945,15 @@
             action.listInfo.completedUsers.add(
                 normalizedUser
             );
+            if (
+                activeListInfo &&
+                activeListInfo.action === 'unban' &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(
+                    normalizedUser
+                );
+            }
             action.storageChanges++;
         } else if (
             activeListInfo &&
@@ -2989,6 +3055,13 @@
                 if (action) {
                     action.skippedUsers.add(normalizedUser);
                     action.listInfo.skippedUsers.add(normalizedUser);
+                    if (
+                        activeListInfo &&
+                        activeListInfo.action === 'ban' &&
+                        activeListInfo.users.has(normalizedUser)
+                    ) {
+                    activeListInfo.skippedUsers.add(normalizedUser);
+                    }
                 }
                 if (action) {
                     action.storageChanges++;
@@ -3050,6 +3123,11 @@
             );
         } catch (error) {
             console.error(LOGPREFIX, `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`, error);
+            if (action) {
+                action.cancelled = true;
+                action.cancelReason = 'Fehler beim Senden';
+            }
+            requestAutomaticQuickCheck();
             return false;
         }
         if (
@@ -3069,6 +3147,13 @@
         if (action) {
             action.processedUsers.add(normalizedUser);
             action.listInfo.completedUsers.add(normalizedUser);
+            if (
+                activeListInfo &&
+                activeListInfo.action === 'ban' &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(normalizedUser);
+            }
         } else if (
             activeListInfo &&
             activeListInfo.action === 'ban' &&
@@ -4186,6 +4271,7 @@
         updateListStatus();
         renderList();
         updateBulkActionControls();
+        runPendingAutomaticQuickCheck();
     }
     // ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG ###############################
     // Twitch rendert Header und Mod-Ansicht dynamisch. Deshalb werden die relevanten Elemente dauerhaft geprüft.
@@ -4195,6 +4281,7 @@
                 refreshActiveChannel();
                 appendActivatorBtn();
                 modMenu();
+                runPendingAutomaticQuickCheck();
             } catch (error) {
                 console.error(LOGPREFIX, 'Fehler im Twitch-Watchdog:', error);
             }
