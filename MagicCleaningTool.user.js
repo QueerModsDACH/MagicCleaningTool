@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.26.2
+// @version      26.9.26.3
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,9 +14,18 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.26.2';
+    const myVersion = '26.9.26.3';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
+    const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
+    const QMD_DATABASE_VERSION = 1;
+    const QMD_DATABASE_STORE = 'values';
+    const QMD_EXPORT_FORMAT = 'qmd-mct-export';
+    const QMD_EXPORT_VERSION = 1;
+    let qmdDatabasePromise = null;
+    let qmdStorageReadyPromise = null;
+    let qmdStorageWritePromise = Promise.resolve();
+    const qmdMemoryStore = new Map();
     const MOD_MENU_VISIBILITY_STORAGE_KEY = 'visibility_of_mod_menu';
     const QUICK_CHECK_AUTO_STORAGE_KEY = 'quick_check_auto';
     const defaultBanReason = 'Ban by QMD list';
@@ -363,172 +372,138 @@
         updateListStatus();
         return true;
     }
-
-
-
- function flushBulkActionStorage(action) {
-     if (!action || action.storageChanges === 0) {
-         return;
-     }
-
-     const actionChannel = action.channel;
-     const listInfo = action.listInfo;
-
-     if (action.action === 'ban') {
-         writeStorageValue(
-             `${actionChannel}_banlist`,
-             QMD_bannedUsersStore
-         );
-         writeStorageValue(
-             `${actionChannel}_unbanlist`,
-             QMD_unbannedUsersStore
-         );
-     }
-
-     if (action.action === 'unban') {
-         writeStorageValue(
-             `${actionChannel}_unbanlist`,
-             QMD_unbannedUsersStore
-         );
-         writeStorageValue(
-             `${actionChannel}_banlist`,
-             QMD_bannedUsersStore
-         );
-     }
-
-     if (!listInfo || !listInfo.listSuffix) {
-         return;
-     }
-
-     const storageKeyName = getListProcessedStorageKey(
-         actionChannel,
-         listInfo
-     );
-
-     const storedUsers = new Set(
-         normalizeUserList(
-             readStorageValue(storageKeyName, [])
-         )
-     );
-
-     const processedUsers = new Set(
-         action.processedUsers || []
-     );
-
-     for (const user of processedUsers) {
-         storedUsers.add(user);
-     }
-
-     writeStorageValue(
-         storageKeyName,
-         [...storedUsers]
-     );
-
-     if (
-         action.action === 'ban' &&
-         action.skippedUsers &&
-         action.skippedUsers.size > 0
-     ) {
-         const skippedStorageKey = getListSkippedStorageKey(
-             actionChannel,
-             listInfo
-         );
-
-         const skippedUsers = new Set(
-             normalizeUserList(
-                 readStorageValue(
-                     skippedStorageKey,
-                     []
-                 )
-             )
-         );
-
-         for (const user of action.skippedUsers) {
-             // Ein erfolgreich verarbeiteter Benutzer darf nicht zusätzlich
-             // als übersprungen gespeichert werden.
-             if (!processedUsers.has(user)) {
-                 skippedUsers.add(user);
-             }
-         }
-
-         writeStorageValue(
-             skippedStorageKey,
-             [...skippedUsers]
-         );
-     }
- }
-
-
-
-
-
-
-
-function saveBulkActionListStatus(action) {
-    if (
-        !action ||
-        !action.listInfo ||
-        !action.listInfo.listSuffix ||
-        !action.listInfo.users
-    ) {
-        return;
-    }
-
-    const listInfo = {
-        ...action.listInfo,
-        users: new Set(
-            action.listInfo.users
-        ),
-        completedUsers: new Set([
-            ...(action.listInfo.completedUsers || []),
-            ...(action.processedUsers || [])
-        ]),
-        skippedUsers: new Set([
-            ...(action.listInfo.skippedUsers || []),
-            ...(action.skippedUsers || [])
-        ])
-    };
-
-    const status = buildListStatus(
-        listInfo
-    );
-
-    if (!status) {
-        return;
-    }
-
-    writeStorageValue(
-        getListStatusStorageKey(
-            action.channel,
-            {
-                action: listInfo.action,
-                saveSuffix: listInfo.listSuffix
+    function flushBulkActionStorage(action) {
+        if (!action || action.storageChanges === 0) {
+            return;
+        }
+        const actionChannel = action.channel;
+        const listInfo = action.listInfo;
+        if (action.action === 'ban') {
+            writeStorageValue(
+                `${actionChannel}_banlist`,
+                QMD_bannedUsersStore
+            );
+            writeStorageValue(
+                `${actionChannel}_unbanlist`,
+                QMD_unbannedUsersStore
+            );
+        }
+        if (action.action === 'unban') {
+            writeStorageValue(
+                `${actionChannel}_unbanlist`,
+                QMD_unbannedUsersStore
+            );
+            writeStorageValue(
+                `${actionChannel}_banlist`,
+                QMD_bannedUsersStore
+            );
+        }
+        if (!listInfo || !listInfo.listSuffix) {
+            return;
+        }
+        const storageKeyName = getListProcessedStorageKey( actionChannel, listInfo);
+        const storedUsers = new Set(
+            normalizeUserList(
+                readStorageValue(storageKeyName, [])
+            )
+        );
+        const processedUsers = new Set(
+            action.processedUsers || []
+        );
+        for (const user of processedUsers) {
+            storedUsers.add(user);
+        }
+        writeStorageValue(
+            storageKeyName,
+            [...storedUsers]
+        );
+        if (
+            action.action === 'ban' &&
+            action.skippedUsers &&
+            action.skippedUsers.size > 0
+        ) {
+            const skippedStorageKey = getListSkippedStorageKey(
+                actionChannel,
+                listInfo
+            );
+            const skippedUsers = new Set(
+                normalizeUserList(
+                    readStorageValue(
+                        skippedStorageKey,
+                        []
+                    )
+                )
+            );
+            for (const user of action.skippedUsers) {
+                // Ein erfolgreich verarbeiteter Benutzer darf nicht zusätzlich als übersprungen gespeichert werden.
+                if (!processedUsers.has(user)) {
+                    skippedUsers.add(user);
+                }
             }
-        ),
-        status
-    );
-
-    const listConfig = LIST_BUTTONS.find(
-        (config) =>
-            config.saveSuffix === listInfo.listSuffix &&
-            config.action === listInfo.action
-    );
-
-    if (listConfig) {
-        applyListStatusToButton(
-            listConfig,
+            writeStorageValue(
+                skippedStorageKey,
+                [...skippedUsers]
+            );
+        }
+    }
+    function saveBulkActionListStatus(action) {
+        if (
+            !action ||
+            !action.listInfo ||
+            !action.listInfo.listSuffix ||
+            !action.listInfo.users
+        ) {
+            return;
+        }
+        const listInfo = {
+            ...action.listInfo,
+            users: new Set(
+                action.listInfo.users
+            ),
+            completedUsers: new Set([
+                ...(action.listInfo.completedUsers || []),
+                ...(action.processedUsers || [])
+            ]),
+            skippedUsers: new Set([
+                ...(action.listInfo.skippedUsers || []),
+                ...(action.skippedUsers || [])
+            ])
+        };
+        const status = buildListStatus(
+            listInfo
+        );
+        if (!status) {
+            return;
+    }
+        writeStorageValue(
+            getListStatusStorageKey(
+                action.channel,
+                {
+                    action: listInfo.action,
+                    saveSuffix: listInfo.listSuffix
+                }
+            ),
             status
         );
+        const listConfig = LIST_BUTTONS.find(
+            (config) =>
+                config.saveSuffix === listInfo.listSuffix &&
+                config.action === listInfo.action
+        );
+        if (listConfig) {
+            applyListStatusToButton(
+                listConfig,
+                status
+            );
+        }
     }
-}
-
-
-    function finishBulkAction(action) {
+    async function finishBulkAction(action) {
         if (activeBulkAction !== action) {
             return;
         }
         flushBulkActionStorage(action);
         saveBulkActionListStatus(action);
+        await flushStorageWrites();
         lastBulkActionResult = {
             total: action.users.length,
             cancelled: action.cancelled,
@@ -562,32 +537,25 @@ function saveBulkActionListStatus(action) {
                 action.cancelReason
                 ? `Grund: ${action.cancelReason}.`
                 : 'Grund: unbekannt.';
-
-return [
-    'Sammelaktion abgebrochen.',
-    cancelReason,
-    `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
-    `Fehler: ${(action.failed || 0).toLocaleString('de-DE')}.`,
-    `${remaining.toLocaleString('de-DE')} Einträge verbleiben.`
-].join(' ');
-
-
+            return [
+                'Sammelaktion abgebrochen.',
+                cancelReason,
+                `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
+                `Fehler: ${(action.failed || 0).toLocaleString('de-DE')}.`,
+                `${remaining.toLocaleString('de-DE')} Einträge verbleiben.`
+            ].join(' ');
         }
-
-if (completed >= total) {
-    const failedText = action.failed > 0
-        ? ` Fehler: ${action.failed.toLocaleString('de-DE')}.`
-        : '';
-
-    return [
-        'Sammelaktion abgeschlossen.',
-        `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
-        `Übersprungen: ${action.skipped.toLocaleString('de-DE')}.`,
-        failedText
-    ].join(' ');
-}
-
-
+        if (completed >= total) {
+            const failedText = action.failed > 0
+                ? ` Fehler: ${action.failed.toLocaleString('de-DE')}.`
+                : '';
+            return [
+                'Sammelaktion abgeschlossen.',
+                `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
+                `Übersprungen: ${action.skipped.toLocaleString('de-DE')}.`,
+                failedText
+            ].join(' ');
+        }
         return [
             'Sammelaktion läuft.',
             `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
@@ -615,103 +583,319 @@ if (completed >= total) {
     // Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen dadurch möglicherweise zu schnell nacheinander ausgeführt werden.
     const DELAY_BAN_ACTION = 130;
     const DELAY_UNBAN_ACTION = 130;
-    // ##### LOCALSTORAGE-HILFSFUNKTIONEN #########################################
+    // ##### INDEXEDDB- UND STORAGE-HILFSFUNKTIONEN ###############################
     function storageKey(key) {
         return `${BROWSER_STORAGE_PREFIX}${key}`;
     }
-    function readStorageList(key) {
-        try {
-            const value = localStorage.getItem(storageKey(key));
-            if (!value) {
-                return [];
-            }
-            const parsedValue = JSON.parse(value);
-            return Array.isArray(parsedValue)
-                ? parsedValue
-                : [];
-        } catch (error) {
-            console.error(LOGPREFIX, `Ungültige Daten im Speicher-Schlüssel "${storageKey(key)}":`, error);
-            return [];
+    function getStorageKeyFromPrefixedKey(key) {
+        return String(key).startsWith(BROWSER_STORAGE_PREFIX)
+            ? String(key).slice(BROWSER_STORAGE_PREFIX.length)
+            : String(key);
+    }
+    function cloneStorageValue(value) {
+        if (value === undefined) {
+            return undefined;
         }
+        try {
+            return structuredClone(value);
+        } catch (error) {
+            return JSON.parse(JSON.stringify(value));
+        }
+    }
+    function openQmdDatabase() {
+        if (qmdDatabasePromise) {
+            return qmdDatabasePromise;
+        }
+        qmdDatabasePromise = new Promise((resolve, reject) => {
+            if (!('indexedDB' in window)) {
+                reject(new Error('IndexedDB wird von diesem Browser nicht unterstützt.'));
+                return;
+            }
+            const request = window.indexedDB.open(
+                QMD_DATABASE_NAME,
+                QMD_DATABASE_VERSION
+            );
+            request.onerror = () => {
+                reject(
+                    request.error ||
+                    new Error('IndexedDB konnte nicht geöffnet werden.')
+                );
+            };
+            request.onupgradeneeded = () => {
+                const database = request.result;
+                if (!database.objectStoreNames.contains(QMD_DATABASE_STORE)) {
+                    database.createObjectStore(
+                        QMD_DATABASE_STORE,
+                        {
+                            keyPath: 'key'
+                        }
+                    );
+                }
+            };
+            request.onsuccess = () => {
+                const database = request.result;
+                database.onversionchange = () => {
+                    database.close();
+                };
+                resolve(database);
+            };
+        });
+        return qmdDatabasePromise;
+    }
+    function readInitialLocalStorageValues() {
+        for (let index = 0; index < localStorage.length; index++) {
+            const prefixedKey = localStorage.key(index);
+            if (
+                !prefixedKey ||
+                !prefixedKey.startsWith(BROWSER_STORAGE_PREFIX)
+            ) {
+                continue;
+            }
+            try {
+                const rawValue = localStorage.getItem(prefixedKey);
+                if (rawValue === null) {
+                    continue;
+                }
+                qmdMemoryStore.set(
+                    getStorageKeyFromPrefixedKey(prefixedKey),
+                    JSON.parse(rawValue)
+                );
+            } catch (error) {
+                console.error(
+                    LOGPREFIX,
+                    `Ungültiger Local-Storage-Wert für "${prefixedKey}":`,
+                    error
+                );
+            }
+        }
+    }
+    function readAllIndexedDbValues(database) {
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(
+                QMD_DATABASE_STORE,
+                'readonly'
+            );
+            const store = transaction.objectStore(QMD_DATABASE_STORE);
+            const request = store.getAll();
+            request.onerror = () => {
+                reject(
+                    request.error ||
+                    new Error('IndexedDB-Daten konnten nicht gelesen werden.')
+                );
+            };
+            request.onsuccess = () => {
+                resolve(request.result || []);
+            };
+        });
+    }
+    function writeIndexedDbValues(database, values) {
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(
+                QMD_DATABASE_STORE,
+                'readwrite'
+            );
+            const store = transaction.objectStore(QMD_DATABASE_STORE);
+            transaction.onerror = () => {
+                reject(
+                    transaction.error ||
+                    new Error('IndexedDB-Daten konnten nicht gespeichert werden.')
+                );
+            };
+            transaction.oncomplete = () => {
+                resolve();
+            };
+            for (const [key, value] of values) {
+                store.put({
+                    key,
+                    value: cloneStorageValue(value)
+                });
+            }
+        });
+    }
+    async function initializeQmdStorage() {
+        readInitialLocalStorageValues();
+        try {
+            const database = await openQmdDatabase();
+            const indexedDbValues = await readAllIndexedDbValues(database);
+            if (indexedDbValues.length === 0) {
+                await writeIndexedDbValues(
+                    database,
+                    qmdMemoryStore.entries()
+                );
+            } else {
+                qmdMemoryStore.clear();
+                for (const record of indexedDbValues) {
+                    if (
+                        record &&
+                        typeof record.key === 'string'
+                    ) {
+                        qmdMemoryStore.set(
+                            record.key,
+                            cloneStorageValue(record.value)
+                        );
+                    }
+                }
+            }
+            console.info(
+                LOGPREFIX,
+                `IndexedDB bereit: ${qmdMemoryStore.size} Speicherwerte geladen.`
+            );
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                'IndexedDB konnte nicht initialisiert werden. LocalStorage-Fallback wird verwendet:',
+                error
+            );
+        }
+    }
+    qmdStorageReadyPromise = initializeQmdStorage();
+    function queueIndexedDbWrite(key, value) {
+        qmdStorageWritePromise = qmdStorageWritePromise
+            .then(async () => {
+                const database = await openQmdDatabase();
+                await writeIndexedDbValues(
+                    database,
+                    [
+                        [
+                            key,
+                            value
+                        ]
+                    ]
+                );
+            })
+            .catch((error) => {
+                console.error(
+                    LOGPREFIX,
+                    `IndexedDB-Wert "${key}" konnte nicht gespeichert werden:`,
+                    error
+                );
+            });
+        return qmdStorageWritePromise;
+    }
+    function readStorageList(key) {
+        const value = readStorageValue(key, []);
+        return Array.isArray(value)
+            ? value
+            : [];
     }
     function writeStorageList(key, list) {
-        try {
-            const storageKeyName = storageKey(key);
-            const newValue = JSON.stringify(list);
-            const oldValue = localStorage.getItem(storageKeyName);
-            if (oldValue === newValue) {
-                return true;
-            }
-            localStorage.setItem(
-                storageKeyName,
-                newValue
-            );
-            return true;
-        } catch (error) {
-            console.error(LOGPREFIX, `Konnte Liste "${storageKey(key)}" nicht speichern:`, error);
-            return false;
-        }
+        return writeStorageValue(key, list);
     }
     function readStorageValue(key, fallback = null) {
-        try {
-            const value = localStorage.getItem(storageKey(key));
-            if (value === null) {
-                return fallback;
-            }
-            return JSON.parse(value);
-        } catch (error) {
-            console.error(LOGPREFIX, `Ungültiger Speicherwert für "${storageKey(key)}":`, error);
+        if (!qmdMemoryStore.has(key)) {
             return fallback;
         }
+        return cloneStorageValue(
+            qmdMemoryStore.get(key)
+        );
     }
     function writeStorageValue(key, value) {
-        try {
-            localStorage.setItem(
-                storageKey(key),
-                JSON.stringify(value)
-            );
-            return true;
-        } catch (error) {
-            console.error(LOGPREFIX, `Konnte Speicherwert "${storageKey(key)}" nicht speichern:`, error);
-            return false;
+        const clonedValue = cloneStorageValue(value);
+        qmdMemoryStore.set(
+            key,
+            clonedValue
+        );
+        queueIndexedDbWrite(
+            key,
+            clonedValue
+        );
+        return true;
+    }
+    async function waitForStorageReady() {
+        if (qmdStorageReadyPromise) {
+            await qmdStorageReadyPromise;
         }
     }
-    // Vereinheitlicht Benutzernamen ausschließlich für Vergleiche.
+    async function flushStorageWrites() {
+        await qmdStorageWritePromise;
+    }
     function normalizeUser(user) {
         return String(user ?? '')
             .trim()
             .toLowerCase();
     }
-    // Prüft, ob ein Benutzername dem erwarteten Twitch-Format entspricht.
     function isValidUsername(user) {
         const normalizedUser = normalizeUser(user);
         return /^[a-z0-9_]{1,25}$/.test(normalizedUser);
     }
-    // Wandelt einen Text oder ein Array in eine bereinigte Benutzerliste um.
     function parseUserList(value) {
         const lines = Array.isArray(value)
             ? value
             : String(value ?? '').split(/\r?\n/);
-        return [
-            ...new Set(
-                lines
-                    .map(normalizeUser)
-                    .filter(isValidUsername)
-            )
-        ];
+        const users = new Set();
+        for (const line of lines) {
+            const normalizedUser = normalizeUser(line);
+            if (isValidUsername(normalizedUser)) {
+                users.add(normalizedUser);
+            }
+        }
+        return [...users];
     }
-    // Normalisiert und bereinigt eine gespeicherte Benutzerliste.
+    async function parseUserListFromResponse(response) {
+        if (
+            !response ||
+            !response.body ||
+            typeof response.body.getReader !== 'function'
+        ) {
+            return new Set(
+                parseUserList(
+                    await response.text()
+                )
+            );
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        const users = new Set();
+        let pendingText = '';
+        const addLine = (line) => {
+            const normalizedLine = normalizeUser(line);
+            if (
+                normalizedLine &&
+                !normalizedLine.startsWith('#') &&
+                isValidUsername(normalizedLine)
+            ) {
+                users.add(normalizedLine);
+            }
+        };
+        try {
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) {
+                    break;
+                }
+                pendingText += decoder.decode(
+                    value,
+                    {
+                        stream: true
+                    }
+                );
+                const lines = pendingText.split(/\r?\n/);
+                pendingText = lines.pop() || '';
+                for (const line of lines) {
+                    addLine(line);
+                }
+            }
+            pendingText += decoder.decode();
+            if (pendingText) {
+                addLine(pendingText);
+            }
+        } finally {
+            reader.releaseLock();
+        }
+        return users;
+    }
     function normalizeUserList(list) {
         if (!Array.isArray(list)) {
             return [];
         }
-        return [
-            ...new Set(
-                list
-                    .map(normalizeUser)
-                    .filter(isValidUsername)
-            )
-        ];
+        const users = new Set();
+        for (const user of list) {
+            const normalizedUser = normalizeUser(user);
+            if (isValidUsername(normalizedUser)) {
+                users.add(normalizedUser);
+            }
+        }
+        return [...users];
     }
     function getListActionStorageName(action) {
         return action === 'unban'
@@ -727,6 +911,7 @@ if (completed >= total) {
         const actionStorageName = getListActionStorageName(action);
         return `${channel}_${actionStorageName}${listSuffix}${extraSuffix}`;
     }
+
     function addUserToListStorage(
         channel,
         action,
@@ -735,7 +920,10 @@ if (completed >= total) {
         extraSuffix = ''
     ) {
         const normalizedUser = normalizeUser(user);
-        if (!channel || !isValidUsername(normalizedUser)) {
+        if (
+            !channel ||
+            !isValidUsername(normalizedUser)
+        ) {
             return false;
         }
         const storageKeyName = getListStorageKey(
@@ -744,13 +932,18 @@ if (completed >= total) {
             listSuffix,
             extraSuffix
         );
-        const storedUsers = normalizeUserList( readStorageValue(storageKeyName, []) );
-        if (!storedUsers.includes(normalizedUser)) {
-            storedUsers.push(normalizedUser);
-        }
+        const storedUsers = new Set(
+            normalizeUserList(
+                readStorageValue(
+                    storageKeyName,
+                    []
+                )
+            )
+        );
+        storedUsers.add(normalizedUser);
         return writeStorageValue(
             storageKeyName,
-            storedUsers
+            [...storedUsers]
         );
     }
     function getListStatusStorageKey(
@@ -785,128 +978,113 @@ if (completed >= total) {
             '_skipped'
         );
     }
-// Erzeugt überschneidungsfreie Statusmengen für eine Liste.
-function getDisjointListState(listInfo) {
-    if (
-        !listInfo ||
-        !listInfo.users
-    ) {
+    // Erzeugt überschneidungsfreie Statusmengen für eine Liste.
+    function getDisjointListState(listInfo) {
+        if (
+            !listInfo ||
+            !listInfo.users
+        ) {
+            return {
+                completedUsers: new Set(),
+                skippedUsers: new Set()
+            };
+        }
+        const completedUsers = new Set(
+            [...(listInfo.completedUsers || [])]
+                .filter((user) => listInfo.users.has(user))
+        );
+        const skippedUsers = new Set(
+            [...(listInfo.skippedUsers || [])]
+                .filter(
+                    (user) =>
+                        listInfo.users.has(user) &&
+                        !completedUsers.has(user)
+                )
+        );
         return {
-            completedUsers: new Set(),
-            skippedUsers: new Set()
+            completedUsers,
+            skippedUsers
         };
     }
 
-    const completedUsers = new Set(
-        [...(listInfo.completedUsers || [])]
-            .filter((user) => listInfo.users.has(user))
-    );
-
-    const skippedUsers = new Set(
-        [...(listInfo.skippedUsers || [])]
-            .filter(
-                (user) =>
-                    listInfo.users.has(user) &&
-                    !completedUsers.has(user)
-            )
-    );
-
-    return {
-        completedUsers,
-        skippedUsers
-    };
-}
-
-// Erstellt einen einheitlichen gespeicherten Status für eine Liste.
-function buildListStatus(listInfo) {
-    if (
-        !listInfo ||
-        !listInfo.users
-    ) {
-        return null;
-    }
-
-    const {
-        completedUsers,
-        skippedUsers
-    } = getDisjointListState(listInfo);
-
-    const total = listInfo.users.size;
-    const processed = completedUsers.size + skippedUsers.size;
-    const remaining = Math.max(
-        0,
-        total - processed
-    );
-
-    const percentage = total === 0
-        ? 100
-        : (processed / total) * 100;
-
-    return {
-        status: total === 0
-            ? 'empty'
-            : remaining === 0
-                ? 'complete'
-                : processed > 0
-                    ? 'partial'
-                    : 'open',
-        total,
-        processed,
-        remaining,
-        percentage,
-        action: listInfo.action,
-        listSuffix: listInfo.listSuffix,
-        fileName: listInfo.fileName,
-        checkedAt: new Date().toISOString()
-    };
-}
-
-// Speichert und aktualisiert den aktuellen Status einer Liste.
-function saveListInfoStatus(
-    channel,
-    listInfo
-) {
-    if (
-        !channel ||
-        !listInfo ||
-        !listInfo.listSuffix
-    ) {
-        return;
-    }
-
-    const status = buildListStatus(listInfo);
-
-    if (!status) {
-        return;
-    }
-
-    const storageKeyName = getListStatusStorageKey(
-        channel,
-        {
-            action: listInfo.action,
-            saveSuffix: listInfo.listSuffix
+    // Erstellt einen einheitlichen gespeicherten Status für eine Liste.
+    function buildListStatus(listInfo) {
+        if (
+            !listInfo ||
+            !listInfo.users
+        ) {
+            return null;
         }
-    );
-
-    writeStorageValue(
-        storageKeyName,
-        status
-    );
-
-    const listConfig = LIST_BUTTONS.find(
-        (config) =>
-            config.saveSuffix === listInfo.listSuffix &&
-            config.action === listInfo.action
-    );
-
-    if (listConfig) {
-        applyListStatusToButton(
-            listConfig,
+        const {
+            completedUsers,
+            skippedUsers
+        } = getDisjointListState(listInfo);
+        const total = listInfo.users.size;
+        const processed = completedUsers.size + skippedUsers.size;
+        const remaining = Math.max(
+            0,
+            total - processed
+        );
+        const percentage = total === 0
+            ? 100
+            : (processed / total) * 100;
+        return {
+            status: total === 0
+                ? 'empty'
+                : remaining === 0
+                    ? 'complete'
+                    : processed > 0
+                        ? 'partial'
+                        : 'open',
+            total,
+            processed,
+            remaining,
+            percentage,
+            action: listInfo.action,
+            listSuffix: listInfo.listSuffix,
+            fileName: listInfo.fileName,
+            checkedAt: new Date().toISOString()
+        };
+    }
+    // Speichert und aktualisiert den aktuellen Status einer Liste.
+    function saveListInfoStatus(
+        channel,
+        listInfo
+    ) {
+        if (
+            !channel ||
+            !listInfo ||
+            !listInfo.listSuffix
+        ) {
+            return;
+        }
+        const status = buildListStatus(listInfo);
+        if (!status) {
+            return;
+        }
+        const storageKeyName = getListStatusStorageKey(
+            channel,
+            {
+                action: listInfo.action,
+                saveSuffix: listInfo.listSuffix
+            }
+        );
+        writeStorageValue(
+            storageKeyName,
             status
         );
+        const listConfig = LIST_BUTTONS.find(
+            (config) =>
+                config.saveSuffix === listInfo.listSuffix &&
+                config.action === listInfo.action
+        );
+        if (listConfig) {
+            applyListStatusToButton(
+                listConfig,
+                status
+            );
+        }
     }
-}
-
     // Ermittelt die CSS-Klasse für den Bearbeitungsstatus einer Liste.
     function getListStatusClass(status) {
         if (!status) {
@@ -1051,8 +1229,9 @@ function saveListInfoStatus(
                     `HTTP-Fehler ${response.status}`
                 );
             }
-            const sourceText = await response.text();
-            const sourceUsers = new Set( parseUserList(sourceText) );
+            const sourceUsers = await parseUserListFromResponse(
+                response
+            );
             const processedUsers = new Set(
                 normalizeUserList(
                     readStorageValue(
@@ -1082,35 +1261,28 @@ function saveListInfoStatus(
                 channelProcessedUsers[listConfig.action]
                     ? channelProcessedUsers[listConfig.action]
                     : new Set();
-
-const completedUsers = new Set([
-    ...processedUsers,
-    ...skippedUsers,
-    ...channelUsers
-]);
-
-const skippedOnlyUsers = new Set(
-    [...skippedUsers]
-        .filter(
-            (user) =>
-                !processedUsers.has(user) &&
-                !channelUsers.has(user)
-        )
-);
-
-const total = sourceUsers.size;
-
-const processed = [...sourceUsers].filter(
-    (user) =>
-        completedUsers.has(user)
-).length;
-
-const remaining = Math.max(
-    0,
-    total - processed
-);
-
-
+            const completedUsers = new Set([
+                ...processedUsers,
+                ...skippedUsers,
+                ...channelUsers
+            ]);
+            const skippedOnlyUsers = new Set(
+                [...skippedUsers]
+                    .filter(
+                        (user) =>
+                            !processedUsers.has(user) &&
+                            !channelUsers.has(user)
+                    )
+            );
+            const total = sourceUsers.size;
+            const processed = [...sourceUsers].filter(
+                (user) =>
+                    completedUsers.has(user)
+            ).length;
+            const remaining = Math.max(
+                0,
+                total - processed
+            );
             const percentage = total === 0
                 ? 100
                 : (processed / total) * 100;
@@ -1171,18 +1343,11 @@ const remaining = Math.max(
     }
     // Prüft den Bearbeitungsstand aller verfügbaren externen Listen.
     async function quickCheckLists() {
-        const button = d.querySelector('.quickCheck');
-        if (!button) {
-            return;
-        }
         if (activeBulkAction) {
             console.warn(
                 LOGPREFIX,
                 'Quick check blockiert: Eine Sammelaktion läuft noch.'
             );
-            return;
-        }
-        if (button.disabled) {
             return;
         }
         if (!activeChannel) {
@@ -1209,13 +1374,9 @@ const remaining = Math.max(
         if (activeLists.length === 0) {
             return;
         }
-        const originalText = button.textContent;
         quickCheckPromise = (async () => {
-            button.disabled = true;
-            button.classList.add('is-checking');
-            button.textContent = 'Prüfe …';
-            button.setAttribute('aria-busy', 'true');
             try {
+                await waitForStorageReady();
                 const checkedChannel = activeChannel;
                 const channelProcessedUsers = {
                     ban: new Set(
@@ -1235,48 +1396,41 @@ const remaining = Math.max(
                         )
                     )
                 };
-
-for (const listConfig of activeLists) {
-    if (
-        activeChannel !== checkedChannel ||
-        !isCurrentChannelModerated()
-    ) {
-        return;
-    }
-
-    const result = await checkSingleListStatus(
-        listConfig,
-        checkedChannel,
-        channelProcessedUsers
-    );
-
-    if (
-        activeChannel !== checkedChannel
-    ) {
-        return;
-    }
-
-    applyListStatusToButton(
-        result.listConfig,
-        result.status
-    );
-}
-
-
+                for (const listConfig of activeLists) {
+                    if (
+                        activeChannel !== checkedChannel ||
+                        !isCurrentChannelModerated()
+                    ) {
+                        return;
+                    }
+                    const result = await checkSingleListStatus(
+                        listConfig,
+                        checkedChannel,
+                        channelProcessedUsers
+                    );
+                    if (
+                        activeChannel !== checkedChannel
+                    ) {
+                        return;
+                    }
+                    applyListStatusToButton(
+                        result.listConfig,
+                        result.status
+                    );
+                    await delay(0);
+                }
             } finally {
-                button.disabled = false;
-                button.classList.remove('is-checking');
-                button.textContent = originalText;
-                button.removeAttribute('aria-busy');
                 quickCheckPromise = null;
-                if (isQuickCheckAuto && automaticQuickCheckPending) {
+                if (
+                    isQuickCheckAuto &&
+                    automaticQuickCheckPending
+                ) {
                     runPendingAutomaticQuickCheck();
                 }
             }
         })();
         return quickCheckPromise;
     }
-
     function runPendingAutomaticQuickCheck() {
         if (!isQuickCheckAuto) {
             automaticQuickCheckPending = false;
@@ -1291,17 +1445,9 @@ for (const listConfig of activeLists) {
         ) {
             return;
         }
-        const quickCheckButton = d.querySelector('.quickCheck');
-        if (
-            !quickCheckButton ||
-            quickCheckButton.disabled
-        ) {
-            return;
-        }
         automaticQuickCheckPending = false;
         quickCheckLists();
     }
-
     function requestAutomaticQuickCheck() {
         if (!isQuickCheckAuto) {
             automaticQuickCheckPending = false;
@@ -1328,7 +1474,6 @@ for (const listConfig of activeLists) {
             0
         );
     }
-
     // ##### AKTUELLEN KANAL AUS DER URL ERMITTELN ###############################
     function getActiveChannel() {
         const pathParts = window.location.pathname
@@ -1662,8 +1807,6 @@ for (const listConfig of activeLists) {
                 .magicMorningStar .action-bar button { flex: 0 0 auto; min-height: 32px; white-space: nowrap; }
                 /* Neutrale Navigation */
                 .magicMorningStar .action-bar .back { min-width: 78px; background: #5f6368; color: #ffffff; }
-                .magicMorningStar .action-bar .quickCheck { min-width: 96px; background: #2878b5; color: #ffffff; }
-                .magicMorningStar .action-bar .quickCheck.is-checking { background: #6c757d; cursor: wait; }
 
                 /* Umschalter für automatische Quick Checks */
                 .magicMorningStar .quickCheckAutoToggle { width: 48px; min-width: 48px; height: 32px; min-height: 32px; margin-left: 4px; padding: 0;
@@ -1748,6 +1891,11 @@ for (const listConfig of activeLists) {
                 /* Einheitliches Hover-Verhalten */
                 .magicMorningStar .action-bar button:not(:disabled):hover { cursor: pointer;}
                 .magicMorningStar .action-bar button:not(:disabled):active { filter: brightness(0.95); transform: translateY(0); }
+
+                .magicMorningStar .storage-tools {display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin: 0 0 8px 0;}
+                .magicMorningStar .storage-tools button {min-height: 26px; padding: 2px 8px; font-size: 11px; background: #5f6368; color: #ffffff;}
+                .magicMorningStar .storage-tools button:not(:disabled):hover {cursor: pointer; filter: brightness(1.12);}
+
                 .magicMorningStar .import { min-height: 20px; padding: 3px; background: var(--color-background-body);
                     border: var(--border-width-default) solid var(--color-border-base); }
                 .magicMorningStar textarea { width: 100%; min-height: 8em; padding: 0.5em; background: var(--color-background-base);
@@ -1811,6 +1959,15 @@ for (const listConfig of activeLists) {
             </div>
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
+            <div class="storage-tools">
+                <button class="exportDataBtn" type="button" title="Alle Tool-Daten als Datei exportieren">
+                    &#8681; Daten exportieren
+                </button>
+                <button class="importDataBtn" type="button" title="Tool-Daten aus einer Exportdatei importieren">
+                    &#8679; Daten importieren
+                </button>
+                <input id="importDataFile" type="file" accept="application/json,.json" style="display: none;">
+            </div>
                 <textarea id="textfield" placeholder="für separaten bann, hier ein Benutzername pro Zeile einfügen" ></textarea>
                 <div style="text-align: right;">
                     <button class="importBtn" type="button" title="Benutzer zur Liste hinzufügen"
@@ -1836,9 +1993,7 @@ for (const listConfig of activeLists) {
                     <button class="back" type="button" title="Zurück" aria-label="Zurück" >
                         &#8592; zurück
                     </button>
-                    <button class="quickCheck" type="button" title="Bearbeitungsstand aller Listen prüfen" aria-label="Bearbeitungsstand aller Listen prüfen" >
-                        &#9432; Quick check
-                    </button>
+
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
                 <div class="action-group action-group-center">
@@ -2036,56 +2191,46 @@ for (const listConfig of activeLists) {
                 listSuffix,
                 false
             );
-
-} else {
-    const button = d.querySelector(
-        `#${buttonId}`
-    );
-
-    if (button) {
-        button.textContent = 'already banned';
-    }
-
-    // Falls der Benutzer früher als entbannt gespeichert wurde,
-    // wird dieser veraltete Gegenstatus entfernt.
-    if (
-        QMD_unbannedUsersSet.delete(
-            normalizedUser
-        )
-    ) {
-        QMD_unbannedUsersStore =
-            QMD_unbannedUsersStore.filter(
-                (storedUser) =>
-                    storedUser !== normalizedUser
+        } else {
+            const button = d.querySelector(
+                `#${buttonId}`
             );
-
-        writeStorageValue(
-            `${activeChannel}_unbanlist`,
-            QMD_unbannedUsersStore
-        );
-    }
-
-    if (
-        activeListInfo &&
-        activeListInfo.action === 'ban' &&
-        activeListInfo.users.has(normalizedUser)
-    ) {
-        activeListInfo.completedUsers.add(
-            normalizedUser
-        );
-
-        activeListInfo.skippedUsers.delete(
-            normalizedUser
-        );
-    }
-
-    console.log(
-        LOGPREFIX,
-        `${normalizedUser} already banned in ${activeChannel}`
-    );
-}
-
-
+            if (button) {
+                button.textContent = 'already banned';
+            }
+            // Falls der Benutzer früher als entbannt gespeichert wurde, wird dieser veraltete Gegenstatus entfernt.
+            if (
+                QMD_unbannedUsersSet.delete(
+                    normalizedUser
+                )
+            ) {
+                QMD_unbannedUsersStore =
+                    QMD_unbannedUsersStore.filter(
+                        (storedUser) =>
+                            storedUser !== normalizedUser
+                    );
+                writeStorageValue(
+                    `${activeChannel}_unbanlist`,
+                    QMD_unbannedUsersStore
+                );
+            }
+            if (
+                activeListInfo &&
+                activeListInfo.action === 'ban' &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(
+                    normalizedUser
+                );
+                activeListInfo.skippedUsers.delete(
+                    normalizedUser
+                );
+            }
+            console.log(
+                LOGPREFIX,
+                `${normalizedUser} already banned in ${activeChannel}`
+            );
+        }
         if (shouldRender) {
             renderList();
         }
@@ -2352,44 +2497,35 @@ for (const listConfig of activeLists) {
         );
     }
     // Schaltet automatische Quick Checks um und speichert den Zustand.
-
-function toggleQuickCheckAuto() {
-    const wasAutoEnabled = isQuickCheckAuto;
-
-    isQuickCheckAuto = !isQuickCheckAuto;
-
-    writeStorageValue(
-        QUICK_CHECK_AUTO_STORAGE_KEY,
-        isQuickCheckAuto
-    );
-
-    if (!isQuickCheckAuto) {
-        automaticQuickCheckPending = false;
-
-        if (automaticQuickCheckTimer !== null) {
-            window.clearTimeout(
-                automaticQuickCheckTimer
-            );
-            automaticQuickCheckTimer = null;
-        }
-    } else if (!wasAutoEnabled) {
-        // Beim Wechsel von "Aus" auf "Auto" immer sofort eine Prüfung vormerken.
-        requestAutomaticQuickCheck();
-    }
-
-    updateQuickCheckAutoToggle();
-
-    console.info(
-        LOGPREFIX,
-        `Automatische Quick Checks sind jetzt ${
+    function toggleQuickCheckAuto() {
+        const wasAutoEnabled = isQuickCheckAuto;
+        isQuickCheckAuto = !isQuickCheckAuto;
+        writeStorageValue(
+            QUICK_CHECK_AUTO_STORAGE_KEY,
             isQuickCheckAuto
-                ? 'aktiviert'
-                : 'deaktiviert'
-        }.`
-    );
-}
-
-
+        );
+        if (!isQuickCheckAuto) {
+            automaticQuickCheckPending = false;
+            if (automaticQuickCheckTimer !== null) {
+                window.clearTimeout(
+                    automaticQuickCheckTimer
+                );
+                automaticQuickCheckTimer = null;
+            }
+        } else if (!wasAutoEnabled) {
+            // Beim Wechsel von "Aus" auf "Auto" immer sofort eine Prüfung vormerken.
+            requestAutomaticQuickCheck();
+        }
+        updateQuickCheckAutoToggle();
+        console.info(
+            LOGPREFIX,
+            `Automatische Quick Checks sind jetzt ${
+                isQuickCheckAuto
+                    ? 'aktiviert'
+                    : 'deaktiviert'
+            }.`
+        );
+    }
     // ##### MOD-MENÜ-SICHTBARKEIT ###############################################
     // Aktualisiert das Bild und die Beschriftung des Umschalters.
     function updateModMenuToggleImage() {
@@ -2524,6 +2660,176 @@ function toggleQuickCheckAuto() {
             'noopener,noreferrer'
         );
     }
+    // ##### EXPORT UND IMPORT DER TOOL-DATEN #####################################
+    function createQmdExportData() {
+        const values = {};
+        for (const [key, value] of qmdMemoryStore.entries()) {
+            values[key] = cloneStorageValue(value);
+        }
+        return {
+            format: QMD_EXPORT_FORMAT,
+            version: QMD_EXPORT_VERSION,
+            exportedAt: new Date().toISOString(),
+            values
+        };
+    }
+    async function exportQmdData() {
+        try {
+            await waitForStorageReady();
+            await flushStorageWrites();
+            const exportData = createQmdExportData();
+            const json = JSON.stringify(
+                exportData,
+                null,
+                4
+            );
+            const blob = new Blob(
+                [
+                    json
+                ],
+                {
+                    type: 'application/json'
+                }
+            );
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download =
+                `magic-cleaning-tool-export-${new Date()
+                    .toISOString()
+                    .slice(0, 10)}.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => {
+                URL.revokeObjectURL(downloadUrl);
+            }, 1000);
+            console.info(
+                LOGPREFIX,
+                `Export abgeschlossen: ${Object.keys(exportData.values).length} Speicherwerte.`
+            );
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                'Export fehlgeschlagen:',
+                error
+            );
+            window.alert(
+                'Der Export konnte nicht erstellt werden.'
+            );
+        }
+    }
+    function validateQmdImportData(data) {
+        if (
+            !data ||
+            data.format !== QMD_EXPORT_FORMAT ||
+            data.version !== QMD_EXPORT_VERSION ||
+            !data.values ||
+            typeof data.values !== 'object' ||
+            Array.isArray(data.values)
+        ) {
+            throw new Error(
+                'Die Datei ist kein gültiger Magic-Cleaning-Tool-Export.'
+            );
+        }
+        return data;
+    }
+    async function importQmdDataFromFile(file) {
+        if (!file) {
+            return;
+        }
+        if (
+            !window.confirm(
+                'Sollen die vorhandenen Tool-Daten durch die Daten aus der Datei ersetzt werden?'
+            )
+        ) {
+            return;
+        }
+        try {
+            await waitForStorageReady();
+            const text = await file.text();
+            const importedData = validateQmdImportData(
+                JSON.parse(text)
+            );
+            const importedEntries = Object.entries(
+                importedData.values
+            );
+            const database = await openQmdDatabase();
+            await writeIndexedDbValues(
+                database,
+                importedEntries
+            );
+            qmdMemoryStore.clear();
+            for (const [key, value] of importedEntries) {
+                qmdMemoryStore.set(
+                    key,
+                    cloneStorageValue(value)
+                );
+            }
+            qmdStorageWritePromise = Promise.resolve();
+            if (activeChannel) {
+                QMD_bannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_banlist`,
+                        []
+                    )
+                );
+                QMD_bannedUsersSet = new Set(
+                    QMD_bannedUsersStore
+                );
+                QMD_unbannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_unbanlist`,
+                        []
+                    )
+                );
+                QMD_unbannedUsersSet = new Set(
+                    QMD_unbannedUsersStore
+                );
+            }
+            restoreListStatuses();
+            renderList();
+            console.info(
+                LOGPREFIX,
+                `Import abgeschlossen: ${importedEntries.length} Speicherwerte.`
+            );
+            window.alert(
+                'Import erfolgreich abgeschlossen.'
+            );
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                'Import fehlgeschlagen:',
+                error
+            );
+            window.alert(
+                `Der Import konnte nicht durchgeführt werden:\n${error.message}`
+            );
+        }
+    }
+    function setupStorageImportExportEvents() {
+        const exportButton = d.querySelector('.exportDataBtn');
+        const importButton = d.querySelector('.importDataBtn');
+        const fileInput = d.querySelector('#importDataFile');
+        if (
+            !exportButton ||
+            !importButton ||
+            !fileInput
+        ) {
+            return;
+        }
+        exportButton.onclick = exportQmdData;
+        importButton.onclick = () => {
+            fileInput.value = '';
+            fileInput.click();
+        };
+        fileInput.onchange = () => {
+            const file = fileInput.files?.[0];
+            if (file) {
+                importQmdDataFromFile(file);
+            }
+        };
+    }
     // ##### BUTTON-EVENTS EINRICHTEN ############################################
     function setupButtonEvents() {
         d.querySelector('.banAll').onclick = banAll;
@@ -2531,7 +2837,6 @@ function toggleQuickCheckAuto() {
         d.querySelector('.unbanAll').onclick = unbanAll;
         d.querySelector('.back').onclick = toggleBack;
         d.querySelector('.cancelAction').onclick = () => { cancelActiveBulkAction('manuell'); };
-        d.querySelector('.quickCheck').onclick = quickCheckLists;
         d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
         d.querySelector('.quickCheckAutoToggle').onclick = toggleQuickCheckAuto;
         d.querySelector('.importBtn').onclick = importList;
@@ -2592,7 +2897,41 @@ function toggleQuickCheckAuto() {
         });
     }
     setupButtonEvents();
+    setupStorageImportExportEvents();
     restoreListStatuses();
+    waitForStorageReady()
+    .then(() => {
+        if (!activeChannel) {
+            return;
+        }
+        QMD_bannedUsersStore = normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_banlist`,
+                []
+            )
+        );
+        QMD_bannedUsersSet = new Set(
+            QMD_bannedUsersStore
+        );
+        QMD_unbannedUsersStore = normalizeUserList(
+            readStorageValue(
+                `${activeChannel}_unbanlist`,
+                []
+            )
+        );
+        QMD_unbannedUsersSet = new Set(
+            QMD_unbannedUsersStore
+        );
+        restoreListStatuses();
+        renderList();
+    })
+    .catch((error) => {
+        console.error(
+            LOGPREFIX,
+            'Speicherinitialisierung fehlgeschlagen:',
+            error
+        );
+    });
     // Markiert manuell eingegebene Banngründe als benutzerdefiniert.
     const banReasonInput = d.querySelector('#banReason');
     if (
@@ -2616,7 +2955,8 @@ function toggleQuickCheckAuto() {
                 : value;
     }
     // Übernimmt Benutzer aus der manuellen Eingabe in die Warteschlange.
-    function importList() {
+    async function importList() {
+        await waitForStorageReady();
         if (activeBulkAction) {
             console.warn(LOGPREFIX, 'Manueller Import während einer Sammelaktion blockiert.');
             return;
@@ -2673,7 +3013,8 @@ function toggleQuickCheckAuto() {
         importMDGGeneric(listConfig);
     }
     // Allgemeine Importfunktion für externe Listen.
-    function importMDGGeneric(listConfig) {
+    async function importMDGGeneric(listConfig) {
+        await waitForStorageReady();
         if (activeBulkAction) {
             console.warn(LOGPREFIX, 'Listenimport während einer Sammelaktion blockiert.');
             return;
@@ -2778,9 +3119,9 @@ function toggleQuickCheckAuto() {
                         `HTTP-Fehler ${response.status}`
                     );
                 }
-                return response.text();
+                return parseUserListFromResponse(response);
             })
-            .then((data) => {
+            .then((parsedUsers) => {
                 if (
                     activeBulkAction ||
                     activeChannel !== importChannel ||
@@ -2804,52 +3145,46 @@ function toggleQuickCheckAuto() {
                     }
                     return;
                 }
-                const parsedUsers = parseUserList(data);
-
-const storedProcessedUsers = new Set(
-    normalizeUserList(
-        readStorageValue(
-            getListProcessedStorageKey(
-                importChannel,
-                {
+                const storedProcessedUsers = new Set(
+                    normalizeUserList(
+                        readStorageValue(
+                            getListProcessedStorageKey(
+                                importChannel,
+                                {
+                                    action: normalizedAction,
+                                    saveSuffix: listSuffix
+                                }
+                            ),
+                            []
+                        )
+                    )
+                );
+                const storedSkippedUsers = new Set(
+                    normalizedAction === 'ban'
+                        ? normalizeUserList(
+                            readStorageValue(
+                                getListSkippedStorageKey(
+                                    importChannel,
+                                    {
+                                        action: normalizedAction,
+                                        saveSuffix: listSuffix
+                                    }
+                                ),
+                                []
+                            )
+                        )
+                        : []
+                );
+                activeListInfo = {
+                    fileName,
+                    listSuffix,
                     action: normalizedAction,
-                    saveSuffix: listSuffix
-                }
-            ),
-            []
-        )
-    )
-);
-
-const storedSkippedUsers = new Set(
-    normalizedAction === 'ban'
-        ? normalizeUserList(
-            readStorageValue(
-                getListSkippedStorageKey(
-                    importChannel,
-                    {
-                        action: normalizedAction,
-                        saveSuffix: listSuffix
-                    }
-                ),
-                []
-            )
-        )
-        : []
-);
-
-activeListInfo = {
-    fileName,
-    listSuffix,
-    action: normalizedAction,
-    channel: importChannel,
-    banReason: effectiveBanReason,
-    users: new Set(parsedUsers),
-    completedUsers: storedProcessedUsers,
-    skippedUsers: storedSkippedUsers
-};
-
-
+                    channel: importChannel,
+                    banReason: effectiveBanReason,
+                    users: parsedUsers,
+                    completedUsers: storedProcessedUsers,
+                    skippedUsers: storedSkippedUsers
+                };
                 usersToProcess.push(...parsedUsers);
                 if (!isCurrentChannelModerated()) {
                     console.warn(LOGPREFIX, 'Listenimport wegen eines Kanalwechsels verworfen.');
@@ -2869,62 +3204,52 @@ activeListInfo = {
                     }
                     return;
                 }
-
-for (const name of usersToProcess) {
-    // Bereits gespeicherte Einträge werden nicht erneut in die Queue aufgenommen.
-    if (
-        activeListInfo.completedUsers.has(name) ||
-        activeListInfo.skippedUsers.has(name)
-    ) {
-        continue;
-    }
-
-    if (normalizedAction === 'unban') {
-        userAlreadyUnBanned(
-            name,
-            buttonId,
-            false
-        );
-    } else {
-        userAlreadyBanned(
-            name,
-            buttonId,
-            listSuffix,
-            false
-        );
-    }
-}
-
-
+                for (const name of usersToProcess) {
+                    // Bereits gespeicherte Einträge werden nicht erneut in die Queue aufgenommen.
+                    if (
+                        activeListInfo.completedUsers.has(name) ||
+                        activeListInfo.skippedUsers.has(name)
+                    ) {
+                        continue;
+                        }
+                    if (normalizedAction === 'unban') {
+                        userAlreadyUnBanned(
+                            name,
+                            buttonId,
+                            false
+                        );
+                    } else {
+                        userAlreadyBanned(
+                            name,
+                            buttonId,
+                            listSuffix,
+                            false
+                        );
+                    }
+                }
                 const textField = d.querySelector('#textfield');
                 if (textField) {
                     textField.value = '';
                 }
-
-if (queueList.size > 0) {
-    const importDiv = d.querySelector('.import');
-    const body = d.querySelector('.body');
-
-    if (importDiv && body) {
-        importDiv.style.display = 'none';
-        body.style.display = '';
-    }
-} else {
-    // Alle Einträge waren bereits erledigt oder wurden übersprungen.
-    saveListInfoStatus(
-        importChannel,
-        activeListInfo
-    );
-
-    // Die Liste ist vollständig abgearbeitet oder enthält keine neuen Benutzer.
-    showListSelectionView();
-
-    if (isQuickCheckAuto) {
-        requestAutomaticQuickCheck();
-    }
-}
-
-
+                if (queueList.size > 0) {
+                    const importDiv = d.querySelector('.import');
+                    const body = d.querySelector('.body');
+                    if (importDiv && body) {
+                        importDiv.style.display = 'none';
+                        body.style.display = '';
+                    }
+                } else {
+                    // Alle Einträge waren bereits erledigt oder wurden übersprungen.
+                    saveListInfoStatus(
+                        importChannel,
+                        activeListInfo
+                    );
+                    // Die Liste ist vollständig abgearbeitet oder enthält keine neuen Benutzer.
+                    showListSelectionView();
+                    if (isQuickCheckAuto) {
+                        requestAutomaticQuickCheck();
+                    }
+                }
                 if (
                     queueList.size === 0 &&
                     normalizedAction === 'unban'
@@ -2967,20 +3292,16 @@ if (queueList.size > 0) {
                 if (textField) {
                     textField.value = '';
                 }
-
-showListSelectionView();
-updateBulkActionControls();
-
-if (sourceButton) {
-    sourceButton.disabled = false;
-    sourceButton.removeAttribute(
-        'aria-busy'
-    );
-    sourceButton.textContent =
-        defaultButtonText;
-}
-
-
+                showListSelectionView();
+                updateBulkActionControls();
+                if (sourceButton) {
+                    sourceButton.disabled = false;
+                    sourceButton.removeAttribute(
+                        'aria-busy'
+                    );
+                    sourceButton.textContent =
+                        defaultButtonText;
+                }
             });
         const loadedList = d.querySelector('#loadedList');
         if (loadedList) {
@@ -3090,29 +3411,23 @@ if (sourceButton) {
                     }
                 }
             const actionStartedAt = performance.now();
-
-const wasBanned = await banItem(
-    user,
-    action
-);
-
-// Fehler und Abbruch werden nicht als verarbeitet gezählt.
-if (
-    action.cancelled ||
-    isBulkActionCancelled(action)
-) {
-    break;
-}
-
-action.completed++;
-
-if (wasBanned) {
-    action.successful++;
-} else {
-    action.skipped++;
-}
-
-
+            const wasBanned = await banItem(
+                user,
+                action
+            );
+            // Fehler und Abbruch werden nicht als verarbeitet gezählt.
+            if (
+                action.cancelled ||
+                isBulkActionCancelled(action)
+            ) {
+                break;
+            }
+            action.completed++;
+            if (wasBanned) {
+                action.successful++;
+            } else {
+                action.skipped++;
+            }
                 updateListStatus();
             if (isBulkActionCancelled(action)) {
                 break;
@@ -3130,24 +3445,19 @@ if (wasBanned) {
             // updateListStatus();
             updateListStatusThrottled();
             }
-
-} catch (error) {
-    action.failed++;
-    action.cancelled = true;
-    action.cancelReason = 'Fehler';
-    requestAutomaticQuickCheck();
-
-    console.error(
-        LOGPREFIX,
-        'Ban-All-Aktion wurde wegen eines Fehlers beendet:',
-        error
-    );
-}
-
-        finally {
-            // updateListStatus();
+        } catch (error) {
+            action.failed++;
+            action.cancelled = true;
+            action.cancelReason = 'Fehler';
+            requestAutomaticQuickCheck();
+            console.error(
+                LOGPREFIX,
+                'Ban-All-Aktion wurde wegen eines Fehlers beendet:',
+                error
+            );
+        } finally {
             updateListStatusThrottled(true);
-            finishBulkAction(action);
+            await finishBulkAction(action);
         }
     }
     async function unbanAll() {
@@ -3196,28 +3506,22 @@ if (wasBanned) {
                     }
                 }
             const actionStartedAt = performance.now();
-
-const wasUnbanned = await unbanItem(
-    user,
-    action
-);
-
-if (
-    action.cancelled ||
-    isBulkActionCancelled(action)
-) {
-    break;
-}
-
-action.completed++;
-
-if (wasUnbanned) {
-    action.successful++;
-} else {
-    action.skipped++;
-}
-
-
+            const wasUnbanned = await unbanItem(
+                user,
+                action
+            );
+            if (
+                action.cancelled ||
+                isBulkActionCancelled(action)
+            ) {
+                break;
+            }
+            action.completed++;
+            if (wasUnbanned) {
+                action.successful++;
+            } else {
+                action.skipped++;
+            }
             // updateListStatus();
             updateListStatusThrottled(true);
             if (isBulkActionCancelled(action)) {
@@ -3235,23 +3539,19 @@ if (wasUnbanned) {
             }
             updateListStatus();
             }
-
-} catch (error) {
-    action.failed++;
-    action.cancelled = true;
-    action.cancelReason = 'Fehler';
-    requestAutomaticQuickCheck();
-
-    console.error(
-        LOGPREFIX,
-        'Unban-All-Aktion wurde wegen eines Fehlers beendet:',
-        error
-    );
-}
-
-        finally {
+        } catch (error) {
+            action.failed++;
+            action.cancelled = true;
+            action.cancelReason = 'Fehler';
+            requestAutomaticQuickCheck();
+            console.error(
+                LOGPREFIX,
+                'Unban-All-Aktion wurde wegen eines Fehlers beendet:',
+                error
+            );
+        } finally {
             updateListStatus();
-            finishBulkAction(action);
+            await finishBulkAction(action);
         }
     }
     function usercard(user) {
@@ -3274,17 +3574,14 @@ if (wasUnbanned) {
         queueList.delete(normalizedUser);
         queueListSources.delete(normalizedUser);
         ignoredList.add(normalizedUser);
-
-if (
-    listInfo &&
-    listInfo.users.has(normalizedUser) &&
-    !listInfo.completedUsers.has(normalizedUser)
-) {
-    listInfo.skippedUsers.add(
-        normalizedUser
-    );
-
-
+        if (
+            listInfo &&
+            listInfo.users.has(normalizedUser) &&
+            !listInfo.completedUsers.has(normalizedUser)
+        ) {
+            listInfo.skippedUsers.add(
+                normalizedUser
+            );
             if (
                 listInfo.action === 'ban' &&
                 listInfo.listSuffix
@@ -3354,27 +3651,21 @@ if (
         }
         try {
             sendMessage(`/unban ${normalizedUser}`);
-
-} catch (error) {
-    console.error(
-        LOGPREFIX,
-        `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
-        error
-    );
-
-    if (action) {
-        action.failed++;
-        action.cancelled = true;
-        action.cancelReason =
-            'Fehler beim Senden';
-    }
-
-    requestAutomaticQuickCheck();
-
-    return false;
-}
-
-
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                `Unban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+                error
+            );
+            if (action) {
+                action.failed++;
+                action.cancelled = true;
+                action.cancelReason =
+                    'Fehler beim Senden';
+            }
+            requestAutomaticQuickCheck();
+            return false;
+        }
         if (
             !actionChannel ||
             activeChannel !== actionChannel ||
@@ -3419,15 +3710,14 @@ if (
                         storedUser !== normalizedUser
                 );
         }
-writeStorageValue(
-    `${actionChannel}_unbanlist`,
-    QMD_unbannedUsersStore
-);
-writeStorageValue(
-    `${actionChannel}_banlist`,
-    QMD_bannedUsersStore
-);
-
+        writeStorageValue(
+            `${actionChannel}_unbanlist`,
+            QMD_unbannedUsersStore
+        );
+        writeStorageValue(
+            `${actionChannel}_banlist`,
+            QMD_bannedUsersStore
+        );
         const processedListInfo = action?.listInfo || activeListInfo;
         if (action) {
             action.processedUsers.add(
@@ -3585,27 +3875,21 @@ writeStorageValue(
                 }
                 return false;
             }
-
-} catch (error) {
-    console.error(
-        LOGPREFIX,
-        `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
-        error
-    );
-
-    if (action) {
-        action.failed++;
-        action.cancelled = true;
-        action.cancelReason =
-            'Whitelist konnte nicht geprüft werden';
-    }
-
-    requestAutomaticQuickCheck();
-
-    return false;
-}
-
-
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                `Ban von ${normalizedUser} wurde abgebrochen, weil die Whitelist nicht geprüft werden konnte.`,
+                error
+            );
+            if (action) {
+                action.failed++;
+                action.cancelled = true;
+                action.cancelReason =
+                    'Whitelist konnte nicht geprüft werden';
+            }
+            requestAutomaticQuickCheck();
+            return false;
+        }
         const storedBanReason =
             listInfo?.action === 'ban'
                 ? listInfo.banReason
@@ -3629,27 +3913,21 @@ writeStorageValue(
             sendMessage(
                 `/ban ${normalizedUser} ${safeReason}`
             );
-
-} catch (error) {
-    console.error(
-        LOGPREFIX,
-        `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
-        error
-    );
-
-    if (action) {
-        action.failed++;
-        action.cancelled = true;
-        action.cancelReason =
-            'Fehler beim Senden';
-    }
-
-    requestAutomaticQuickCheck();
-
-    return false;
-}
-
-
+        } catch (error) {
+            console.error(
+                LOGPREFIX,
+                `Ban-Befehl für ${normalizedUser} konnte nicht gesendet werden:`,
+                error
+            );
+            if (action) {
+                action.failed++;
+                action.cancelled = true;
+                action.cancelReason =
+                    'Fehler beim Senden';
+            }
+            requestAutomaticQuickCheck();
+            return false;
+        }
         if (
             action &&
             isBulkActionCancelled(action)
@@ -3700,36 +3978,30 @@ writeStorageValue(
                 normalizedUser
             );
         }
-// Ein erfolgreicher Ban macht einen früheren Unban-Status ungültig.
-if (
-    QMD_unbannedUsersSet.delete(
-        normalizedUser
-    )
-) {
-    QMD_unbannedUsersStore =
-        QMD_unbannedUsersStore.filter(
-            (storedUser) =>
-                storedUser !== normalizedUser
-        );
-}
-
-        if (action) {
-            action.storageChanges++;
-
-} else {
-    writeStorageValue(
-        `${actionChannel}_banlist`,
-        QMD_bannedUsersStore
-    );
-
-    writeStorageValue(
-        `${actionChannel}_unbanlist`,
-        QMD_unbannedUsersStore
-    );
-
-    for (const listSuffix of listSuffixes) {
-
-
+        // Ein erfolgreicher Ban macht einen früheren Unban-Status ungültig.
+        if (
+            QMD_unbannedUsersSet.delete(
+                normalizedUser
+            )
+        ) {
+            QMD_unbannedUsersStore =
+                QMD_unbannedUsersStore.filter(
+                    (storedUser) =>
+                        storedUser !== normalizedUser
+                );
+        }
+                if (action) {
+                    action.storageChanges++;
+        } else {
+            writeStorageValue(
+                `${actionChannel}_banlist`,
+                QMD_bannedUsersStore
+            );
+            writeStorageValue(
+                `${actionChannel}_unbanlist`,
+                QMD_unbannedUsersStore
+            );
+            for (const listSuffix of listSuffixes) {
                 addUserToListStorage(
                     actionChannel,
                     'ban',
@@ -3858,7 +4130,6 @@ if (
         const cancelButton = d.querySelector('.cancelAction');
         const backButton = d.querySelector('.back');
         const importButton = d.querySelector('.importBtn');
-        const quickCheckButton = d.querySelector('.quickCheck');
         const hasQueueItems = queueList.size > 0;
         if (banAllButton) {
             const shouldDisable =
@@ -3916,14 +4187,6 @@ if (
             importButton.disabled =
                 isRunning;
             importButton.setAttribute(
-                'aria-disabled',
-                String(isRunning)
-            );
-        }
-        if (quickCheckButton) {
-            quickCheckButton.disabled =
-                isRunning;
-            quickCheckButton.setAttribute(
                 'aria-disabled',
                 String(isRunning)
             );
@@ -4102,25 +4365,19 @@ if (
         }
         const listUsers = activeListInfo.users;
         const totalCount = listUsers.size;
-
-const {
-    completedUsers,
-    skippedUsers
-} = getDisjointListState(
-    activeListInfo
-);
-
-const skippedCount = skippedUsers.size;
-const completedCount = completedUsers.size;
-
-const remainingCount = Math.max(
-    0,
-    totalCount - completedCount - skippedCount
-);
-
-const processedCount = completedCount;
-
-
+        const {
+            completedUsers,
+            skippedUsers
+        } = getDisjointListState(
+            activeListInfo
+        );
+        const skippedCount = skippedUsers.size;
+        const completedCount = completedUsers.size;
+        const remainingCount = Math.max(
+            0,
+            totalCount - completedCount - skippedCount
+        );
+        const processedCount = completedCount;
         const actionWord =
             activeListInfo.action === 'unban'
                 ? 'entbannt'
@@ -4232,7 +4489,6 @@ const processedCount = completedCount;
             return;
         }
         const isSelectionView = importDiv && importDiv.style.display !== 'none';
-        const quickCheckButton = d.querySelector('.quickCheck');
         const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
         const buttonsToToggle = [
             '.banAll',
@@ -4264,12 +4520,6 @@ const processedCount = completedCount;
         if (backButton) {
             backButton.style.display =
                 navigationDisplay;
-        }
-        if (quickCheckButton) {
-            quickCheckButton.style.display =
-                isSelectionView
-                    ? ''
-                    : 'none';
         }
         updateBulkActionControls();
         const visibleItems = [];
@@ -4517,27 +4767,22 @@ const processedCount = completedCount;
                 state.dropdownList.appendChild(listItem);
                 return;
             }
-
-     storedChannels.forEach((channel) => {
-         const listItem = document.createElement('li');
-         const linkItem = document.createElement('a');
-
-         linkItem.innerText = channel;
-         linkItem.href =
-             `https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
-         linkItem.target = '_blank';
-         linkItem.rel = 'noopener noreferrer';
-         linkItem.title =
-             `Mod-View für den Kanal ${channel}`;
-         linkItem.style.display = 'block';
-         linkItem.style.padding = '4px 8px';
-         linkItem.style.whiteSpace = 'nowrap';
-
-         listItem.appendChild(linkItem);
-         state.dropdownList.appendChild(listItem);
-     });
-
-
+            storedChannels.forEach((channel) => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.innerText = channel;
+                linkItem.href =
+                    `https://twitch.tv/moderator/${encodeURIComponent(channel)}`;
+                linkItem.target = '_blank';
+                linkItem.rel = 'noopener noreferrer';
+                linkItem.title =
+                    `Mod-View für den Kanal ${channel}`;
+                linkItem.style.display = 'block';
+                linkItem.style.padding = '4px 8px';
+                linkItem.style.whiteSpace = 'nowrap';
+                listItem.appendChild(linkItem);
+                state.dropdownList.appendChild(listItem);
+            });
         }
         function createDropdownMenu() {
             const referenceButton = getHomeLink();
@@ -4837,6 +5082,41 @@ const processedCount = completedCount;
         renderList();
         updateBulkActionControls();
         runPendingAutomaticQuickCheck();
+        waitForStorageReady()
+            .then(() => {
+                if (
+                    activeChannel !== detectedChannel
+                ) {
+                    return;
+                }
+                QMD_bannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_banlist`,
+                        []
+                    )
+                );
+                QMD_bannedUsersSet = new Set(
+                    QMD_bannedUsersStore
+                );
+                QMD_unbannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_unbanlist`,
+                        []
+                    )
+                );
+                QMD_unbannedUsersSet = new Set(
+                    QMD_unbannedUsersStore
+                );
+                restoreListStatuses();
+                renderList();
+            })
+        .catch((error) => {
+            console.error(
+                LOGPREFIX,
+                'Kanalstatus konnte nach IndexedDB-Initialisierung nicht geladen werden:',
+                error
+            );
+        });
     }
     // ##### STARTUP UND DAUERHAFTE TWITCH-PRÜFUNG ###############################
     // Twitch rendert Header und Mod-Ansicht dynamisch. Deshalb werden die relevanten Elemente dauerhaft geprüft.
