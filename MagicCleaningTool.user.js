@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.30.1
+// @version      26.9.30.2
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.30.1';
+    const myVersion = '26.9.30.2';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -1884,18 +1884,51 @@
             return;
         }
         const listConfig = LIST_BUTTONS.find( (list) => list.id === buttonId );
-        if (!QMD_unbannedUsersSet.has(normalizedUser) ) {
+        if (!QMD_unbannedUsersSet.has(normalizedUser)) {
             queueList.add(normalizedUser);
             if (listConfig && listConfig.saveSuffix) {
-                if (!queueListSources.has(normalizedUser) ) {
-                    queueListSources.set(normalizedUser, new Set() );
+                if (!queueListSources.has(normalizedUser)) {
+                    queueListSources.set(normalizedUser, new Set());
                 }
-                queueListSources .get(normalizedUser) .add(listConfig.saveSuffix);
+                queueListSources
+                    .get(normalizedUser)
+                    .add(listConfig.saveSuffix);
             }
         } else {
             const button = d.querySelector(`#${buttonId}`);
             if (button) {
                 button.textContent = 'already unbanned';
+            }
+            // Der Benutzer befindet sich bereits im Unban-Zustand. Deshalb gilt er für die aktuell geladene Liste als verarbeitet.
+            if (
+                activeListInfo &&
+                activeListInfo.users &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.add(normalizedUser);
+                activeListInfo.skippedUsers.delete(normalizedUser);
+                // Der bereits erledigte Benutzer muss zusätzlich dauerhaft als verarbeitet gespeichert werden.
+                // Der Quick Check liest später genau diesen Speicherbereich erneut ein.
+                if (
+                    activeChannel &&
+                    activeListInfo.action === QMD_ACTION_UNBAN &&
+                    activeListInfo.listSuffix
+                ) {
+                    const processedStorageKey = getListProcessedStorageKey(
+                        activeChannel,
+                        {
+                            action: activeListInfo.action,
+                            saveSuffix: activeListInfo.listSuffix
+                        }
+                    );
+                    const processedUsers = new Set(
+                        normalizeUserList(
+                            readStorageValue(processedStorageKey, [])
+                        )
+                    );
+                    processedUsers.add(normalizedUser);
+                    writeStorageValue(processedStorageKey, [...processedUsers] );
+                }
             }
             console.log(LOGPREFIX,`${normalizedUser} already unbanned in ${activeChannel}`);
         }
