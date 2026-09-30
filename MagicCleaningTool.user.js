@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.26.5
+// @version      26.9.26.11
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,14 +14,21 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.26.5';
+    const myVersion = '26.9.26.11';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
     const QMD_DATABASE_VERSION = 1;
     const QMD_DATABASE_STORE = 'values';
     const QMD_EXPORT_FORMAT = 'qmd-mct-export';
-    const QMD_EXPORT_VERSION = 2;
+    const QMD_EXPORT_VERSION = 3;
+    const QMD_ACTION_BAN = 'ban';
+    const QMD_ACTION_UNBAN = 'unban';
+    const QMD_STORAGE_STATE_BAN = 'banlist';
+    const QMD_STORAGE_STATE_UNBAN = 'unbanlist';
+    const QMD_STORAGE_PROCESSED = 'processed';
+    const QMD_STORAGE_SKIPPED = 'skipped';
+    let qmdStorageError = null;
     let qmdDatabasePromise = null;
     let qmdStorageReadyPromise = null;
     let qmdStorageWritePromise = Promise.resolve();
@@ -252,6 +259,26 @@
         if (shouldRender) {renderList();
         }
     }
+
+    function addUserToQueue(user, listSuffix = null, shouldRender = true) {
+        const normalizedUser = normalizeUser(user);
+        if (!isValidUsername(normalizedUser)) {
+            console.warn(LOGPREFIX, `Ungültiger Benutzername wurde ignoriert: ${normalizedUser}`);
+            return;
+        }
+        queueList.add(normalizedUser);
+        if (listSuffix) {
+            if (!queueListSources.has(normalizedUser)) {
+                queueListSources.set( normalizedUser, new Set() );
+            }
+            queueListSources
+                .get(normalizedUser)
+                .add(listSuffix);
+        }
+        if (shouldRender) {
+            renderList();
+        }
+    }
     const ignoredList = new Set();
     const bannedList = new Set();
     // Aktuell moderierbarer Twitch-Kanal. Der Wert wird nach der Definition der Moderationsprüfung gesetzt.
@@ -343,7 +370,7 @@
         return true;
     }
     function flushBulkActionStorage(action) {
-        if (!action || action.storageChanges === 0) {
+        if (!action) {
             return;
         }
         const actionChannel = action.channel;
@@ -356,43 +383,56 @@
             writeStorageValue(`${actionChannel}_unbanlist`, QMD_unbannedUsersStore);
             writeStorageValue(`${actionChannel}_banlist`, QMD_bannedUsersStore);
         }
-        if (!listInfo || !listInfo.listSuffix) {
+        if (!listInfo || !listInfo.listSuffix || action.storageChanges === 0) {
             return;
         }
-        const storageKeyName = getListProcessedStorageKey( actionChannel, listInfo);
-        const storedUsers = new Set(normalizeUserList(readStorageValue(storageKeyName, []) ) );
-        const processedUsers = new Set(action.processedUsers || []);
-        for (const user of processedUsers) {
-            storedUsers.add(user);
+        const processedStorageKey = getListProcessedStorageKey( actionChannel, { action: listInfo.action, saveSuffix: listInfo.listSuffix } );
+        const storedProcessedUsers = new Set( normalizeUserList( readStorageValue(processedStorageKey, []) ) );
+        for (const user of action.processedUsers || []) {
+            storedProcessedUsers.add(user);
         }
-        writeStorageValue(storageKeyName, [...storedUsers] );
-        if (action.action === 'ban' && action.skippedUsers && action.skippedUsers.size > 0 ) {
-            const skippedStorageKey = getListSkippedStorageKey(actionChannel, listInfo);
-            const skippedUsers = new Set( normalizeUserList( readStorageValue(skippedStorageKey, [] ) ) );
-            for (const user of action.skippedUsers) {
-                // Ein erfolgreich verarbeiteter Benutzer darf nicht zusätzlich als übersprungen gespeichert werden.
-                if (!processedUsers.has(user)) {
-                    skippedUsers.add(user);
-                }
+        writeStorageValue(processedStorageKey, [...storedProcessedUsers] );
+        if (action.action !== 'ban') {
+            return;
+        }
+        const skippedStorageKey = getListSkippedStorageKey(
+            actionChannel,
+            {
+                action: listInfo.action,
+                saveSuffix: listInfo.listSuffix
             }
-            writeStorageValue( skippedStorageKey, [...skippedUsers] );
+        );
+        const storedSkippedUsers = new Set(normalizeUserList( readStorageValue(skippedStorageKey, []) ) );
+        for (const user of action.skippedUsers || []) {
+            if (!action.processedUsers.has(user)) {
+                storedSkippedUsers.add(user);
+            }
         }
+        for (const user of action.processedUsers || []) {
+            storedSkippedUsers.delete(user);
+        }
+        writeStorageValue(skippedStorageKey, [...storedSkippedUsers] );
     }
     function saveBulkActionListStatus(action) {
         if (!action || !action.listInfo || !action.listInfo.listSuffix || !action.listInfo.users ) {
             return;
         }
+        const completedUsers = new Set([
+            ...(action.listInfo.completedUsers || []),
+            ...(action.processedUsers || [])
+        ]);
+        const skippedUsers = new Set([
+            ...(action.listInfo.skippedUsers || []),
+            ...(action.skippedUsers || [])
+        ]);
+        for (const user of completedUsers) {
+            skippedUsers.delete(user);
+        }
         const listInfo = {
             ...action.listInfo,
             users: new Set(action.listInfo.users),
-            completedUsers: new Set([
-                ...(action.listInfo.completedUsers || []),
-                ...(action.processedUsers || [])
-            ]),
-            skippedUsers: new Set([
-                ...(action.listInfo.skippedUsers || []),
-                ...(action.skippedUsers || [])
-            ])
+            completedUsers,
+            skippedUsers
         };
         const status = buildListStatus(listInfo);
         if (!status) {
@@ -408,27 +448,53 @@
         if (activeBulkAction !== action) {
             return;
         }
-        flushBulkActionStorage(action);
-        saveBulkActionListStatus(action);
-        await flushStorageWrites();
-        lastBulkActionResult = {
-            total: action.users.length,
-            cancelled: action.cancelled,
-            cancelReason: action.cancelReason,
-            completed: action.completed,
-            successful: action.successful,
-            skipped: action.skipped,
-            failed: action.failed,
-            finishedAt: Date.now()
-        };
-        activeBulkAction = null;
-        showListSelectionView();
-        updateBulkActionControls();
-        updateListStatus();
-        requestAutomaticQuickCheck();
+        if (activeListInfo && activeListInfo.users) {
+            activeListInfo.completedUsers = new Set([
+                ...(activeListInfo.completedUsers || []),
+                ...(action.processedUsers || [])
+            ]);
+            activeListInfo.skippedUsers = new Set([
+                ...(activeListInfo.skippedUsers || []),
+                ...(action.skippedUsers || [])
+            ]);
+            for (const user of activeListInfo.completedUsers) {
+                activeListInfo.skippedUsers.delete(user);
+            }
+        }
+        let finishError = null;
+        try {
+            flushBulkActionStorage(action);
+            saveBulkActionListStatus(action);
+            await flushStorageWrites();
+        } catch (error) {
+            finishError = error;
+            action.failed++;
+            action.cancelled = true;
+            action.cancelReason = 'Speicherfehler';
+        console.error(LOGPREFIX,'Sammelaktion konnte nicht vollständig gespeichert werden:', error);
+        } finally {
+            lastBulkActionResult = {
+                total: action.users.length,
+                cancelled: action.cancelled,
+                cancelReason: action.cancelReason,
+                completed: action.completed,
+                successful: action.successful,
+                skipped: action.skipped,
+                failed: action.failed,
+                finishedAt: Date.now(),
+                storageError: finishError
+                    ? finishError.message
+                    : null
+            };
+            activeBulkAction = null;
+            showListSelectionView();
+            updateBulkActionControls();
+            updateListStatus();
+            requestAutomaticQuickCheck();
+        }
         console.info(LOGPREFIX, action.cancelled
-                ? `Sammelaktion abgebrochen: ${action.cancelReason || 'unbekannter Grund'}.`
-                : 'Sammelaktion abgeschlossen.');
+            ? `Sammelaktion abgebrochen: ${action.cancelReason || 'unbekannter Grund'}.`
+            : 'Sammelaktion abgeschlossen.');
     }
     function getBulkActionStatusText(action) {
         if (!action) {
@@ -452,12 +518,11 @@
         }
         if (completed >= total) {
             const failedText = action.failed > 0
-                ? ` Fehler: ${action.failed.toLocaleString('de-DE')}.`
+                ? ` Fehler: ${ action.failed.toLocaleString('de-DE') }.`
                 : '';
             return [
                 'Sammelaktion abgeschlossen.',
-                `${completed.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Einträgen verarbeitet.`,
-                `Übersprungen: ${action.skipped.toLocaleString('de-DE')}.`,
+                `${ completed.toLocaleString('de-DE') } von ${ total.toLocaleString('de-DE') } Einträgen verarbeitet.`,
                 failedText
             ].join(' ');
         }
@@ -576,12 +641,32 @@
             transaction.onerror = () => { reject(transaction.error || new Error('IndexedDB-Daten konnten nicht gespeichert werden.') ); };
             transaction.oncomplete = () => { resolve(); };
             for (const [key, value] of values) {
-                store.put({
-                    key,
-                    value: cloneStorageValue(value)
-                });
+                store.put({key, value: cloneStorageValue(value) });
             }
         });
+    }
+    function clearIndexedDbValues(database) {
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(QMD_DATABASE_STORE, 'readwrite');
+            const store = transaction.objectStore(QMD_DATABASE_STORE);
+            transaction.onerror = () => { reject( transaction.error || new Error('IndexedDB-Daten konnten nicht gelöscht werden.') ); };
+            transaction.oncomplete = () => { resolve(); };
+            store.clear();
+        });
+    }
+    function writeLocalStorageValue(key, value) {
+        const prefixedKey = storageKey(key);
+        const serializedValue = JSON.stringify(value);
+        localStorage.setItem(prefixedKey, serializedValue);
+    }
+    function setStorageError(error) {
+        qmdStorageError = error instanceof Error
+            ? error
+            : new Error(String(error));
+        console.error(LOGPREFIX, 'Persistenter Speicherfehler:', qmdStorageError);
+    }
+    function getStorageError() {
+        return qmdStorageError;
     }
     async function initializeQmdStorage() {
         readInitialLocalStorageValues();
@@ -603,6 +688,7 @@
             }
             console.info(LOGPREFIX,`IndexedDB bereit: ${qmdMemoryStore.size} Speicherwerte geladen.`);
         } catch (error) {
+            setStorageError(error);
             console.error(LOGPREFIX,'IndexedDB konnte nicht initialisiert werden. LocalStorage-Fallback wird verwendet:', error);
         }
     }
@@ -610,11 +696,33 @@
     function queueIndexedDbWrite(key, value) {
         qmdStorageWritePromise = qmdStorageWritePromise
             .then(async () => {
-                const database = await openQmdDatabase();
-                await writeIndexedDbValues(database, [ [ key, value ] ] );
+                if (qmdStorageError) {
+                    writeLocalStorageValue(key, value);
+                    return;
+                }
+                try {
+                    const database = await openQmdDatabase();
+                    await writeIndexedDbValues(
+                        database,
+                        [[key, value]]
+                    );
+                } catch (error) {
+                    setStorageError(error);
+                    try {
+                        writeLocalStorageValue(key, value);
+                        console.warn(LOGPREFIX,`Wert "${key}" wurde ersatzweise in LocalStorage gespeichert.`);
+                    } catch (fallbackError) {
+                        setStorageError( new Error(`IndexedDB und LocalStorage konnten nicht schreiben: ${fallbackError.message}`) );
+                    }
+                }
             })
             .catch((error) => {
-                console.error(LOGPREFIX,`IndexedDB-Wert "${key}" konnte nicht gespeichert werden:`, error);
+                setStorageError(error);
+                try {
+                    writeLocalStorageValue(key, value);
+                } catch (fallbackError) {
+                    setStorageError(fallbackError);
+                }
             });
         return qmdStorageWritePromise;
     }
@@ -633,9 +741,19 @@
         }
         return cloneStorageValue( qmdMemoryStore.get(key) );
     }
+
     function writeStorageValue(key, value) {
         const clonedValue = cloneStorageValue(value);
         qmdMemoryStore.set(key, clonedValue);
+        if (qmdStorageError) {
+            try {
+                writeLocalStorageValue(key, clonedValue);
+            } catch (error) {
+                setStorageError(error);
+                return false;
+            }
+            return false;
+        }
         queueIndexedDbWrite(key, clonedValue);
         return true;
     }
@@ -646,6 +764,9 @@
     }
     async function flushStorageWrites() {
         await qmdStorageWritePromise;
+        if (qmdStorageError) {
+            throw qmdStorageError;
+        }
     }
     function normalizeUser(user) {
         return String(user ?? '')
@@ -719,9 +840,9 @@
         return [...users];
     }
     function getListActionStorageName(action) {
-        return action === 'unban'
-            ? 'unbanlist'
-            : 'banlist';
+        return action === QMD_ACTION_UNBAN
+            ? QMD_STORAGE_STATE_UNBAN
+            : QMD_STORAGE_STATE_BAN;
     }
     function getListStorageKey(channel, action, listSuffix, extraSuffix = '') {
         const actionStorageName = getListActionStorageName(action);
@@ -749,7 +870,8 @@
         return getListStorageKey(
             channel,
             listConfig.action,
-            listConfig.saveSuffix
+            listConfig.saveSuffix,
+            `_${QMD_STORAGE_PROCESSED}`
         );
     }
     function getListSkippedStorageKey(channel, listConfig) {
@@ -757,8 +879,36 @@
             channel,
             listConfig.action,
             listConfig.saveSuffix,
-            '_skipped'
+            `_${QMD_STORAGE_SKIPPED}`
         );
+    }
+    function migrateLegacyListStatusKey(channel, listConfig) {
+        const newProcessedKey = getListProcessedStorageKey(channel, listConfig);
+        const newSkippedKey = getListSkippedStorageKey(channel, listConfig);
+        const legacyProcessedKey = getListStorageKey(channel, listConfig.action, listConfig.saveSuffix);
+        const legacyProcessedValue = readStorageValue(legacyProcessedKey, null);
+        if (
+            !qmdMemoryStore.has(newProcessedKey) &&
+            Array.isArray(legacyProcessedValue) &&
+            legacyProcessedValue.length > 0
+        ) {
+            const normalizedLegacyUsers = normalizeUserList(legacyProcessedValue);
+            if (normalizedLegacyUsers.length > 0) {
+                writeStorageValue(newProcessedKey, normalizedLegacyUsers);
+            }
+        }
+        const legacySkippedKey = getListStorageKey(channel, listConfig.action, listConfig.saveSuffix, '_skipped');
+        const legacySkippedValue = readStorageValue(legacySkippedKey, null);
+        if (
+            !qmdMemoryStore.has(newSkippedKey) &&
+            Array.isArray(legacySkippedValue) &&
+            legacySkippedValue.length > 0
+        ) {
+            const normalizedLegacySkippedUsers = normalizeUserList(legacySkippedValue);
+            if (normalizedLegacySkippedUsers.length > 0) {
+                writeStorageValue(newSkippedKey, normalizedLegacySkippedUsers);
+            }
+        }
     }
     // Erzeugt überschneidungsfreie Statusmengen für eine Liste.
     function getDisjointListState(listInfo) {
@@ -825,7 +975,10 @@
     }
     // Ermittelt die CSS-Klasse für den Bearbeitungsstatus einer Liste.
     function getListStatusClass(status) {
-        if (!status) {
+        if (!status || status.status === 'unknown') {
+            return 'qmd-status-unknown';
+        }
+        if (status.status === 'open' && Number(status.total) === 0) {
             return 'qmd-status-unknown';
         }
         if (status.status === 'error') {
@@ -886,13 +1039,7 @@
             return;
         }
         const statusClasses = [
-            'qmd-list-status',
-            'qmd-status-unknown',
-            'qmd-status-empty',
-            'qmd-status-open',
-            'qmd-status-partial',
-            'qmd-status-complete',
-            'qmd-status-error'
+            'qmd-list-status', 'qmd-status-unknown', 'qmd-status-empty', 'qmd-status-open', 'qmd-status-partial', 'qmd-status-complete', 'qmd-status-error'
         ];
         button.classList.remove(...statusClasses);
         button.classList.add('qmd-list-status', getListStatusClass(status) );
@@ -912,13 +1059,13 @@
             if (listConfig.placeholder) {
                 return;
             }
+            migrateLegacyListStatusKey( activeChannel, listConfig );
             const status = readStorageValue(getListStatusStorageKey(activeChannel, listConfig), null);
             applyListStatusToButton(listConfig, status);
         });
     }
     // Prüft eine einzelne externe Liste auf ihren Bearbeitungsstand.
-    async function checkSingleListStatus(listConfig, channel, channelProcessedUsers
-    ) {
+    async function checkSingleListStatus(listConfig, channel) {
         const checkedAt = new Date().toISOString();
         try {
             const response = await fetchWithTimeout( listConfig.url, { cache: 'no-store' } );
@@ -926,13 +1073,38 @@
                 throw new Error(`HTTP-Fehler ${response.status}`);
             }
             const sourceUsers = await parseUserListFromResponse(response);
-            const processedUsers = new Set( normalizeUserList( readStorageValue(getListProcessedStorageKey(channel, listConfig), []) ) );
-            const skippedUsers = new Set(listConfig.action === 'ban' ? normalizeUserList( readStorageValue(getListSkippedStorageKey(channel, listConfig), []) ) : [] );
-            const channelUsers = channelProcessedUsers && channelProcessedUsers[listConfig.action] ? channelProcessedUsers[listConfig.action] : new Set();
-            const completedUsers = new Set([ ...processedUsers, ...skippedUsers, ...channelUsers ]);
-            const skippedOnlyUsers = new Set( [...skippedUsers] .filter( (user) => !processedUsers.has(user) && !channelUsers.has(user) ) );
+            const processedUsers = new Set(
+                normalizeUserList(
+                    readStorageValue(
+                        getListProcessedStorageKey(channel, listConfig),
+                        []
+                    )
+                )
+            );
+            const skippedUsers = new Set(
+                listConfig.action === 'ban'
+                ? normalizeUserList(
+                    readStorageValue(
+                        getListSkippedStorageKey(channel, listConfig),
+                        []
+                    )
+                )
+                : []
+            );
+            for (const user of processedUsers) {
+                skippedUsers.delete(user);
+            }
+            const completedUsers = new Set([
+                ...processedUsers,
+                ...skippedUsers
+            ]);
             const total = sourceUsers.size;
-            const processed = [...sourceUsers].filter( (user) => completedUsers.has(user) ).length;
+            let processed = 0;
+            for (const user of sourceUsers) {
+                if (completedUsers.has(user)) {
+                    processed++;
+                }
+            }
             const remaining = Math.max(0, total - processed);
             const percentage = total === 0 ? 100 : (processed / total) * 100;
             const status = {
@@ -975,15 +1147,16 @@
     // Prüft den Bearbeitungsstand aller verfügbaren externen Listen.
     async function quickCheckLists() {
         if (activeBulkAction) {
-            console.warn(LOGPREFIX,'Quick check blockiert: Eine Sammelaktion läuft noch.');
+            console.warn(LOGPREFIX, 'Quick check blockiert: Eine Sammelaktion läuft noch.');
             return;
         }
         if (!activeChannel) {
-            console.warn(LOGPREFIX,'Quick check blockiert: Kein aktiver Kanal.');
+            console.warn(LOGPREFIX, 'Quick check blockiert: Kein aktiver Kanal.');
             return;
         }
         if (!isCurrentChannelModerated()) {
-            console.warn(LOGPREFIX,'Quick check blockiert: Der aktuelle Kanal ist nicht moderierbar.');
+            console.warn(LOGPREFIX, 'Quick check blockiert: Der aktuelle Kanal ist nicht moderierbar.');
+            automaticQuickCheckPending = true;
             return;
         }
         if (quickCheckPromise) {
@@ -994,28 +1167,36 @@
             return;
         }
         quickCheckPromise = (async () => {
+            const checkedChannel = activeChannel;
             try {
                 await waitForStorageReady();
-                const checkedChannel = activeChannel;
-                const channelProcessedUsers = {
-                    ban: new Set( normalizeUserList( readStorageValue(`${checkedChannel}_banlist`, []) ) ),
-                    unban: new Set( normalizeUserList( readStorageValue(`${checkedChannel}_unbanlist`, []) ) )
-                };
                 for (const listConfig of activeLists) {
-                    if (activeChannel !== checkedChannel || !isCurrentChannelModerated() ) {
+                    if (activeChannel !== checkedChannel) {
+                        console.info(LOGPREFIX, 'Quick check wegen Kanalwechsel beendet.');
                         return;
                     }
-                    const result = await checkSingleListStatus(listConfig, checkedChannel, channelProcessedUsers);
+                    if (!isCurrentChannelModerated()) {
+                        console.info(LOGPREFIX,'Quick check wegen vorübergehend fehlendem Moderationskontext pausiert.');
+                        automaticQuickCheckPending = true;
+                        return;
+                    }
+                    const result = await checkSingleListStatus(listConfig, checkedChannel);
                     if (activeChannel !== checkedChannel) {
                         return;
                     }
                     applyListStatusToButton(result.listConfig, result.status);
                     await delay(0);
                 }
+            } catch (error) {
+                console.error(LOGPREFIX,'Quick check konnte nicht vollständig ausgeführt werden:', error);
+                automaticQuickCheckPending = true;
             } finally {
                 quickCheckPromise = null;
-                if (isQuickCheckAuto && automaticQuickCheckPending) {
-                    runPendingAutomaticQuickCheck();
+                if (isQuickCheckAuto && automaticQuickCheckPending && activeChannel && isCurrentChannelModerated() ) {
+                    window.setTimeout(
+                        runPendingAutomaticQuickCheck,
+                        250
+                    );
                 }
             }
         })();
@@ -1030,7 +1211,10 @@
             return;
         }
         automaticQuickCheckPending = false;
-        quickCheckLists();
+        quickCheckLists().catch((error) => {
+            console.error(LOGPREFIX, 'Automatischer Quick Check fehlgeschlagen:', error);
+            automaticQuickCheckPending = true;
+        });
     }
     function requestAutomaticQuickCheck() {
         if (!isQuickCheckAuto) {
@@ -1694,10 +1878,6 @@
                 QMD_unbannedUsersStore = QMD_unbannedUsersStore.filter( (storedUser) => storedUser !== normalizedUser );
                 writeStorageValue(`${activeChannel}_unbanlist`, QMD_unbannedUsersStore);
             }
-            if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
-                activeListInfo.completedUsers.add(normalizedUser);
-                activeListInfo.skippedUsers.delete(normalizedUser);
-            }
             console.log(LOGPREFIX,`${normalizedUser} already banned in ${activeChannel}`);
         }
         if (shouldRender) {
@@ -1723,9 +1903,6 @@
             const button = d.querySelector(`#${buttonId}`);
             if (button) {
                 button.textContent = 'already unbanned';
-            }
-            if (activeListInfo && activeListInfo.action === 'unban' && activeListInfo.users.has(normalizedUser) ) {
-                activeListInfo.completedUsers.add(normalizedUser);
             }
             console.log(LOGPREFIX,`${normalizedUser} already unbanned in ${activeChannel}`);
         }
@@ -1882,6 +2059,7 @@
             loadedList.removeAttribute('href');
             loadedList.style.display = 'none';
         }
+        restoreListStatuses();
         renderList();
     }
     // ##### AUTOMATISCHE QUICK CHECKS ############################################
@@ -2031,73 +2209,35 @@
     // ##### EXPORT UND IMPORT DER TOOL-DATEN #####################################
     function getExportRecordState(key) {
         const storageKeyName = String(key);
-        if (storageKeyName === 'myModChannels'
-        ) {
+        if (storageKeyName === 'myModChannels') {
             return 'mod-channel';
         }
-        if (storageKeyName.includes('_skipped')
-        ) {
+        if (storageKeyName.includes('_skipped') ) {
             return 'skipped';
         }
-        if (storageKeyName.includes('_banlist')
-        ) {
-            if (storageKeyName === 'banlist' || storageKeyName.endsWith('_banlist')
-            ) {
+        if (storageKeyName.includes('_banlist') ) {
+            if (storageKeyName === 'banlist' || storageKeyName.endsWith('_banlist') ) {
                 return 'banned';
             }
             return 'processed';
         }
-        if (storageKeyName.includes('_unbanlist')
-        ) {
-            if (storageKeyName === 'unbanlist' || storageKeyName.endsWith('_unbanlist')
-            ) {
+        if (storageKeyName.includes('_unbanlist') ) {
+            if (storageKeyName === 'unbanlist' || storageKeyName.endsWith('_unbanlist') ) {
                 return 'unbanned';
             }
             return 'processed';
         }
         return null;
     }
-    function createQmdExportRecords(values, exportedAt) {
-        const records = [];
-        for (const [key, value] of Object.entries(values)) {
-            const state = getExportRecordState(key);
-            if (!state || !Array.isArray(value)
-            ) {
-                continue;
-            }
-            for (const rawUser of value) {
-                const normalizedUser = normalizeUser(rawUser);
-                if (!isValidUsername(normalizedUser)
-                ) {
-                    continue;
-                }
-                records.push({
-                    key,
-                    user: normalizedUser,
-                    state,
-                    updatedAt: exportedAt,
-                    source: key
-                });
-            }
-        }
-        return records;
-    }
     function createQmdExportData() {
         const values = {};
         for (const [key, value] of qmdMemoryStore.entries()) {
             values[key] = cloneStorageValue(value);
         }
-        const exportedAt = new Date().toISOString();
-        const records = createQmdExportRecords(
-            values,
-            exportedAt
-        );
         return {
             format: QMD_EXPORT_FORMAT,
             version: QMD_EXPORT_VERSION,
-            exportedAt,
-            recordCount: records.length,
-            records,
+            exportedAt: new Date().toISOString(),
             values
         };
     }
@@ -2127,6 +2267,9 @@
     async function exportQmdData() {
         try {
             await waitForStorageReady();
+            if (getStorageError()) {
+                throw getStorageError();
+            }
             await flushStorageWrites();
             const exportData = createQmdExportData();
             const json = JSON.stringify(exportData, null, 4);
@@ -2148,60 +2291,133 @@
         }
     }
     function validateQmdImportData(data) {
-        if (
-            !data ||
-            data.format !== QMD_EXPORT_FORMAT ||
-            ![
-                1,
-                QMD_EXPORT_VERSION
-            ].includes(data.version) ||
-            !data.values ||
-            typeof data.values !== 'object' ||
-            Array.isArray(data.values)
-        ) {
+        if (!data || data.format !== QMD_EXPORT_FORMAT || ![1, 2, QMD_EXPORT_VERSION].includes(data.version) || !data.values || typeof data.values !== 'object' || Array.isArray(data.values) ) {
             throw new Error('Die Datei ist kein gültiger Magic-Cleaning-Tool-Export.');
         }
-        if (data.version >= 2 && (!Array.isArray(data.records) || typeof data.exportedAt !== 'string')
-        ) {throw new Error('Der Export enthält keine gültigen Zustandsdaten.');
-        }
         return data;
+    }
+    function mergeImportedValues(existingValues, importedValues) {
+        const mergedValues = new Map(existingValues);
+        for (const [key, importedValue] of Object.entries(importedValues)) {
+            const existingValue = mergedValues.get(key);
+            if (Array.isArray(existingValue) && Array.isArray(importedValue) ) {
+                mergedValues.set(
+                    key,
+                    normalizeUserList([
+                        ...existingValue,
+                        ...importedValue
+                    ])
+                );
+                continue;
+            }
+            mergedValues.set(
+                key,
+                cloneStorageValue(importedValue)
+            );
+        }
+        return mergedValues;
     }
     async function importQmdDataFromFile(file) {
         if (!file) {
             return;
         }
-        if (!window.confirm('Sollen die vorhandenen Tool-Daten durch die Daten aus der Datei ersetzt werden?')
-        ) {
+        const importMode = window.prompt(
+            [
+                'Importmodus wählen:',
+                '',
+                'R = vorhandene Daten ersetzen',
+                'M = vorhandene Daten zusammenführen',
+                '',
+                'Abbrechen = Import abbrechen'
+            ].join('\n'),
+            'M'
+        );
+        if (importMode === null) {
             return;
         }
+        const normalizedImportMode = importMode .trim() .toLowerCase();
+        if (!['r', 'm'].includes(normalizedImportMode)) {
+            window.alert('Ungültiger Importmodus. Bitte R für Replace oder M für Merge verwenden.');
+            return;
+        }
+        const replaceExistingData = normalizedImportMode === 'r';
         try {
             await waitForStorageReady();
+            if (getStorageError()) {
+                throw getStorageError();
+            }
             const text = await file.text();
-            const importedData = validateQmdImportData(JSON.parse(text));
+            const importedData = validateQmdImportData( JSON.parse(text) );
             const importedEntries = Object.entries(importedData.values);
+            const importedValues = new Map(
+                importedEntries.map(([key, value]) => [
+                    key,
+                    cloneStorageValue(value)
+                ])
+            );
+            const valuesToStore = replaceExistingData
+                ? importedValues
+                : mergeImportedValues(
+                    qmdMemoryStore,
+                    importedData.values
+                );
             const database = await openQmdDatabase();
-            await writeIndexedDbValues(database, importedEntries);
+            if (replaceExistingData) {
+                await clearIndexedDbValues(database);
+            }
+            await writeIndexedDbValues(
+                database,
+                valuesToStore.entries()
+            );
+            if (replaceExistingData) {
+                for (let index = localStorage.length - 1; index >= 0; index--) {
+                    const prefixedKey = localStorage.key(index);
+                    if (prefixedKey && prefixedKey.startsWith(BROWSER_STORAGE_PREFIX) ) {
+                        localStorage.removeItem(prefixedKey);
+                    }
+                }
+            }
             qmdMemoryStore.clear();
-            for (const [key, value] of importedEntries) {
+            for (const [key, value] of valuesToStore.entries()) {
                 qmdMemoryStore.set(
                     key,
                     cloneStorageValue(value)
                 );
             }
             qmdStorageWritePromise = Promise.resolve();
+            qmdStorageError = null;
             if (activeChannel) {
-                QMD_bannedUsersStore = normalizeUserList( readStorageValue(`${activeChannel}_banlist`, []) );
-                QMD_bannedUsersSet = new Set(QMD_bannedUsersStore);
-                QMD_unbannedUsersStore = normalizeUserList( readStorageValue(`${activeChannel}_unbanlist`, []) );
-                QMD_unbannedUsersSet = new Set(QMD_unbannedUsersStore);
+                QMD_bannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_${QMD_STORAGE_STATE_BAN}`,
+                        []
+                    )
+                );
+                QMD_bannedUsersSet = new Set(
+                    QMD_bannedUsersStore
+                );
+                QMD_unbannedUsersStore = normalizeUserList(
+                    readStorageValue(
+                        `${activeChannel}_${QMD_STORAGE_STATE_UNBAN}`,
+                        []
+                    )
+                );
+                QMD_unbannedUsersSet = new Set(
+                    QMD_unbannedUsersStore
+                );
             }
             restoreListStatuses();
             renderList();
-            console.info(LOGPREFIX,`Import abgeschlossen: ${importedEntries.length} Speicherwerte.`);
-            window.alert('Import erfolgreich abgeschlossen.');
+            console.info(LOGPREFIX,`Import abgeschlossen: ${valuesToStore.size} Speicherwerte.`);
+            window.alert(
+                replaceExistingData
+                    ? 'Replace-Import erfolgreich abgeschlossen.'
+                    : 'Merge-Import erfolgreich abgeschlossen.'
+            );
         } catch (error) {
+            setStorageError(error);
             console.error(LOGPREFIX,'Import fehlgeschlagen:', error);
-            window.alert(`Der Import konnte nicht durchgeführt werden:\n${error.message}`);
+            window.alert( `Der Import konnte nicht durchgeführt werden:\n${error.message}` );
         }
     }
     function setupStorageImportExportEvents() {
@@ -2257,8 +2473,7 @@
             if (!target) {
                 return;
             }
-            if (target.matches('.ignore') && !activeBulkAction
-            ) {
+            if (target.matches('.ignore') && !activeBulkAction) {
                 ignoreItem(target.dataset.user);
             }
             if (target.matches('.ban')) {
@@ -2275,8 +2490,7 @@
                 usercard(target.dataset.user);
             }
             // Das Startbanner öffnet die Auswahl der Bannlisten.
-            if (target.matches('.toggleImport, .start')
-            ) {
+            if (target.matches('.toggleImport, .start') ) {
                 toggleImport();
             }
             if (target.matches('.removeModChannel')) {
@@ -2307,15 +2521,9 @@
     });
     // Markiert manuell eingegebene Banngründe als benutzerdefiniert.
     const banReasonInput = d.querySelector('#banReason');
-    if (banReasonInput && banReasonInput.dataset.reasonListenerAttached !== 'true'
-    ) {
+    if (banReasonInput && banReasonInput.dataset.reasonListenerAttached !== 'true') {
         banReasonInput.dataset.reasonSource = 'empty';
-        banReasonInput.addEventListener(
-            'input',
-            () => {
-                banReasonInput.dataset.reasonSource = 'custom';
-            }
-        );
+        banReasonInput.addEventListener('input', () => { banReasonInput.dataset.reasonSource = 'custom'; } );
         banReasonInput.dataset.reasonListenerAttached = 'true';
     }
     // ##### IMPORT UND EINGABEVERARBEITUNG #######################################
@@ -2354,13 +2562,13 @@
             completedUsers: new Set(),
             skippedUsers: new Set()
         };
-        for (const user of users) {
-            addUsersToQueue([user]);
-        }
+        addUsersToQueue(
+            users,
+            activeListInfo.listSuffix,
+            false
+        );
         importTextarea.value = '';
         toggleImport();
-        updateBulkActionControls();
-        renderList();
     }
     // Ermittelt eine Listen-Konfiguration anhand ihrer Nummer.
     function getListConfig(number) {
@@ -2400,20 +2608,32 @@
             banReason: listBanReason = defaultBanReason,
             saveSuffix: listSuffix
         } = listConfig;
-        if (activeChannel) {
-            const oldStatus = readStorageValue(getListStatusStorageKey(activeChannel, listConfig), null);
-            if (oldStatus) {
-                oldStatus.status = 'unknown';
-                oldStatus.checkedAt = null;
-                writeStorageValue(getListStatusStorageKey(activeChannel, listConfig), oldStatus);
-                applyListStatusToButton(listConfig, oldStatus);
-            }
-        }
-        const loadedListText = `Geladene Liste '${fileName}' anzeigen`;
-        const loadedListHref = url;
         if (!isCurrentChannelModerated()) {
             console.warn(LOGPREFIX, 'Listenimport blockiert: Kein moderierbarer Kanal aktiv.');
             return;
+        }
+        if (activeChannel) {
+            const oldStatus = readStorageValue(
+                getListStatusStorageKey(activeChannel, listConfig),
+                null
+            );
+            const unknownStatus = {
+                ...(oldStatus || {}),
+                status: 'unknown',
+                total: Number(oldStatus?.total) || 0,
+                processed: 0,
+                remaining: Number(oldStatus?.total) || 0,
+                percentage: 0,
+                action: listConfig.action,
+                listSuffix: listConfig.saveSuffix,
+                fileName: listConfig.fileName,
+                checkedAt: null
+            };
+            // Während des Ladens nur die Anzeige ändern. Der bisher gespeicherte Listenstatus bleibt unverändert.
+            applyListStatusToButton(
+                listConfig,
+                unknownStatus
+            );
         }
         const normalizedAction =
             action === 'unban'
@@ -2433,13 +2653,11 @@
         }
         updateListStatus();
         updateBulkActionControls();
-        const usersToProcess = [];
         const banReasonInput = d.querySelector('#banReason');
         const currentBanReason = banReasonInput?.value.trim() || '';
         const reasonWasAutomaticallyFilled = banReasonInput?.dataset.reasonSource === 'list';
         const shouldUseListReason = !currentBanReason || reasonWasAutomaticallyFilled;
-        if (normalizedAction === 'ban' && banReasonInput && shouldUseListReason
-        ) {
+        if (normalizedAction === 'ban' && banReasonInput && shouldUseListReason) {
             banReasonInput.value = listBanReason;
             banReasonInput.dataset.reasonSource = 'list';
         }
@@ -2462,6 +2680,14 @@
             );
             sourceButton.textContent = 'Lade …';
         }
+        const resetListImportButton = () => {
+            if (!sourceButton) {
+                return;
+            }
+            sourceButton.disabled = false;
+            sourceButton.removeAttribute('aria-busy');
+            sourceButton.textContent = defaultButtonText;
+        };
         fetchWithTimeout(url)
             .then((response) => {
                 if (!response.ok) {
@@ -2470,21 +2696,15 @@
                 return parseUserListFromResponse(response);
             })
             .then((parsedUsers) => {
-                if (activeBulkAction || activeChannel !== importChannel || !isCurrentChannelModerated()
-                ) {
+                if (activeBulkAction || activeChannel !== importChannel || !isCurrentChannelModerated() ) {
                     console.warn(LOGPREFIX, 'Listenimport wegen Sammelaktion oder Kanalwechsel verworfen.');
                     activeListAction = null;
                     activeListInfo = null;
-                    usersToProcess.length = 0;
                     queueList.clear();
                     queueListSources.clear();
                     showListSelectionView();
                     updateBulkActionControls();
-                    if (sourceButton) {
-                        sourceButton.disabled = false;
-                        sourceButton.removeAttribute('aria-busy');
-                        sourceButton.textContent = defaultButtonText;
-                    }
+                    resetListImportButton();
                     return;
                 }
                 const storedProcessedUsers = new Set(
@@ -2509,41 +2729,17 @@
                     completedUsers: storedProcessedUsers,
                     skippedUsers: storedSkippedUsers
                 };
-                usersToProcess.push(...parsedUsers);
-                if (!isCurrentChannelModerated()) {
-                    console.warn(LOGPREFIX, 'Listenimport wegen eines Kanalwechsels verworfen.');
-                    activeListAction = null;
-                    usersToProcess.length = 0;
-                    queueList.clear();
-                    queueListSources.clear();
-                    showListSelectionView();
-                    updateBulkActionControls();
-                    if (sourceButton) {
-                        sourceButton.disabled = false;
-                        sourceButton.removeAttribute('aria-busy');
-                        sourceButton.textContent = defaultButtonText;
-                    }
-                    return;
-                }
-                for (const name of usersToProcess) {
-                    // Bereits gespeicherte Einträge werden nicht erneut in die Queue aufgenommen.
-                    if (activeListInfo.completedUsers.has(name) || activeListInfo.skippedUsers.has(name)
+                for (const name of parsedUsers) {
+                    if (
+                        activeListInfo.completedUsers.has(name) ||
+                        activeListInfo.skippedUsers.has(name)
                     ) {
                         continue;
-                        }
+                    }
                     if (normalizedAction === 'unban') {
-                        userAlreadyUnBanned(
-                            name,
-                            buttonId,
-                            false
-                        );
+                        userAlreadyUnBanned(name, buttonId, false);
                     } else {
-                        userAlreadyBanned(
-                            name,
-                            buttonId,
-                            listSuffix,
-                            false
-                        );
+                        addUserToQueue(name, listSuffix, false);
                     }
                 }
                 const textField = d.querySelector('#textfield');
@@ -2558,9 +2754,29 @@
                         body.style.display = '';
                     }
                 } else {
-                    // Alle Einträge waren bereits erledigt oder wurden übersprungen.
+                    const importedCount = activeListInfo.users.size;
+                    const processedCount = activeListInfo.completedUsers.size;
+                    const skippedCount = activeListInfo.skippedUsers.size;
                     saveListInfoStatus(importChannel, activeListInfo);
-                    // Die Liste ist vollständig abgearbeitet oder enthält keine neuen Benutzer.
+                    const currentStateSet =
+                        normalizedAction === 'ban'
+                            ? QMD_bannedUsersSet
+                            : QMD_unbannedUsersSet;
+                    const alreadyInCurrentStateCount = [
+                        ...activeListInfo.users
+                    ].filter((user) => currentStateSet.has(user)).length;
+                    const statusElement = d.querySelector('#listStatus');
+                    if (statusElement) {
+                        statusElement.textContent = [
+                            `${importedCount.toLocaleString('de-DE')} Namen geladen.`,
+                            `${alreadyInCurrentStateCount.toLocaleString('de-DE')} Namen befinden sich bereits im aktuellen ${normalizedAction === 'ban' ? 'Ban-' : 'Unban-'}Zustand.`,
+                            `${processedCount.toLocaleString('de-DE')} Namen wurden bereits über diese Liste verarbeitet.`,
+                            `${skippedCount.toLocaleString('de-DE')} Namen wurden übersprungen.`,
+                            'Es gibt keine neuen Namen für eine Aktion.'
+                        ].join('\n');
+                        statusElement.className = 'list-status complete';
+                        statusElement.style.display = 'block';
+                    }
                     showListSelectionView();
                     if (isQuickCheckAuto) {
                         requestAutomaticQuickCheck();
@@ -2577,11 +2793,7 @@
                 }
                 updateListStatus();
                 renderList();
-                if (sourceButton) {
-                    sourceButton.disabled = false;
-                    sourceButton.removeAttribute('aria-busy');
-                    sourceButton.textContent = defaultButtonText;
-                }
+                resetListImportButton();
             })
             .catch((error) => {
                 console.error(LOGPREFIX, `Liste konnte nicht geladen werden: ${url}`, error);
@@ -2592,9 +2804,35 @@
                 resetActionDurationEstimate();
                 const statusElement = d.querySelector('#listStatus');
                 if (statusElement) {
-                    statusElement.textContent = 'Liste konnte nicht geladen werden.\nBitte Netzwerkverbindung und Listenadresse prüfen.\nEs wurden keine Benutzer übernommen.';
+                    statusElement.textContent =
+                        'Liste konnte nicht geladen werden.\nBitte Netzwerkverbindung und Listenadresse prüfen.\nEs wurden keine Benutzer übernommen.';
                     statusElement.className = 'list-status cancelled';
                     statusElement.style.display = 'block';
+                }
+                if (activeChannel === importChannel) {
+                    const errorStatus = {
+                        status: 'error',
+                        total: 0,
+                        processed: 0,
+                        remaining: 0,
+                        percentage: 0,
+                        action: normalizedAction,
+                        listSuffix,
+                        fileName,
+                        checkedAt: new Date().toISOString(),
+                        error: error.message
+                    };
+                    writeStorageValue(
+                        getListStatusStorageKey(
+                            importChannel,
+                            {
+                                action: normalizedAction,
+                                saveSuffix: listSuffix
+                            }
+                        ),
+                        errorStatus
+                    );
+                    applyListStatusToButton(listConfig, errorStatus);
                 }
                 const textField = d.querySelector('#textfield');
                 if (textField) {
@@ -2602,18 +2840,14 @@
                 }
                 showListSelectionView();
                 updateBulkActionControls();
-                if (sourceButton) {
-                    sourceButton.disabled = false;
-                    sourceButton.removeAttribute('aria-busy');
-                    sourceButton.textContent = defaultButtonText;
-                }
+                resetListImportButton();
             });
-        const loadedList = d.querySelector('#loadedList');
-        if (loadedList) {
-            loadedList.textContent = loadedListText;
-            loadedList.href = loadedListHref;
-            loadedList.style.display = 'inline-block';
-        }
+            const loadedList = d.querySelector('#loadedList');
+            if (loadedList) {
+                loadedList.textContent = fileName;
+                loadedList.href = url;
+                loadedList.style.display = 'inline-block';
+            }
     }
     // ##### WHITELIST LADEN UND PRÜFEN ###########################################
     // Lädt beide Whitelists und führt sie in einem Set zusammen.
@@ -2964,6 +3198,24 @@
         const listInfo = action?.listInfo || activeListInfo;
         const sourceMap = action?.sources || queueListSources;
         const listSuffixes = sourceMap.get(normalizedUser) || new Set();
+        if (QMD_bannedUsersSet.has(normalizedUser)) {
+            if (action) {
+                action.skippedUsers.add(normalizedUser);
+                action.listInfo.skippedUsers.add(normalizedUser);
+                if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
+                    activeListInfo.skippedUsers.add(normalizedUser);
+                }
+                action.storageChanges++;
+            } else if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
+                activeListInfo.skippedUsers.add(normalizedUser);
+            }
+            if (!action || activeBulkAction === action) {
+                queueList.delete(normalizedUser);
+                queueListSources.delete(normalizedUser);
+                renderList();
+            }
+            return false;
+        }
         try {
             const whitelisted = await isUserWhitelisted(normalizedUser);
             if (action && isBulkActionCancelled(action) ) {
@@ -2975,7 +3227,7 @@
                     action.skippedUsers.add(normalizedUser);
                     action.listInfo.skippedUsers.add(normalizedUser);
                     if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
-                    activeListInfo.skippedUsers.add(normalizedUser);
+                        activeListInfo.skippedUsers.add(normalizedUser);
                     }
                 }
                 if (action) {
@@ -3323,16 +3575,12 @@
         );
         const skippedCount = skippedUsers.size;
         const completedCount = completedUsers.size;
-        const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
-        const processedCount = completedCount;
+        const processedCount = completedCount + skippedCount;
+        const remainingCount = Math.max(0, totalCount - processedCount);
         const actionWord =
             activeListInfo.action === 'unban'
-                ? 'entbannt'
-                : 'gebannt';
-        const actionVerb =
-            activeListInfo.action === 'unban'
-                ? 'entbannt'
-                : 'gebannt';
+            ? 'verarbeitet beziehungsweise entbannt'
+            : 'verarbeitet beziehungsweise gebannt';
         const channelName =
             activeListInfo.channel ||
             activeChannel ||
@@ -3347,10 +3595,10 @@
         // Erstellt den sichtbaren Status- und Fortschrittstext.
         let statusText = `Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei \u25B6 ${channelName} \u25C0 ${actionWord}.`;
         let progressText = '';
-        if (skippedCount > 0) {
-            progressText += `Übersprungen: ${skippedCount.toLocaleString('de-DE')}. `;
-        }
         if (remainingCount > 0) {
+            if (skippedCount > 0) {
+                progressText += `Übersprungen: ${ skippedCount.toLocaleString('de-DE') }. `;
+            }
             const averageActionDuration = getAverageActionDuration();
             const estimatedDuration = remainingCount * averageActionDuration;
             progressText += `Verbleibend: ${ remainingCount.toLocaleString('de-DE') } … `;
