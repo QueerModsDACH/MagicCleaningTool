@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.26.11
+// @version      26.9.30.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.26.11';
+    const myVersion = '26.9.30.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -1578,7 +1578,6 @@
                 .magicMorningStar .action-bar .streamelements:focus-visible,
                 .magicMorningStar .action-bar .streamlabs:focus-visible {
                     outline: 2px solid rgba(145, 70, 255, 0.9); outline-offset: 3px; }
-
                 /* Listenaktionen */
                 .magicMorningStar .action-bar .cancelAction { min-width: 92px; background: #8f1d1d; color: #ffffff;}
                 .magicMorningStar .action-bar .unbanAll { min-width: 48px; background: #34ae0c; color: #ffffff;}
@@ -1586,11 +1585,9 @@
                 /* Einheitliches Hover-Verhalten */
                 .magicMorningStar .action-bar button:not(:disabled):hover { cursor: pointer;}
                 .magicMorningStar .action-bar button:not(:disabled):active { filter: brightness(0.95); transform: translateY(0); }
-
-                .magicMorningStar .storage-tools {display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin: 0 0 8px 0;}
-                .magicMorningStar .storage-tools button {min-height: 26px; padding: 2px 8px; font-size: 11px; background: #5f6368; color: #ffffff;}
-                .magicMorningStar .storage-tools button:not(:disabled):hover {cursor: pointer; filter: brightness(1.12);}
-
+                .magicMorningStar .action-bar .storageAction {min-width: 52px; min-height: 32px; padding: 0 6px; background: #5f6368; color: #ffffff; font-size: 11px;}
+                .magicMorningStar .action-bar .storageAction:not(:disabled):hover {cursor: pointer; filter: brightness(1.12);}
+                .magicMorningStar .action-bar .storageAction[hidden] {display: none;}
                 .magicMorningStar .import { min-height: 20px; padding: 3px; background: var(--color-background-body);
                     border: var(--border-width-default) solid var(--color-border-base); }
                 .magicMorningStar textarea { width: 100%; min-height: 8em; padding: 0.5em; background: var(--color-background-base);
@@ -1601,14 +1598,12 @@
                     box-sizing: border-box; font-size: 9pt; line-height: 1.45; text-align: center; white-space: pre-line; }
                 .magicMorningStar .list-limit-info { padding: 12px; color: var(--color-hinted-grey-7);
                     text-align: center; font-size: 0.9em; line-height: 1.4; }
-
                 .magicMorningStar .list-status.incomplete {color: #ff9a9a;}
                 .magicMorningStar .list-status.partial {color: #f4d35e;}
                 .magicMorningStar .list-status.complete {color: #9be7a1;}
                 .magicMorningStar .list-status-complete-message { font-size: 26px; font-weight: bold; }
                 .magicMorningStar .list-status.running {color: #f4d35e;}
                 .magicMorningStar .list-status.cancelled {color: #ffa500;}
-
                 .magicMorningStar .list-button-row { display: flex; justify-content: center; align-items: center; }
                 .magicMorningStar .list-button-row button { box-sizing: border-box; overflow: visible; text-overflow: clip; white-space: pre-line;
                     min-height: 40px; height: auto; padding: 4px 4px; font-size: 12px; line-height: 1.2; text-align: center;
@@ -1621,12 +1616,10 @@
                     <img class="modMenuToggleImage" src="${isModMenuVisible ? modMenuOnImage : modMenuOffImage}"
                         title="Mod-Menü ein- oder ausblenden" alt="Mod-Menü" width="32" height="32" >
                 </button>
-
                 <!-- Umschalter für automatische Quick Checks -->
                 <button class="quickCheckAutoToggle" type="button" title="Automatische Quick Checks ein- oder ausschalten" aria-label="Automatische Quick Checks ein- oder ausschalten" style="display: inline-flex;" >
                     <span class="quickCheckAutoToggleSymbol" aria-hidden="true"></span>
                 </button>
-
                 <span style="flex-grow: 1;"></span>
                 <!-- Repository-Link und Tool-Titel -->
                 <h5 id="header" class="logo">
@@ -1652,17 +1645,10 @@
                 <div id="moderatorName" class="moderator-name"></div>
                 <a id="loadedList" href="#" target="_blank" rel="noopener noreferrer" style="display: none;" title="Geladene Liste anzeigen" ></a>
             </div>
+
             <!-- Importbereich -->
             <div id="import" class="import" style="display: none;">
-            <div class="storage-tools">
-                <button class="exportDataBtn" type="button" title="Alle Tool-Daten als Datei exportieren">
-                    &#8679; Daten exportieren
-                </button>
-                <button class="importDataBtn" type="button" title="Tool-Daten aus einer Exportdatei importieren">
-                    &#8681; Daten importieren
-                </button>
                 <input id="importDataFile" type="file" accept="application/json,.json" style="display: none;">
-            </div>
                 <textarea id="textfield" placeholder="für separaten bann, hier ein Benutzername pro Zeile einfügen" ></textarea>
                 <div style="text-align: right;">
                     <button class="importBtn" type="button" title="Benutzer zur Liste hinzufügen"
@@ -1688,7 +1674,6 @@
                     <button class="back" type="button" title="Zurück" aria-label="Zurück" >
                         &#8592; zurück
                     </button>
-
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
                 <div class="action-group action-group-center">
@@ -1714,18 +1699,26 @@
                             <img src="${buttonStreamlabsImage}" alt="" width="42" height="42" aria-hidden="true">
                         </button>
                 </div>
-                <!-- Rechte Gruppe: Listenaktionen -->
+
+                <!-- Rechte Gruppe: Listenaktionen und Datenverwaltung -->
                 <div class="action-group action-group-right">
-                <button class="cancelAction" type="button" title="Keine weiteren Aktionen ausführen" aria-label="Laufende Sammelaktion abbrechen" hidden>
-                    &#x2715; Abbrechen
-                </button>
-                    <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen" >
+                    <button class="cancelAction" type="button" title="Keine weiteren Aktionen ausführen" aria-label="Laufende Sammelaktion abbrechen" hidden>
+                        &#x2715; Abbrechen
+                    </button>
+                    <button class="exportDataBtn storageAction" type="button" title="Alle Tool-Daten als Datei exportieren" aria-label="Tool-Daten exportieren" hidden>
+                        &#8679; export
+                    </button>
+                    <button class="importDataBtn storageAction" type="button" title="Tool-Daten aus einer Exportdatei importieren" aria-label="Tool-Daten importieren" hidden>
+                        &#8681; import
+                    </button>
+                    <button class="unbanAll" type="button" title="Alle auf der Liste entbannen" aria-label="Alle auf der Liste entbannen">
                         &#128519;
                     </button>
-                    <button class="banAll" type="button" title="Alle auf der Liste bannen" aria-label="Alle auf der Liste bannen" >
+                    <button class="banAll" type="button" title="Alle auf der Liste bannen" aria-label="Alle auf der Liste bannen">
                         &#128121;
                     </button>
                 </div>
+
             </div>
             <!-- Status der aktuell geladenen Liste -->
             <div id="listStatus" class="list-status" aria-live="polite"
@@ -3652,6 +3645,17 @@
         }
         const isSelectionView = importDiv && importDiv.style.display !== 'none';
         const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
+        const storageButtons = [
+            '.exportDataBtn',
+            '.importDataBtn'
+        ];
+        storageButtons.forEach((selector) => {
+            const button = d.querySelector(selector);
+            if (!button) {
+                return;
+            }
+            button.hidden = !isSelectionView;
+        });
         const buttonsToToggle = [
             '.banAll',
             '.unbanAll'
