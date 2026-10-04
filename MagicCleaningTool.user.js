@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.9.30.2
+// @version      26.10.3.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.9.30.2';
+    const myVersion = '26.10.3.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -51,47 +51,47 @@
     // ----------------------------------------------------------------------------
     // Button 01
     const Button_01_IdClass = 'Button_01';
-    const Button_01_Text = 'follow bot\n( QMD-List )';
+    const Button_01_Text = 'follow bot (pleb)\n( QMD-List )';
     const Button_01_BanReason = 'follow BOT (QMD-List)';
-    const Button_01_ListSaveSuffix = '_LIST_qmd_follow_bot_COMPILED';
-    const Button_01_AltText = 'Importiert die QMD-follow-bot-Liste';
-    const Button_01_FileName = 'LIST_qmd_follow_bot_COMPILED.txt';
+    const Button_01_ListSaveSuffix = '_LIST_qmd_follow_bot_COMPILED_pleb';
+    const Button_01_AltText = 'Importiert die QMD-follow-bot-COMPILED-pleb-Liste';
+    const Button_01_FileName = 'LIST_qmd_follow_bot_COMPILED_pleb.txt';
     const Button_01_URL = `${Listen_rawURL}${Button_01_FileName}`;
     const Button_01_Action = 'ban';
     // Button 02
     const Button_02_IdClass = 'Button_02';
-    const Button_02_Text = 'hostile Troll\n( QMD-List )';
+    const Button_02_Text = 'hostile Troll (pleb)\n( QMD-List )';
     const Button_02_BanReason = 'hostile Troll (QMD-List)';
-    const Button_02_ListSaveSuffix = '_LIST_qmd_hostile_troll_COMPILED';
-    const Button_02_AltText = 'Importiert die QMD-hostile-Troll-Liste';
-    const Button_02_FileName = 'LIST_qmd_hostile_troll_COMPILED.txt';
+    const Button_02_ListSaveSuffix = '_LIST_qmd_hostile_troll_COMPILED_pleb';
+    const Button_02_AltText = 'Importiert die QMD-hostile-Troll-COMPILED-pleb-Liste';
+    const Button_02_FileName = 'LIST_qmd_hostile_troll_COMPILED_pleb.txt';
     const Button_02_URL = `${Listen_rawURL}${Button_02_FileName}`;
     const Button_02_Action = 'ban';
     // Button 03
     const Button_03_IdClass = 'Button_03';
-    const Button_03_Text = 'unsorted Troll\n( QMD-List )';
+    const Button_03_Text = 'unsorted Troll (pleb)\n( QMD-List )';
     const Button_03_BanReason = 'unsorted Troll (QMD-List)';
-    const Button_03_ListSaveSuffix = '_LIST_qmd_unsorted_COMPILED';
-    const Button_03_AltText = 'Importiert die QMD-unsorted-Liste';
-    const Button_03_FileName = 'LIST_qmd_unsorted_COMPILED.txt';
+    const Button_03_ListSaveSuffix = '_LIST_qmd_unsorted_COMPILED_pleb';
+    const Button_03_AltText = 'Importiert die QMD-unsorted-COMPILED-pleb-Liste';
+    const Button_03_FileName = 'LIST_qmd_unsorted_COMPILED_pleb.txt';
     const Button_03_URL = `${Listen_rawURL}${Button_03_FileName}`;
     const Button_03_Action = 'ban';
     // Button 04
     const Button_04_IdClass = 'Button_04';
-    const Button_04_Text = 'suspect\n( QMD-List )';
+    const Button_04_Text = 'suspect (pleb)\n( QMD-List )';
     const Button_04_BanReason = 'suspect (QMD-List)';
-    const Button_04_ListSaveSuffix = '_LIST_qmd_suspect_COMPILED';
-    const Button_04_AltText = 'Importiert die QMD-Suspect-Liste';
-    const Button_04_FileName = 'LIST_qmd_suspect_COMPILED.txt';
+    const Button_04_ListSaveSuffix = '_LIST_qmd_suspect_COMPILED_pleb';
+    const Button_04_AltText = 'Importiert die QMD-Suspect-COMPILED-pleb-Liste';
+    const Button_04_FileName = 'LIST_qmd_suspect_COMPILED_pleb.txt';
     const Button_04_URL = `${Listen_rawURL}${Button_04_FileName}`;
     const Button_04_Action = 'ban';
     // Button 05
     const Button_05_IdClass = 'Button_05';
-    const Button_05_Text = '5B2Z Bots @240505\n( QMD-List )';
+    const Button_05_Text = '5B2Z Bots @240505 (pleb)\n( QMD-List )';
     const Button_05_BanReason = '5B2Z-BOT @240505 (QMD-List)';
-    const Button_05_ListSaveSuffix = '_LIST_5B2Z_20240505_COMPILED';
-    const Button_05_AltText = 'Importiert die QMD-5B2Z-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
-    const Button_05_FileName = 'LIST_5B2Z_20240505_COMPILED.txt';
+    const Button_05_ListSaveSuffix = '_LIST_5B2Z_20240505_COMPILED_pleb';
+    const Button_05_AltText = 'Importiert die QMD-5B2Z-COMPILED-pleb-Liste (Bots, die alle am 05.05.2024 erstellt wurden)';
+    const Button_05_FileName = 'LIST_5B2Z_20240505_COMPILED_pleb.txt';
     const Button_05_URL = `${Listen_rawURL}${Button_05_FileName}`;
     const Button_05_Action = 'ban';
     // Button 06
@@ -105,95 +105,131 @@
     const Button_06_Action = 'ban';
     // Button 07
     const Button_07_IdClass = 'Button_07';
-    const Button_07_Text = 'well known bots\n(derived from twitchbotsnbigots)';
+    const Button_07_Text = 'well known bots (pleb)\n(derived from twitchbotsnbigots)';
     const Button_07_BanReason = 'well known BOT (QMD-List derived from twitchbotsnbigots)';
-    const Button_07_ListSaveSuffix = '_LIST_twitchbotsnbigots_COMPILED';
-    const Button_07_AltText = 'Importiert die twitchbotsnbigots-Liste';
-    const Button_07_FileName = 'LIST_twitchbotsnbigots_COMPILED.txt';
+    const Button_07_ListSaveSuffix = '_LIST_twitchbotsnbigots_COMPILED_pleb';
+    const Button_07_AltText = 'Importiert die twitchbotsnbigots-COMPILED-pleb-Liste';
+    const Button_07_FileName = 'LIST_twitchbotsnbigots_COMPILED_pleb.txt';
     const Button_07_URL = `${Listen_rawURL}${Button_07_FileName}`;
     const Button_07_Action = 'ban';
     // Button 08
     const Button_08_IdClass = 'Button_08';
-    const Button_08_Text = 'well known bots\n(derived from Twitch Insights)';
+    const Button_08_Text = 'well known bots (pleb)\n(derived from Twitch Insights)';
     const Button_08_BanReason = 'well known BOT (QMD-List derived from TwitchInsights)';
-    const Button_08_ListSaveSuffix = '_LIST_TwitchInsights_COMPILED';
-    const Button_08_AltText = 'Importiert die Twitch-Insights-Liste';
-    const Button_08_FileName = 'LIST_TwitchInsights_COMPILED.txt';
+    const Button_08_ListSaveSuffix = '_LIST_TwitchInsights_COMPILED_pleb';
+    const Button_08_AltText = 'Importiert die Twitch-Insights-COMPILED-pleb-Liste';
+    const Button_08_FileName = 'LIST_TwitchInsights_COMPILED_pleb.txt';
     const Button_08_URL = `${Listen_rawURL}${Button_08_FileName}`;
     const Button_08_Action = 'ban';
     // Button 09
     const Button_09_IdClass = 'Button_09';
-    const Button_09_Text = 'follower bots\n(derived from isds list)';
+    const Button_09_Text = 'follower bots (pleb)\n(derived from isds list)';
     const Button_09_BanReason = 'follower BOT (QMD-List derived from isds)';
-    const Button_09_ListSaveSuffix = '_LIST_isds_follower_bot_COMPILED';
-    const Button_09_AltText = 'Importiert die isds-follower-bot-Liste';
-    const Button_09_FileName = 'LIST_isds_follower_bot_COMPILED.txt';
+    const Button_09_ListSaveSuffix = '_LIST_isds_follower_bot_COMPILED_pleb';
+    const Button_09_AltText = 'Importiert die isds-follower-bot-COMPILED-pleb-Liste';
+    const Button_09_FileName = 'LIST_isds_follower_bot_COMPILED_pleb.txt';
     const Button_09_URL = `${Listen_rawURL}${Button_09_FileName}`;
     const Button_09_Action = 'ban';
     // Button 10
     const Button_10_IdClass = 'Button_10';
-    const Button_10_Text = 'troll\n(derived from isds list)';
+    const Button_10_Text = 'troll (pleb)\n(derived from isds list)';
     const Button_10_BanReason = 'troll (QMD-List derived from isds)';
-    const Button_10_ListSaveSuffix = '_LIST_isds_troll_COMPILED';
-    const Button_10_AltText = 'Importiert die isds-troll-Liste';
-    const Button_10_FileName = 'LIST_isds_troll_COMPILED.txt';
+    const Button_10_ListSaveSuffix = '_LIST_isds_troll_COMPILED_pleb';
+    const Button_10_AltText = 'Importiert die isds-troll-COMPILED-pleb-Liste';
+    const Button_10_FileName = 'LIST_isds_troll_COMPILED_pleb.txt';
     const Button_10_URL = `${Listen_rawURL}${Button_10_FileName}`;
     const Button_10_Action = 'ban';
     // Button 11
     const Button_11_IdClass = 'Button_11';
-    const Button_11_Text = 'viewer bots\n(derived from isds list)';
+    const Button_11_Text = 'viewer bots (pleb)\n(derived from isds list)';
     const Button_11_BanReason = 'viewer BOT (QMD-List derived from isds)';
-    const Button_11_ListSaveSuffix = '_LIST_isds_viewer_bot_COMPILED';
-    const Button_11_AltText = 'Importiert die isds-viewer-bot-Liste';
-    const Button_11_FileName = 'LIST_isds_viewer_bot_COMPILED.txt';
+    const Button_11_ListSaveSuffix = '_LIST_isds_viewer_bot_COMPILED_pleb';
+    const Button_11_AltText = 'Importiert die isds-viewer-bot-COMPILED-pleb-Liste';
+    const Button_11_FileName = 'LIST_isds_viewer_bot_COMPILED_pleb.txt';
     const Button_11_URL = `${Listen_rawURL}${Button_11_FileName}`;
     const Button_11_Action = 'ban';
     // Button 12
     const Button_12_IdClass = 'Button_12';
-    const Button_12_Text = 'unwanted bots\n(derived from isds list)';
+    const Button_12_Text = 'unwanted bots (pleb)\n(derived from isds list)';
     const Button_12_BanReason = 'unwanted BOT (QMD-List derived from isds)';
-    const Button_12_ListSaveSuffix = '_LIST_isds_unwanted_bots_COMPILED';
-    const Button_12_AltText = 'Importiert die isds-(unwanted)-mad-tos-porn-seller-spam-bot-Liste';
-    const Button_12_FileName = 'LIST_isds_unwanted_bots_COMPILED.txt';
+    const Button_12_ListSaveSuffix = '_LIST_isds_unwanted_bots_COMPILED_pleb';
+    const Button_12_AltText = 'Importiert die isds-(unwanted)-mad-tos-porn-seller-spam-bot-COMPILED-pleb-Liste';
+    const Button_12_FileName = 'LIST_isds_unwanted_bots_COMPILED_pleb.txt';
     const Button_12_URL = `${Listen_rawURL}${Button_12_FileName}`;
     const Button_12_Action = 'ban';
     // Button 13
     const Button_13_IdClass = 'Button_13';
-    const Button_13_Text = '/monitor\n …function coming soon…';
-    const Button_13_BanReason = 'MONITOR-List (QMD-List)';
-    const Button_13_ListSaveSuffix = '_MONITOR_List';
-    const Button_13_AltText = 'Importiert die MONITOR-Liste';
-    const Button_13_FileName = 'monitor.txt';
+    const Button_13_Text = 'sus troll streamers (Affiliate)\n( QMD-List )';
+    const Button_13_BanReason = 'sus Troll streamer (QMD-List)';
+    const Button_13_ListSaveSuffix = '_LIST_qmd_sus_troll_streamers_COMPILED_affiliate';
+    const Button_13_AltText = 'Importiert die QMD-sus-troll-streamers-COMPILED-affiliate-Liste';
+    const Button_13_FileName = 'LIST_qmd_sus_troll_streamers_COMPILED_affiliate.txt';
     const Button_13_URL = `${Listen_rawURL}${Button_13_FileName}`;
-    // TODO: Diese Aktion soll später zu "monitor" geändert werden.
     const Button_13_Action = 'ban';
     // Button 14
     const Button_14_IdClass = 'Button_14';
-    const Button_14_Text = 'UNBAN …';
-    const Button_14_BanReason = 'UNBAN-List (QMD-UNBAN-List)';
-    const Button_14_ListSaveSuffix = '_UNBAN_List';
-    const Button_14_AltText = 'Importiert die UNBAN-Liste';
-    const Button_14_FileName = 'UNBANLIST.txt';
+    const Button_14_Text = 'sus troll streamers (Partner)\n( QMD-List )';
+    const Button_14_BanReason = 'sus Troll streamer (QMD-List)';
+    const Button_14_ListSaveSuffix = '_LIST_qmd_sus_troll_streamers_COMPILED_partner';
+    const Button_14_AltText = 'Importiert die QMD-sus-troll-streamers-COMPILED-partner-Liste';
+    const Button_14_FileName = 'LIST_qmd_sus_troll_streamers_COMPILED_partner.txt';
     const Button_14_URL = `${Listen_rawURL}${Button_14_FileName}`;
-    const Button_14_Action = 'unban';
+    const Button_14_Action = 'ban';
     // Button 15
     const Button_15_IdClass = 'Button_15';
-    const Button_15_Text = 'UNBAN\nWhitelisted User';
-    const Button_15_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
-    const Button_15_ListSaveSuffix = '_WHITELISTED_user';
-    const Button_15_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
-    const Button_15_FileName = 'WHITELISTED_user.txt';
+    const Button_15_Text = 'sus troll streamers (Affiliate)\n(derived from tb/ti/isds list)';
+    const Button_15_BanReason = 'sus Troll streamer (QMD-List derived from tb/ti/isds)';
+    const Button_15_ListSaveSuffix = '_LIST_tb_ti_isds_COMPILED_affiliate';
+    const Button_15_AltText = 'Importiert die tb-ti-isds-COMPILED-affiliate-Liste';
+    const Button_15_FileName = 'LIST_tb_ti_isds_COMPILED_affiliate.txt';
     const Button_15_URL = `${Listen_rawURL}${Button_15_FileName}`;
-    const Button_15_Action = 'unban';
+    const Button_15_Action = 'ban';
     // Button 16
     const Button_16_IdClass = 'Button_16';
-    const Button_16_Text = 'UNBAN\nWhitelisted Bots';
-    const Button_16_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
-    const Button_16_ListSaveSuffix = '_WHITELISTED_bots';
-    const Button_16_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
-    const Button_16_FileName = 'WHITELISTED_bots.txt';
+    const Button_16_Text = 'sus troll streamers (Partner)\n(derived from tb/ti/isds list)';
+    const Button_16_BanReason = 'sus Troll streamer (QMD-List derived from tb/ti/isds)';
+    const Button_16_ListSaveSuffix = '_LIST_tb_ti_isds_COMPILED_partner';
+    const Button_16_AltText = 'Importiert die tb-ti-isds-COMPILED-partner-Liste';
+    const Button_16_FileName = 'LIST_tb_ti_isds_COMPILED_partner.txt';
     const Button_16_URL = `${Listen_rawURL}${Button_16_FileName}`;
-    const Button_16_Action = 'unban';
+    const Button_16_Action = 'ban';
+    // Button 17
+    const Button_17_IdClass = 'Button_17';
+    const Button_17_Text = '/monitor\n …function coming soon…';
+    const Button_17_BanReason = 'MONITOR-List (QMD-List)';
+    const Button_17_ListSaveSuffix = '_MONITOR_List';
+    const Button_17_AltText = 'Importiert die MONITOR-Liste';
+    const Button_17_FileName = 'monitor.txt';
+    const Button_17_URL = `${Listen_rawURL}${Button_17_FileName}`;
+    // TODO: Diese Aktion soll später zu "monitor" geändert werden.
+    const Button_17_Action = 'ban';
+    // Button 18
+    const Button_18_IdClass = 'Button_18';
+    const Button_18_Text = 'UNBAN …';
+    const Button_18_BanReason = 'UNBAN-List (QMD-UNBAN-List)';
+    const Button_18_ListSaveSuffix = '_UNBAN_List';
+    const Button_18_AltText = 'Importiert die UNBAN-Liste';
+    const Button_18_FileName = 'UNBANLIST.txt';
+    const Button_18_URL = `${Listen_rawURL}${Button_18_FileName}`;
+    const Button_18_Action = 'unban';
+    // Button 19
+    const Button_19_IdClass = 'Button_19';
+    const Button_19_Text = 'UNBAN\nWhitelisted User';
+    const Button_19_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
+    const Button_19_ListSaveSuffix = '_WHITELISTED_user';
+    const Button_19_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
+    const Button_19_FileName = 'WHITELISTED_user.txt';
+    const Button_19_URL = `${Listen_rawURL}${Button_19_FileName}`;
+    const Button_19_Action = 'unban';
+    // Button 20
+    const Button_20_IdClass = 'Button_20';
+    const Button_20_Text = 'UNBAN\nWhitelisted Bots';
+    const Button_20_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
+    const Button_20_ListSaveSuffix = '_WHITELISTED_bots';
+    const Button_20_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
+    const Button_20_FileName = 'WHITELISTED_bots.txt';
+    const Button_20_URL = `${Listen_rawURL}${Button_20_FileName}`;
+    const Button_20_Action = 'unban';
     // Zentrale Zusammenfassung aller Listenbutton-Konfigurationen.
     const LIST_BUTTONS = [
         { number: '01', saveSuffix: Button_01_ListSaveSuffix, id: Button_01_IdClass, className: Button_01_IdClass, text: Button_01_Text, altText: Button_01_AltText,
@@ -221,13 +257,21 @@
         { number: '12', saveSuffix: Button_12_ListSaveSuffix, id: Button_12_IdClass, className: Button_12_IdClass, text: Button_12_Text, altText: Button_12_AltText,
             fileName: Button_12_FileName, url: Button_12_URL, banReason: Button_12_BanReason, action: Button_12_Action, placeholder: false },
         { number: '13', saveSuffix: Button_13_ListSaveSuffix, id: Button_13_IdClass, className: Button_13_IdClass, text: Button_13_Text, altText: Button_13_AltText,
-            fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, action: Button_13_Action, placeholder: true },
+            fileName: Button_13_FileName, url: Button_13_URL, banReason: Button_13_BanReason, action: Button_13_Action, placeholder: false },
         { number: '14', saveSuffix: Button_14_ListSaveSuffix, id: Button_14_IdClass, className: Button_14_IdClass, text: Button_14_Text, altText: Button_14_AltText,
-            fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, action: Button_14_Action, placeholder: true },
+            fileName: Button_14_FileName, url: Button_14_URL, banReason: Button_14_BanReason, action: Button_14_Action, placeholder: false },
         { number: '15', saveSuffix: Button_15_ListSaveSuffix, id: Button_15_IdClass, className: Button_15_IdClass, text: Button_15_Text, altText: Button_15_AltText,
             fileName: Button_15_FileName, url: Button_15_URL, banReason: Button_15_BanReason, action: Button_15_Action, placeholder: false },
         { number: '16', saveSuffix: Button_16_ListSaveSuffix, id: Button_16_IdClass, className: Button_16_IdClass, text: Button_16_Text, altText: Button_16_AltText,
-            fileName: Button_16_FileName, url: Button_16_URL, banReason: Button_16_BanReason, action: Button_16_Action, placeholder: false }
+            fileName: Button_16_FileName, url: Button_16_URL, banReason: Button_16_BanReason, action: Button_16_Action, placeholder: false },
+        { number: '17', saveSuffix: Button_17_ListSaveSuffix, id: Button_17_IdClass, className: Button_17_IdClass, text: Button_17_Text, altText: Button_17_AltText,
+            fileName: Button_17_FileName, url: Button_17_URL, banReason: Button_17_BanReason, action: Button_17_Action, placeholder: true },
+        { number: '18', saveSuffix: Button_18_ListSaveSuffix, id: Button_18_IdClass, className: Button_18_IdClass, text: Button_18_Text, altText: Button_18_AltText,
+            fileName: Button_18_FileName, url: Button_18_URL, banReason: Button_18_BanReason, action: Button_18_Action, placeholder: true },
+        { number: '19', saveSuffix: Button_19_ListSaveSuffix, id: Button_19_IdClass, className: Button_19_IdClass, text: Button_19_Text, altText: Button_19_AltText,
+            fileName: Button_19_FileName, url: Button_19_URL, banReason: Button_19_BanReason, action: Button_19_Action, placeholder: false },
+        { number: '20', saveSuffix: Button_20_ListSaveSuffix, id: Button_20_IdClass, className: Button_20_IdClass, text: Button_20_Text, altText: Button_20_AltText,
+            fileName: Button_20_FileName, url: Button_20_URL, banReason: Button_20_BanReason, action: Button_20_Action, placeholder: false }
     ];
     // Laufzeitstatus der aktuellen Sammelaktion.
     let activeBulkAction = null;
@@ -3011,10 +3055,10 @@
             console.warn(LOGPREFIX,'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
-        if (activeListAction === 'ban') {
-            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
-            return;
-        }
+//        if (activeListAction === 'ban') {
+//            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
+//            return;
+//        }
         if (activeBulkAction || queueList.size === 0 || !activeListInfo) {
             return;
         }
@@ -3445,9 +3489,16 @@
             banAllButton.setAttribute('aria-disabled', String(shouldDisable) );
         }
         if (unbanAllButton) {
-            const shouldDisable = isRunning || !hasQueueItems || activeListAction === 'ban';
+            const shouldDisable =
+                isRunning ||
+                !hasQueueItems;
+//                !hasQueueItems ||
+//                activeListAction === 'ban';
             unbanAllButton.disabled = shouldDisable;
-            unbanAllButton.setAttribute('aria-disabled', String(shouldDisable) );
+            unbanAllButton.setAttribute(
+                'aria-disabled',
+                String(shouldDisable)
+            );
         }
         LIST_BUTTONS.forEach((listConfig) => {
             const button = d.querySelector(`#${listConfig.id}`);
