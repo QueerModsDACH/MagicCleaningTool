@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.3
+// @version      26.10.3.4
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.3';
+    const myVersion = '26.10.3.4';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -3055,10 +3055,12 @@
             console.warn(LOGPREFIX,'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
-//        if (activeListAction === 'ban') {
-//            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
-//            return;
-//        }
+// ##### UNBAN bei BAN ausblenden #####
+        if (activeListAction === 'ban') {
+            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
+            return;
+        }
+// ##### UNBAN bei BAN ausblenden #####
         if (activeBulkAction || queueList.size === 0 || !activeListInfo) {
             return;
         }
@@ -3492,8 +3494,10 @@
             const shouldDisable =
                 isRunning ||
                 !hasQueueItems;
-//                !hasQueueItems ||
-//                activeListAction === 'ban';
+// ##### UNBAN bei BAN ausblenden #####
+                !hasQueueItems ||
+                activeListAction === 'ban';
+// ##### UNBAN bei BAN ausblenden #####
             unbanAllButton.disabled = shouldDisable;
             unbanAllButton.setAttribute(
                 'aria-disabled',
