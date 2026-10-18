@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.4
+// @version      26.10.3.5
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.4';
+    const myVersion = '26.10.3.5';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -243,7 +243,7 @@
         { number: '05', saveSuffix: Button_05_ListSaveSuffix, id: Button_05_IdClass, className: Button_05_IdClass, text: Button_05_Text, altText: Button_05_AltText,
             fileName: Button_05_FileName, url: Button_05_URL, banReason: Button_05_BanReason, action: Button_05_Action, placeholder: false },
         { number: '06', saveSuffix: Button_06_ListSaveSuffix, id: Button_06_IdClass, className: Button_06_IdClass, text: Button_06_Text, altText: Button_06_AltText,
-            fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, action: Button_06_Action, placeholder: true },
+            fileName: Button_06_FileName, url: Button_06_URL, banReason: Button_06_BanReason, action: Button_06_Action, placeholder: false },
         { number: '07', saveSuffix: Button_07_ListSaveSuffix, id: Button_07_IdClass, className: Button_07_IdClass, text: Button_07_Text, altText: Button_07_AltText,
             fileName: Button_07_FileName, url: Button_07_URL, banReason: Button_07_BanReason, action: Button_07_Action, placeholder: false },
         { number: '08', saveSuffix: Button_08_ListSaveSuffix, id: Button_08_IdClass, className: Button_08_IdClass, text: Button_08_Text, altText: Button_08_AltText,
@@ -3056,10 +3056,10 @@
             return;
         }
 // ##### UNBAN bei BAN ausblenden #####
-        if (activeListAction === 'ban') {
-            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
-            return;
-        }
+//        if (activeListAction === 'ban') {
+//            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
+//            return;
+//        }
 // ##### UNBAN bei BAN ausblenden #####
         if (activeBulkAction || queueList.size === 0 || !activeListInfo) {
             return;
@@ -3495,8 +3495,8 @@
                 isRunning ||
                 !hasQueueItems;
 // ##### UNBAN bei BAN ausblenden #####
-                !hasQueueItems ||
-                activeListAction === 'ban';
+//                !hasQueueItems ||
+//                activeListAction === 'ban';
 // ##### UNBAN bei BAN ausblenden #####
             unbanAllButton.disabled = shouldDisable;
             unbanAllButton.setAttribute(
