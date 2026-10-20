@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.5
+// @version      26.10.3.6
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.5';
+    const myVersion = '26.10.3.6';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -24,6 +24,9 @@
     const QMD_EXPORT_VERSION = 3;
     const QMD_ACTION_BAN = 'ban';
     const QMD_ACTION_UNBAN = 'unban';
+    // Gegenaktionen in der jeweils anderen Listenart steuern.
+    const unbanButtonInBanAction = false;
+    const banButtonInUnbanAction = false;
     const QMD_STORAGE_STATE_BAN = 'banlist';
     const QMD_STORAGE_STATE_UNBAN = 'unbanlist';
     const QMD_STORAGE_PROCESSED = 'processed';
@@ -2978,7 +2981,10 @@
             console.warn(LOGPREFIX,'Ban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
-        if (activeListAction === 'unban') {
+        if (
+            activeListAction === 'unban' &&
+            !banButtonInUnbanAction
+        ) {
             console.warn(LOGPREFIX,'Ban All wurde für eine Unban-Liste blockiert.');
             return;
         }
@@ -3055,12 +3061,13 @@
             console.warn(LOGPREFIX,'Unban All blockiert: Kein moderierbarer Kanal aktiv.');
             return;
         }
-// ##### UNBAN bei BAN ausblenden #####
-//        if (activeListAction === 'ban') {
-//            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
-//            return;
-//        }
-// ##### UNBAN bei BAN ausblenden #####
+        if (
+            activeListAction === 'ban' &&
+            !unbanButtonInBanAction
+        ) {
+            console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
+            return;
+        }
         if (activeBulkAction || queueList.size === 0 || !activeListInfo) {
             return;
         }
@@ -3486,18 +3493,27 @@
         const importButton = d.querySelector('.importBtn');
         const hasQueueItems = queueList.size > 0;
         if (banAllButton) {
-            const shouldDisable = isRunning || !hasQueueItems || activeListAction === 'unban';
+            const shouldDisable =
+                isRunning ||
+                !hasQueueItems ||
+                (
+                    activeListAction === 'unban' &&
+                    !banButtonInUnbanAction
+                );
             banAllButton.disabled = shouldDisable;
-            banAllButton.setAttribute('aria-disabled', String(shouldDisable) );
+            banAllButton.setAttribute(
+                'aria-disabled',
+                String(shouldDisable)
+            );
         }
         if (unbanAllButton) {
             const shouldDisable =
                 isRunning ||
-                !hasQueueItems;
-// ##### UNBAN bei BAN ausblenden #####
-//                !hasQueueItems ||
-//                activeListAction === 'ban';
-// ##### UNBAN bei BAN ausblenden #####
+                !hasQueueItems ||
+                (
+                    activeListAction === 'ban' &&
+                    !unbanButtonInBanAction
+                );
             unbanAllButton.disabled = shouldDisable;
             unbanAllButton.setAttribute(
                 'aria-disabled',
