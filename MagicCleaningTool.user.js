@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.10
+// @version      26.10.3.11
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.10';
+    const myVersion = '26.10.3.11';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -72,11 +72,11 @@
     const Button_02_Action = 'ban';
     // Button 03
     const Button_03_IdClass = 'Button_03';
-    const Button_03_Text = 'unsorted Troll (pleb)\n( QMD-List )';
-    const Button_03_BanReason = 'unsorted Troll (QMD-List)';
-    const Button_03_ListSaveSuffix = '_LIST_qmd_unsorted_COMPILED_pleb';
-    const Button_03_AltText = 'Importiert die QMD-unsorted-COMPILED-pleb-Liste';
-    const Button_03_FileName = 'LIST_qmd_unsorted_COMPILED_pleb.txt';
+    const Button_03_Text = 'just another Troll (pleb)\n( QMD-List )';
+    const Button_03_BanReason = 'just another Troll (QMD-List)';
+    const Button_03_ListSaveSuffix = '_LIST_qmd_just_another_troll_COMPILED_pleb';
+    const Button_03_AltText = 'Importiert die QMD-just-another-troll-COMPILED-pleb-Liste';
+    const Button_03_FileName = 'LIST_qmd_just_another_troll_COMPILED_pleb.txt';
     const Button_03_URL = `${Listen_rawURL}${Button_03_FileName}`;
     const Button_03_Action = 'ban';
     // Button 04
