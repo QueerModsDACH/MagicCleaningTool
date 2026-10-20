@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.7
+// @version      26.10.3.8
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.7';
+    const myVersion = '26.10.3.8';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -383,6 +383,7 @@
             failed: 0,
             storageChanges: 0,
             processedUsers: new Set(activeListInfo.completedUsers || [] ),
+            reopenedUsers: new Set(),
             skippedUsers: new Set(),
             startedAt: Date.now()
         };
@@ -437,6 +438,9 @@
         const storedProcessedUsers = new Set( normalizeUserList( readStorageValue(processedStorageKey, []) ) );
         for (const user of action.processedUsers || []) {
             storedProcessedUsers.add(user);
+        }
+        for (const user of action.reopenedUsers || []) {
+            storedProcessedUsers.delete(user);
         }
         writeStorageValue(processedStorageKey, [...storedProcessedUsers] );
         if (action.action !== 'ban') {
@@ -2853,6 +2857,22 @@
                 if (textField) {
                     textField.value = '';
                 }
+                if (
+                    queueList.size === 0 &&
+                    normalizedAction === QMD_ACTION_BAN &&
+                    unbanButtonInBanAction
+                ) {
+                    const currentlyBannedUsers = [
+                        ...activeListInfo.users
+                    ].filter(
+                        (user) => QMD_bannedUsersSet.has(user)
+                    );
+                    addUsersToQueue(
+                        currentlyBannedUsers,
+                        listSuffix,
+                        false
+                    );
+                }
                 if (queueList.size > 0) {
                     const importDiv = d.querySelector('.import');
                     const body = d.querySelector('.body');
@@ -3102,7 +3122,32 @@
             console.warn(LOGPREFIX,'Unban All wurde für eine Bannliste blockiert.');
             return;
         }
-        if (activeBulkAction || queueList.size === 0 || !activeListInfo) {
+        if (activeBulkAction || !activeListInfo || !activeListInfo.users) {
+            return;
+        }
+        if (activeListAction === QMD_ACTION_BAN) {
+            const usersToUnban = [...activeListInfo.users].filter(
+                (user) => QMD_bannedUsersSet.has(user)
+            );
+            if (usersToUnban.length === 0) {
+                console.info(
+                    LOGPREFIX,
+                    'Unban All: Keine aktuell gebannten Namen aus dieser Bannliste gefunden.'
+                );
+                return;
+            }
+            queueList.clear();
+            queueListSources.clear();
+            for (const user of usersToUnban) {
+                queueList.add(user);
+                queueListSources.set(
+                    user,
+                    new Set([activeListInfo.listSuffix])
+                );
+            }
+            renderList();
+        }
+        if (queueList.size === 0) {
             return;
         }
         const action = createBulkAction('unban');
@@ -3250,13 +3295,49 @@
         writeStorageValue(`${actionChannel}_unbanlist`, QMD_unbannedUsersStore);
         writeStorageValue(`${actionChannel}_banlist`, QMD_bannedUsersStore);
         const processedListInfo = action?.listInfo || activeListInfo;
-        if (action) {
+
+    if (action) {
+        const isUndoingBanList =
+            action.action === QMD_ACTION_UNBAN &&
+            action.listInfo.action === QMD_ACTION_BAN;
+
+        if (isUndoingBanList) {
+            action.reopenedUsers.add(normalizedUser);
+            action.processedUsers.delete(normalizedUser);
+            action.listInfo.completedUsers.delete(normalizedUser);
+            action.listInfo.skippedUsers.delete(normalizedUser);
+
+            if (
+                activeListInfo &&
+                activeListInfo.action === QMD_ACTION_BAN &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
+                activeListInfo.completedUsers.delete(normalizedUser);
+                activeListInfo.skippedUsers.delete(normalizedUser);
+            }
+        } else {
             action.processedUsers.add(normalizedUser);
             action.listInfo.completedUsers.add(normalizedUser);
-            if (activeListInfo && activeListInfo.action === 'unban' && activeListInfo.users.has(normalizedUser) ) {
+
+            if (
+                activeListInfo &&
+                activeListInfo.action === QMD_ACTION_UNBAN &&
+                activeListInfo.users.has(normalizedUser)
+            ) {
                 activeListInfo.completedUsers.add(normalizedUser);
             }
-            action.storageChanges++;
+        }
+
+        action.storageChanges++;
+    } else if (
+        activeListInfo &&
+        activeListInfo.action === QMD_ACTION_UNBAN &&
+        activeListInfo.users.has(normalizedUser)
+    ) {
+        activeListInfo.completedUsers.add(normalizedUser);
+
+
+
         } else if (activeListInfo && activeListInfo.action === 'unban' && activeListInfo.users.has(normalizedUser) ) {
             activeListInfo.completedUsers.add(normalizedUser);
         }
