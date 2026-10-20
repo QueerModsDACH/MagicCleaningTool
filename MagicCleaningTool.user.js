@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.6
+// @version      26.10.3.7
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.6';
+    const myVersion = '26.10.3.7';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -534,7 +534,11 @@
                     : null
             };
             activeBulkAction = null;
-            showListSelectionView();
+            if (action.cancelled) {
+                renderList();
+            } else {
+                showListSelectionView();
+            }
             updateBulkActionControls();
             updateListStatus();
             requestAutomaticQuickCheck();
@@ -1115,11 +1119,27 @@
     async function checkSingleListStatus(listConfig, channel) {
         const checkedAt = new Date().toISOString();
         try {
-            const response = await fetchWithTimeout( listConfig.url, { cache: 'no-store' } );
-            if (!response.ok) {
-                throw new Error(`HTTP-Fehler ${response.status}`);
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(
+                () => controller.abort(),
+                10000
+            );
+            let sourceUsers;
+            try {
+                const response = await fetch(
+                    listConfig.url,
+                    {
+                        cache: 'no-store',
+                        signal: controller.signal
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP-Fehler ${response.status}`);
+                }
+                sourceUsers = await parseUserListFromResponse(response);
+            } finally {
+                window.clearTimeout(timeoutId);
             }
-            const sourceUsers = await parseUserListFromResponse(response);
             const processedUsers = new Set(
                 normalizeUserList(
                     readStorageValue(
@@ -1239,7 +1259,13 @@
                 automaticQuickCheckPending = true;
             } finally {
                 quickCheckPromise = null;
-                if (isQuickCheckAuto && automaticQuickCheckPending && activeChannel && isCurrentChannelModerated() ) {
+                updateQuickCheckAutoToggle();
+                if (
+                    isQuickCheckAuto &&
+                    automaticQuickCheckPending &&
+                    activeChannel &&
+                    isCurrentChannelModerated()
+                ) {
                     window.setTimeout(
                         runPendingAutomaticQuickCheck,
                         250
@@ -1247,6 +1273,7 @@
                 }
             }
         })();
+        updateQuickCheckAutoToggle();
         return quickCheckPromise;
     }
     function runPendingAutomaticQuickCheck() {
@@ -1555,6 +1582,7 @@
                     border: 1px solid transparent; background: transparent; color: var(--color-text-base); font-size: 11px; line-height: 1;}
                 .magicMorningStar .quickCheckAutoToggle.is-auto { color: #34ae0c;}
                 .magicMorningStar .quickCheckAutoToggle.is-off { color: #c0392b;}
+                .magicMorningStar .quickCheckAutoToggle.is-running { color: #f4d35e;}
                 .magicMorningStar .quickCheckAutoToggle:not(:disabled):hover { border-color: ${themeTextColor}; cursor: pointer;}
 
                 .magicMorningStar .list-button-row button.qmd-list-status { border: 2px solid rgba(255, 255, 255, 0.55);
@@ -2143,14 +2171,20 @@
         if (!button || !symbol) {
             return;
         }
+        const isRunning = quickCheckPromise !== null;
         button.classList.toggle('is-auto', isQuickCheckAuto);
         button.classList.toggle('is-off', !isQuickCheckAuto);
-        symbol.textContent = isQuickCheckAuto
-            ? 'Qc Auto'
-            : 'Qc Aus';
-        const title = isQuickCheckAuto
-            ? 'Automatische Quick Checks ausschalten'
-            : 'Automatische Quick Checks einschalten';
+        button.classList.toggle('is-running', isRunning);
+        symbol.textContent = isRunning
+            ? 'Qc Läuft'
+            : isQuickCheckAuto
+                ? 'Qc Auto'
+                : 'Qc Aus';
+        const title = isRunning
+            ? 'Quick Check läuft'
+            : isQuickCheckAuto
+                ? 'Automatische Quick Checks ausschalten'
+                : 'Automatische Quick Checks einschalten';
         button.title = title;
         button.setAttribute(
             'aria-label',
