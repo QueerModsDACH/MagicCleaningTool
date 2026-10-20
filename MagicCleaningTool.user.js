@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.9
+// @version      26.10.3.10
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.9';
+    const myVersion = '26.10.3.10';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -162,7 +162,7 @@
     const Button_12_Action = 'ban';
     // Button 13
     const Button_13_IdClass = 'Button_13';
-    const Button_13_Text = 'sus troll streamers 🟣 (Affiliate)\n( QMD-List )';
+    const Button_13_Text = 'sus troll streamers (Affiliate) 🟣\n( QMD-List )';
     const Button_13_BanReason = 'sus Troll streamer (QMD-List)';
     const Button_13_ListSaveSuffix = '_LIST_qmd_sus_troll_streamers_COMPILED_affiliate';
     const Button_13_AltText = 'Importiert die QMD-sus-troll-streamers-COMPILED-affiliate-Liste';
@@ -171,7 +171,7 @@
     const Button_13_Action = 'ban';
     // Button 14
     const Button_14_IdClass = 'Button_14';
-    const Button_14_Text = 'sus troll streamers 🔵 (Partner)\n( QMD-List )';
+    const Button_14_Text = 'sus troll streamers (Partner) 🔵\n( QMD-List )';
     const Button_14_BanReason = 'sus Troll streamer (QMD-List)';
     const Button_14_ListSaveSuffix = '_LIST_qmd_sus_troll_streamers_COMPILED_partner';
     const Button_14_AltText = 'Importiert die QMD-sus-troll-streamers-COMPILED-partner-Liste';
@@ -180,7 +180,7 @@
     const Button_14_Action = 'ban';
     // Button 15
     const Button_15_IdClass = 'Button_15';
-    const Button_15_Text = 'sus troll streamers 🟣 (Affiliate)\n(derived from tb/ti/isds list)';
+    const Button_15_Text = 'sus troll streamers (Affiliate) 🟣\n(derived from tb/ti/isds list)';
     const Button_15_BanReason = 'sus Troll streamer (QMD-List derived from tb/ti/isds)';
     const Button_15_ListSaveSuffix = '_LIST_tb_ti_isds_COMPILED_affiliate';
     const Button_15_AltText = 'Importiert die tb-ti-isds-COMPILED-affiliate-Liste';
@@ -189,7 +189,7 @@
     const Button_15_Action = 'ban';
     // Button 16
     const Button_16_IdClass = 'Button_16';
-    const Button_16_Text = 'sus troll streamers 🔵 (Partner)\n(derived from tb/ti/isds list)';
+    const Button_16_Text = 'sus troll streamers (Partner) 🔵\n(derived from tb/ti/isds list)';
     const Button_16_BanReason = 'sus Troll streamer (QMD-List derived from tb/ti/isds)';
     const Button_16_ListSaveSuffix = '_LIST_tb_ti_isds_COMPILED_partner';
     const Button_16_AltText = 'Importiert die tb-ti-isds-COMPILED-partner-Liste';
@@ -217,7 +217,7 @@
     const Button_18_Action = 'unban';
     // Button 19
     const Button_19_IdClass = 'Button_19';
-    const Button_19_Text = '⚪ UNBAN ⚪\nWhitelisted User';
+    const Button_19_Text = 'UNBAN\n⚪ Whitelisted User ⚪';
     const Button_19_BanReason = 'Whitelisted User (QMD-UNBAN-List)';
     const Button_19_ListSaveSuffix = '_WHITELISTED_user';
     const Button_19_AltText = 'Importiert die UNBAN-Liste für Whitelisted User';
@@ -226,7 +226,7 @@
     const Button_19_Action = 'unban';
     // Button 20
     const Button_20_IdClass = 'Button_20';
-    const Button_20_Text = '⚪ UNBAN ⚪\nWhitelisted Bots';
+    const Button_20_Text = 'UNBAN\n⚪ Whitelisted Bots ⚪';
     const Button_20_BanReason = 'Whitelisted Bots (QMD-UNBAN-List)';
     const Button_20_ListSaveSuffix = '_WHITELISTED_bots';
     const Button_20_AltText = 'Importiert die UNBAN-Liste für Whitelisted Bots';
