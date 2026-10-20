@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.10.3.11
+// @version      26.10.20.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.10.3.11';
+    const myVersion = '26.10.20.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -135,8 +135,8 @@
     const Button_09_Action = 'ban';
     // Button 10
     const Button_10_IdClass = 'Button_10';
-    const Button_10_Text = 'troll (pleb)\n(derived from isds list)';
-    const Button_10_BanReason = 'troll (QMD-List derived from isds)';
+    const Button_10_Text = 'Troll (pleb)\n(derived from isds list)';
+    const Button_10_BanReason = 'Troll (QMD-List derived from isds)';
     const Button_10_ListSaveSuffix = '_LIST_isds_troll_COMPILED_pleb';
     const Button_10_AltText = 'Importiert die isds-troll-COMPILED-pleb-Liste';
     const Button_10_FileName = 'LIST_isds_troll_COMPILED_pleb.txt';
