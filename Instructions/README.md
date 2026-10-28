@@ -33,3 +33,6 @@ Das Script wartet zwischen aufeinanderfolgenden Bann- und Entbannaktionen. Die V
 ```javascript
 const DELAY\_BAN\_ACTION = 130;
 const DELAY\_UNBAN\_ACTION = 130;
+```
+
+Die Verzögerung sollte mindestens 120 ms betragen. Kürzere Intervalle können dazu führen, dass einzelne Aktionen nicht zuverlässig verarbeitet oder abgebrochen werden. Setze die Werte daher nicht unter 120 ms.
