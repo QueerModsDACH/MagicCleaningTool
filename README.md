@@ -1,23 +1,42 @@
-# MagicCleaningTool
+# Magic Cleaning Tool
 
------
+Das **Magic Cleaning Tool** unterstützt Moderatorinnen und Moderatoren dabei, Bann- und Entbannlisten auf Twitch zu bearbeiten. Es lädt die verfügbaren Listen, zeigt den Bearbeitungsstand an und ermöglicht Einzel- oder Sammelaktionen im Moderatorenbereich.
 
-## Voraussetzungen
-Eine der folgenden Erweiterungen wird benötigt.
+> **Bitte sorgfältig verwenden:** Prüfe vor jeder Sammelaktion den aktiven Kanal, die geladene Liste und die vorgesehene Aktion. Ein Abbruch macht bereits ausgeführte Bann- oder Entbannaktionen nicht rückgängig.
 
-- Chrome: [Tampermonkey](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-- Firefox: [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/), [Tampermonkey](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/), or [Violentmonkey](https://addons.mozilla.org/firefox/addon/violentmonkey/)
-- Edge: [Tampermonkey](https://microsoftedge.microsoft.com/addons/detail/iikmkjmpaadaobahmlepeloendndfphd) or [Violentmonkey](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao)
-- Safari: [Tampermonkey](https://apps.apple.com/us/app/tampermonkey/id1482490089)
-- Opera: [Tampermonkey](https://addons.opera.com/en/extensions/details/tampermonkey-beta/)
+## Schnellstart
 
-### Besonderheit zu Tampermonkey
+1. Installiere einen Userscript-Manager, der mit deinem Browser kompatibel ist.
+2. Installiere das Magic Cleaning Tool über den Script-Link.
+3. Öffne Twitch und rufe den Moderatorenbereich eines Kanals auf, den du moderieren darfst.
+4. Öffne das Tool über das Aktivierungssymbol.
 
-Tampermonkey hat eine eigensinnige Art Updates von einem Skript durchzuführen.
-Zeigt euch das Script ein Update, aber es wird im Tampermonkey nicht angezeigt, dann müsste ihr die Interne Update Funktion eures Tampermonkey verwenden.
-Allerdings beitet Tampermonkey auch die möglichkeit auch automatisch nach Updates zu suchen, wenn ihr das möchtet. Dann wird das Skript automatisch geupdatet.
+Die ausführliche Anleitung findest du hier:
+
+- [Installationsanleitung](Installationsanleitung.md)
+- [Bedienungsanleitung](Bedienungsanleitung.md)
 
 ## Installation
 
-Wenn Tamper/Grease-/ViolentMonkey installiert ist, einfach diesen Link anklicken --> [Install](https://github.com/QueerModsDACH/MagicCleaningTool/raw/refs/heads/main/MagicCleaningTool.user.js)
-Es öffnet sich euer Monkey und man kann das User-Script mit einem Klick instalieren.
+[Magic Cleaning Tool installieren](https://github.com/QueerModsDACH/MagicCleaningTool/raw/refs/heads/main/MagicCleaningTool.user.js)
+
+Für die Installation ist ein Userscript-Manager erforderlich, zum Beispiel Tampermonkey, Greasemonkey oder Violentmonkey. Einzelheiten zu unterstützten Browsern und zur Einrichtung stehen in der [Installationsanleitung](Installationsanleitung.md).
+
+## Funktionen
+
+- Bann- und Entbannlisten laden und bearbeiten
+- Einzelne Namen oder eine ganze Warteschlange verarbeiten
+- Listenstatus und Fortschritt anzeigen
+- Namen manuell hinzufügen
+- Daten exportieren und wieder importieren
+- Automatische Quick Checks ein- oder ausschalten
+
+Mehr dazu steht in der [Bedienungsanleitung](Bedienungsanleitung.md).
+
+## Hilfe und Beiträge
+
+- [Anleitungen](.)
+- [Fehler melden oder Verbesserung vorschlagen](https://github.com/QueerModsDACH/MagicCleaningTool/issues)
+- [Projektseite](https://github.com/QueerModsDACH/MagicCleaningTool)
+
+Das Magic Cleaning Tool ist ein Community-Projekt und steht unter der MIT-Lizenz.
