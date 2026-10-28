@@ -35,8 +35,6 @@ Mehr dazu steht in der [Bedienungsanleitung](Bedienungsanleitung.md).
 
 ## Hilfe und Beiträge
 
-- [Anleitungen](.)
 - [Fehler melden oder Verbesserung vorschlagen](https://github.com/QueerModsDACH/MagicCleaningTool/issues)
-- [Projektseite](https://github.com/QueerModsDACH/MagicCleaningTool)
 
 Das Magic Cleaning Tool ist ein Community-Projekt und steht unter der MIT-Lizenz.
