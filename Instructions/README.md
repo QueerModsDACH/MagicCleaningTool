@@ -31,8 +31,8 @@ Wenn du Browserdaten oder Website-Daten löschst, können dadurch auch die gespe
 Das Script wartet zwischen aufeinanderfolgenden Bann- und Entbannaktionen. Die Verzögerungen sind im Code zentral festgelegt:
 
 ```javascript
-const DELAY\_BAN\_ACTION = 130;
-const DELAY\_UNBAN\_ACTION = 130;
+const DELAY_BAN_ACTION = 130;
+const DELAY_UNBAN_ACTION = 130;
 ```
 
 Die Verzögerung sollte mindestens 120 ms betragen. Kürzere Intervalle können dazu führen, dass einzelne Aktionen nicht zuverlässig verarbeitet oder abgebrochen werden. Setze die Werte daher nicht unter 120 ms.
