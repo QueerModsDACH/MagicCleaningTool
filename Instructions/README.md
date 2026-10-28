@@ -1,77 +1,35 @@
-# QueerModsDACH MagicCleaningTool
+# Magic Cleaning Tool – Zusätzliche Hinweise
 
------
+Diese Seite ergänzt die [Installationsanleitung](../Installationsanleitung.md) und die [Bedienungsanleitung](../Bedienungsanleitung.md). Sie enthält zusätzliche Hinweise zur sicheren Nutzung, zur Datenspeicherung und zum Mod-Menü.
 
-## Hinweise zur Benutzung
+## Sicher mit Sammelaktionen arbeiten
 
-**WICHTIG**: Es darf nur einen Twitch Tab im Browser-Fenster geben, sobald ein weiteren Tab dazukommt, versucht das MagicCleaningTool dort zu bannen.
+Prüfe vor einer Sammelaktion immer den angezeigten Kanal und die geladene Liste. Vermeide es, gleichzeitig in mehreren Twitch-Tabs Sammelaktionen zu starten: So lässt sich leichter der Überblick verlieren, welche Aktionen in welchem Kanal laufen.
 
-‼ Das Tool arbeitet mit eurem Chatfenster. Klickt ihre da rein oder schreibet etwas, dann bringt ihr das Tool aus dem tritt. Das Tool ist nicht dafür gedacht, während der normladen Nutzung mit Tonnen von User betankt zu werden. Möchte man das machen ist die Empfehlung: _**eigenes Browserfenster in dem nur der Kanal offen ist in dem gebannt werden soll und sonst nichts.**_
+Das Tool führt Moderationsaktionen über das Chat-Eingabefeld von Twitch aus. Vermeide es, während einer Sammelaktion in dieses Feld zu klicken oder dort Nachrichten zu schreiben. Wenn Twitch oder das Tool unerwartet reagiert, brich die Aktion möglichst ab und prüfe den Kanal, die Warteschlange und den tatsächlichen Moderationsstatus.
 
-‼: _**Nicht mehrere Kanäle gleichzeitig bannen!**_ Hintergrund: **Shadowban-Gefahr**, da zu viele Anfragen in zu kurzer Zeit bei Twitch aufschlagen. Das mag Twitch nicht!
+Ein Abbruch macht bereits ausgeführte Bann- oder Entbannaktionen nicht rückgängig.
 
-⁉ Bei einigen kommt es je nach Einstellungen mit Erweiterungen wie Frankers/BetterTTV/7TVAPP/Darkreader zu Problem.
-Hier ggf. für das Bannen diese Erweiterungen deaktivieren, wenn man Probleme hat.
+## Browser-Erweiterungen und Darstellungsprobleme
 
-### Die Sache mit "Merken wo welcher User gebannt wurde
-Das Tool verwendet dazu den LocalStorage des Browsers.
+Andere Browser-Erweiterungen können die Darstellung oder Bedienung von Twitch beeinflussen. Wenn das Tool Probleme macht, teste Twitch gegebenenfalls in einem separaten Browserprofil oder deaktiviere Erweiterungen testweise einzeln.
 
-Das bedeutet: 
-- man benutzt mehrere Browser? 
-  - Der Speicher ist pro Browser. __Browser übergreifend funktioniert das also nicht!__
-- Im LocalStorage gespeichert Listen löschen
-  - Entwicklungs-Konsole des Browser öffnen (F12)
-  - den Tab `Web-Speicher` (Application/Anwendung) suchen
-  - Dort `LocalStorage` (Storage - LocalStorage) auswählen
-  - darin `https://www.twitch.tv` auswählen
-  - dann nach `_bannlist` filtern [`KANALNAME_banlist`]
-  - oder nach `_unbannlist` filtern [`KANALNAME_unbanlist`]
-  - die gefunden Einträge mit Rechts-Klick löschen
+Mögliche Kandidaten sind Erweiterungen, die Twitch verändern oder Seiteninhalte filtern, zum Beispiel FrankerFaceZ, BetterTTV, 7TV oder Dark Reader. Deaktiviere sie nur testweise, um herauszufinden, ob eine Erweiterung die Ursache ist.
 
-***Werden Cookies und das LocalStorage gelöscht, müssen alle Listen noch einmal gebannt werden!***
+## Gespeicherte Daten und Sicherungen
 
-### Das Tool läuft eine Weile, dann kommt ein Fehler auf der Website von Twitch
-Dann ist vermutlich für euer Setup die Geschwindigkeit zu hoch für die MassenBann/MassenUnbann funktionen.
-Das könnt ihr an diesen beiden Stellen anpassen:
-**HINWEIS:** Es ist dringend davon abzuraten den Wert runter zu setzen -> Twitch Shadow-Ban Gefahr!!!
+Das Tool speichert seine Daten im Browser. Es verwendet dafür vorrangig IndexedDB und kann bei einem Speicherproblem auf LocalStorage zurückgreifen.
 
-```
-// Zentrale Delay-Werte in Millisekunden
-      const DELAY_BAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
-      const DELAY_UNBAN_ACTION = 130; // HINWEIS: Es ist dringend davon abzuraten den Wert runter (<125) zu setzen -> Twitch Shadow-Ban Gefahr!!! (evtl. in kleinen Schritten bis 200 gehen)
-      const DELAY_PAUSE_CHECK = 1000;
-```
+Die Daten werden nicht automatisch zwischen verschiedenen Browsern oder Browserprofilen synchronisiert. Ein Wechsel des Browsers oder Profils übernimmt gespeicherte Listen und Bearbeitungsstände daher nicht automatisch.
 
------
+Verwende **export** in der Listenübersicht, um eine Sicherungsdatei zu erstellen. Mit **import** kannst du eine solche Datei wieder einlesen. Erstelle vor einem Replace-Import eine Sicherung: Replace ersetzt die bisher gespeicherten Tool-Daten.
 
-# Mod-Menü
-Das Mod Menü ist ein Schwert Icon oben links, wenn man einen Twitch Kanal besucht erscheint in der linken oberen Ecke, rechts vom Twitch Logo. In der der Mod-View wird das bestehende Schwert nach dem Laden etwas kleiner und ist nun anklickbar.
-Hierbei handelt es um ein kleines Menü, in dem man die Kanäle hinterlegen kann in welchen man Mod ist.
-Klickt man auf einen Namen, so wird die Mod-View des Kanals in einem neuen Tab geöffnet.
+Wenn du Browserdaten oder Website-Daten löschst, können dadurch auch die gespeicherten Tool-Daten verloren gehen. Exportiere wichtige Daten vorher. Nach dem Löschen kann das Tool nicht mehr auf die dort gespeicherten Bearbeitungsstände zurückgreifen.
 
-![](pix/Mod-Menu1.png)
+## Sammelaktionen und Verzögerungen
 
+Das Script wartet zwischen aufeinanderfolgenden Bann- und Entbannaktionen. Die Verzögerungen sind im Code zentral festgelegt:
 
-## Einen Kanal als Mod Kanal hinzufügen
-Schreibe alle Kanäle in das Feld in das man Namen schreiben kann.
-Hinweis: Die Kanäle werden in der Reihenfolge angelegt wie man sie in die Liste schreibt.
-
-![](pix/Mod-Menu2.png)
-
-
-Dann auf "+ Hinzufügen" klicken und die User werden dann in eine Liste geladen, wie man das von den Bannlisten kennt.
-Dort hat man nun die Möglichkeit unten ALLE auf einmal zu Mod Kanälen als Mod-Kanäle festzulegen, oder eben jeden einzeln.
-![](pix/Mod-Menu3.png)
-
-Mit dem nächsten Neuladen der Webseite, wird der Kanal dann hinzugefügt:
-
-![](pix/Mod-Menu4.png)
-
-## Einen kanal als Mod Kanal entfernen
-Das funktioniert analog zuum Hinzufügen.
-
------
-
-
-# Support
-Du kannst gerne [hier](https://github.com/QueerModsDACH/MagicCleaningTool/issues) ein Ticket aufmachen.
+```javascript
+const DELAY\_BAN\_ACTION = 130;
+const DELAY\_UNBAN\_ACTION = 130;
