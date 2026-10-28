@@ -1,4 +1,4 @@
-# Magic Cleaning Tool – Bedienungsanleitung
+# Magic Cleaning Tool – Bedienungsanleitung (wip)
 
 Das Magic Cleaning Tool unterstützt Moderationsaktionen auf Twitch. Es kann Namen aus den bereitgestellten Listen oder aus einer manuellen Eingabe übernehmen und diese anschließend zur Bearbeitung anzeigen.
 
