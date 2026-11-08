@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.11.8.4
+// @version      26.11.8.6
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.11.8.4';
+    const myVersion = '26.11.8.6';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -395,7 +395,9 @@
             startedAt: Date.now(),
             estimatedRemainingMs: null,
             estimatedRemainingUpdatedAt: 0,
-            lastEtaRecalculationAt: 0
+            lastEtaRecalculationAt: 0,
+            checkpointTimer: null,
+            isCheckpointPause: false
         };
     }
     function isBulkActionActive(action) {
@@ -426,6 +428,66 @@
         updateBulkActionControls();
         updateListStatus();
         return true;
+    }
+    function scheduleBulkActionCheckpoint(action) {
+        if (
+            !checkpointSettingReady ||
+            !isCheckpointAuto ||
+            !action ||
+            action.checkpointTimer !== null
+        ) {
+            return;
+        }
+        action.checkpointTimer = window.setTimeout(() => {
+            action.checkpointTimer = null;
+            if (activeBulkAction !== action || action.cancelled) {
+                return;
+            }
+            action.isCheckpointPause = true;
+            cancelActiveBulkAction(
+                'Automatischer Checkpoint nach 30 Minuten; Aktion pausiert'
+            );
+        }, AUTO_CHECKPOINT_INTERVAL_MS);
+    }
+    function saveBulkActionCheckpoint(action) {
+        if (
+            !action ||
+            !action.listInfo ||
+            !action.listInfo.listSuffix
+        ) {
+            return;
+        }
+        const listInfo = action.listInfo;
+        const checkpoint = {
+            status: 'paused',
+            action: listInfo.action,
+            channel: action.channel,
+            listSuffix: listInfo.listSuffix,
+            fileName: listInfo.fileName || '',
+            total: action.total,
+            completed: action.completed,
+            remaining: Math.max(0, action.total - action.completed),
+            successful: action.successful,
+            skipped: action.skipped,
+            failed: action.failed,
+            pausedAt: new Date().toISOString(),
+            reason: action.cancelReason || 'Sammelaktion pausiert'
+        };
+        const checkpointKey = getListStorageKey(
+            action.channel,
+            listInfo.action,
+            listInfo.listSuffix,
+            '_checkpoint'
+        );
+        writeStorageValue(checkpointKey, checkpoint);
+        if (
+            activeListInfo &&
+            activeListInfo.listSuffix === listInfo.listSuffix &&
+            activeListInfo.action === listInfo.action &&
+            activeListInfo.channel === action.channel
+        ) {
+            activeListInfo.checkpointInfo = checkpoint;
+        }
     }
     function flushBulkActionStorage(action) {
         if (!action) {
@@ -509,6 +571,10 @@
         if (activeBulkAction !== action) {
             return;
         }
+        if (action.checkpointTimer !== null) {
+            window.clearTimeout(action.checkpointTimer);
+            action.checkpointTimer = null;
+        }
         if (activeListInfo && activeListInfo.users) {
             activeListInfo.completedUsers = new Set([
                 ...(activeListInfo.completedUsers || []),
@@ -526,6 +592,25 @@
         try {
             flushBulkActionStorage(action);
             saveBulkActionListStatus(action);
+            if (action.cancelled) {
+                saveBulkActionCheckpoint(action);
+            } else if (action.listInfo?.listSuffix) {
+                const checkpointKey = getListStorageKey(
+                    action.channel,
+                    action.listInfo.action,
+                    action.listInfo.listSuffix,
+                    '_checkpoint'
+                );
+                writeStorageValue(checkpointKey, null);
+                if (
+                    activeListInfo &&
+                    activeListInfo.listSuffix === action.listInfo.listSuffix &&
+                    activeListInfo.action === action.listInfo.action &&
+                    activeListInfo.channel === action.channel
+                ) {
+                    delete activeListInfo.checkpointInfo;
+                }
+            }
             await flushStorageWrites();
         } catch (error) {
             finishError = error;
@@ -614,6 +699,11 @@
     // Werte unter 125 ms sollten vermieden werden, da Twitch-Aktionen dadurch möglicherweise zu schnell nacheinander ausgeführt werden.
     const DELAY_BAN_ACTION = 130;
     const DELAY_UNBAN_ACTION = 130;
+    // Ein automatischer Checkpoint pausiert die Aktion; er setzt sie nicht selbstständig fort.
+    const CHECKPOINT_AUTO_STORAGE_KEY = 'checkpoint_auto';
+    const AUTO_CHECKPOINT_INTERVAL_MS = 30 * 60 * 1000;
+    let isCheckpointAuto = true;
+    let checkpointSettingReady = false;
     // ##### INDEXEDDB- UND STORAGE-HILFSFUNKTIONEN ###############################
     function storageKey(key) {
         return `${BROWSER_STORAGE_PREFIX}${key}`;
@@ -758,6 +848,15 @@
         }
     }
     qmdStorageReadyPromise = initializeQmdStorage();
+    qmdStorageReadyPromise.then(() => {
+        isCheckpointAuto =
+            readStorageValue(CHECKPOINT_AUTO_STORAGE_KEY, true) !== false;
+        checkpointSettingReady = true;
+        updateCheckpointAutoToggle();
+        if (activeBulkAction && isCheckpointAuto) {
+            scheduleBulkActionCheckpoint(activeBulkAction);
+        }
+    });
     function queueIndexedDbWrite(key, value) {
         qmdStorageWritePromise = qmdStorageWritePromise
             .then(async () => {
@@ -1602,6 +1701,12 @@
                 .magicMorningStar .quickCheckAutoToggle.is-running { color: #f4d35e;}
                 .magicMorningStar .quickCheckAutoToggle:not(:disabled):hover { border-color: ${themeTextColor}; cursor: pointer;}
 
+                .magicMorningStar .checkpointAutoToggle { width: 48px; min-width: 48px; height: 32px; min-height: 32px; margin-left: 4px; padding: 0;
+                    border: 1px solid transparent; background: transparent; color: var(--color-text-base); font-size: 11px; line-height: 1;}
+                .magicMorningStar .checkpointAutoToggle.is-auto { color: #34ae0c;}
+                .magicMorningStar .checkpointAutoToggle.is-off { color: #c0392b;}
+                .magicMorningStar .checkpointAutoToggle:not(:disabled):hover { border-color: ${themeTextColor}; cursor: pointer;}
+
                 .magicMorningStar .list-button-row button.qmd-list-status { border: 2px solid rgba(255, 255, 255, 0.55);
                     transition: background-color 160ms ease, border-color 160ms ease, filter 160ms ease; }
                 .magicMorningStar .list-button-row button.qmd-status-unknown { background: #6c757d !important; color: #ffffff !important; }
@@ -1711,6 +1816,9 @@
                 <!-- Umschalter für automatische Quick Checks -->
                 <button class="quickCheckAutoToggle" type="button" title="Automatische Quick Checks ein- oder ausschalten" aria-label="Automatische Quick Checks ein- oder ausschalten" style="display: inline-flex;" >
                     <span class="quickCheckAutoToggleSymbol" aria-hidden="true"></span>
+                </button>
+                <button class="checkpointAutoToggle" type="button" title="Automatische Checkpoints ein- oder ausschalten" aria-label="Automatische Checkpoints ein- oder ausschalten" style="display: inline-flex;" >
+                    <span class="checkpointAutoToggleSymbol" aria-hidden="true"></span>
                 </button>
                 <span style="flex-grow: 1;"></span>
                 <!-- Repository-Link und Tool-Titel -->
@@ -2208,6 +2316,55 @@
             title
         );
     }
+    function updateCheckpointAutoToggle() {
+        const button = d.querySelector('.checkpointAutoToggle');
+        const symbol = d.querySelector('.checkpointAutoToggleSymbol');
+        if (!button || !symbol) {
+            return;
+        }
+        button.disabled = !checkpointSettingReady;
+        button.setAttribute(
+            'aria-disabled',
+            String(!checkpointSettingReady)
+        );
+        button.classList.toggle('is-auto', isCheckpointAuto);
+        button.classList.toggle('is-off', !isCheckpointAuto);
+        symbol.textContent = isCheckpointAuto
+            ? 'Cp Auto'
+            : 'Cp Aus';
+        const title = isCheckpointAuto
+            ? 'Automatische Checkpoints ausschalten'
+            : 'Automatische Checkpoints einschalten';
+        button.title = title;
+        button.setAttribute('aria-label', title);
+    }
+    function toggleCheckpointAuto() {
+        if (!checkpointSettingReady) {
+            return;
+        }
+        isCheckpointAuto = !isCheckpointAuto;
+        writeStorageValue(
+            CHECKPOINT_AUTO_STORAGE_KEY,
+            isCheckpointAuto
+        );
+        if (activeBulkAction) {
+            if (!isCheckpointAuto) {
+                if (activeBulkAction.checkpointTimer !== null) {
+                    window.clearTimeout(
+                        activeBulkAction.checkpointTimer
+                    );
+                    activeBulkAction.checkpointTimer = null;
+                }
+            } else {
+                scheduleBulkActionCheckpoint(activeBulkAction);
+            }
+        }
+        updateCheckpointAutoToggle();
+        console.info(
+            LOGPREFIX,
+            `Automatische Checkpoints sind jetzt ${isCheckpointAuto ? 'aktiviert' : 'deaktiviert'}.`
+        );
+    }
     // Schaltet automatische Quick Checks um und speichert den Zustand.
     function toggleQuickCheckAuto() {
         const wasAutoEnabled = isQuickCheckAuto;
@@ -2573,6 +2730,7 @@
         d.querySelector('.cancelAction').onclick = () => { cancelActiveBulkAction('manuell'); };
         d.querySelector('.modMenuToggle').onclick = toggleModMenuVisibility;
         d.querySelector('.quickCheckAutoToggle').onclick = toggleQuickCheckAuto;
+        d.querySelector('.checkpointAutoToggle').onclick = toggleCheckpointAuto;
         d.querySelector('.importBtn').onclick = importList;
         d.querySelector('.commanderRoot').onclick = () => openExternal('https://twitch-tools.rootonline.de');
         d.querySelector('.chatstats').onclick = () => openExternal(`https://sullygnome.com/channel/${encodeURIComponent(activeChannel)}`);
@@ -2843,6 +3001,13 @@
                         )
                         : []
                 );
+                const checkpointKey = getListStorageKey(
+                    importChannel,
+                    normalizedAction,
+                    listSuffix,
+                    '_checkpoint'
+                );
+                const savedCheckpoint = readStorageValue(checkpointKey, null);
                 activeListInfo = {
                     fileName,
                     listSuffix,
@@ -2851,7 +3016,11 @@
                     banReason: effectiveBanReason,
                     users: parsedUsers,
                     completedUsers: storedProcessedUsers,
-                    skippedUsers: storedSkippedUsers
+                    skippedUsers: storedSkippedUsers,
+                    checkpointInfo:
+                        savedCheckpoint?.status === 'paused'
+                            ? savedCheckpoint
+                            : null
                 };
                 for (const name of parsedUsers) {
                     if (
@@ -3064,6 +3233,7 @@
             return;
         }
         activeBulkAction = action;
+        scheduleBulkActionCheckpoint(action);
         updateBulkActionControls();
         updateListStatus();
         console.log(LOGPREFIX,'Banning all...', action.users);
@@ -3171,6 +3341,7 @@
             return;
         }
         activeBulkAction = action;
+        scheduleBulkActionCheckpoint(action);
         updateBulkActionControls();
         // updateListStatus();
         updateListStatusThrottled();
@@ -3848,13 +4019,13 @@
                 `Übersprungen: ${(action.skipped || 0).toLocaleString('de-DE')}`,
                 `Fehler: ${(action.failed || 0).toLocaleString('de-DE')}`
             ].join(' · ');
-            
+
             const estimatedDuration = remaining === 0
                 ? '0 Sekunden'
                 : formatEstimatedDuration(
                     getStableEstimatedDuration(action, remaining)
                 );
-                
+
             const reasonText = action.action === QMD_ACTION_UNBAN
                 ? 'Banngrund: Bei einer Entbann-Aktion nicht anwendbar.'
                 : `Banngrund: ${action.listInfo?.banReason || defaultBanReason}`;
@@ -3907,6 +4078,16 @@
                 } \u25C0 hinterlegt.`;
         // Erstellt den sichtbaren Status- und Fortschrittstext.
         let statusText = `Es wurden ${totalCount.toLocaleString('de-DE')} Namen geladen, davon sind ${processedCount.toLocaleString('de-DE')} Namen bei \u25B6 ${channelName} \u25C0 ${actionWord}.`;
+        if (activeListInfo.checkpointInfo?.status === 'paused') {
+            const checkpointDate = formatListStatusDate(
+                activeListInfo.checkpointInfo.pausedAt
+            );
+            statusText += [
+                '',
+                `Checkpoint gespeichert: ${checkpointDate}.`,
+                'Die Sammelaktion ist pausiert. Zum Fortsetzen die Sammelaktion manuell erneut starten.'
+            ].join('\n');
+        }
         let progressText = '';
         if (remainingCount > 0) {
             if (skippedCount > 0) {
@@ -4478,4 +4659,6 @@
     updateModMenuToggleImage();
     // Initiale Anzeige des Quick-Check-Automatikschalters.
     updateQuickCheckAutoToggle();
+    // Initiale Anzeige des Checkpoint-Automatikschalters.
+    updateCheckpointAutoToggle();
 })();
