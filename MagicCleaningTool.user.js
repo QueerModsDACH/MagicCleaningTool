@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.11.8.3
+// @version      26.11.8.4
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.11.8.3';
+    const myVersion = '26.11.8.4';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -392,7 +392,10 @@
             processedUsers: new Set(listInfo.completedUsers || []),
             reopenedUsers: new Set(),
             skippedUsers: new Set(),
-            startedAt: Date.now()
+            startedAt: Date.now(),
+            estimatedRemainingMs: null,
+            estimatedRemainingUpdatedAt: 0,
+            lastEtaRecalculationAt: 0
         };
     }
     function isBulkActionActive(action) {
@@ -1461,11 +1464,14 @@
     let activeListInfo = null;
     // Laufzeitmessung für Bann- und Unban-Aktionen.
     // Die Schätzung verwendet mehrere Werte und wird geglättet, damit einzelne Ausreißer nicht sofort sichtbar durchschlagen.
-    const ACTION_DURATION_SAMPLE_SIZE = 20;
+    const ACTION_DURATION_SAMPLE_SIZE = 40;
     const ACTION_DURATION_FALLBACK = 900;
-    const ACTION_DURATION_EWMA_ALPHA = 0.15;
+    const ACTION_DURATION_EWMA_ALPHA = 0.05;
     const ACTION_DURATION_MIN = 100;
     const ACTION_DURATION_MAX = 30000;
+    const ACTION_DURATION_WARMUP_SAMPLES = 3;
+    const ETA_REFRESH_INTERVAL = 5000;
+    const ETA_SMOOTHING_ALPHA = 0.15;
     let actionDurationSamples = [];
     let smoothedActionDuration = null;
     // Lädt Bann- und Unbannlisten nur für einen moderierbaren Kanal.
@@ -3097,9 +3103,11 @@
             }
             await delay(DELAY_BAN_ACTION);
             // Die Wartezeit gehört zur tatsächlichen Dauer eines vollständigen Aktionsdurchlaufs dazu.
-            addActionDurationSample(
-                performance.now() - actionStartedAt
-            );
+            if (action.completed > ACTION_DURATION_WARMUP_SAMPLES) {
+                addActionDurationSample(
+                    performance.now() - actionStartedAt
+                );
+            }
             if ( isBulkActionCancelled(action)
             ) {
                 break;
@@ -3200,9 +3208,11 @@
                 }
                 await delay(DELAY_UNBAN_ACTION);
                 // Auch die Unban-Verzögerung wird in die Messung einbezogen.
-                addActionDurationSample(
-                    performance.now() - actionStartedAt
-                );
+                if (action.completed > ACTION_DURATION_WARMUP_SAMPLES) {
+                    addActionDurationSample(
+                        performance.now() - actionStartedAt
+                    );
+                }
                 if (isBulkActionCancelled(action) ) {
                     break;
                 }
@@ -3751,6 +3761,36 @@
         // Der Median verhindert, dass einzelne sehr langsame oder sehr schnelle Aktionen die Schätzung verfälschen. Der geglättete Wert sorgt zusätzlich für eine ruhige Anzeige.
         return ( smoothedActionDuration * 0.65 + medianDuration * 0.35 );
     }
+    function getStableEstimatedDuration(action, remaining) {
+        if (!action || remaining <= 0) {
+            return 0;
+        }
+        const now = performance.now();
+        const rawEstimatedDuration =
+            remaining * getAverageActionDuration();
+        if (!Number.isFinite(action.estimatedRemainingMs)) {
+            action.estimatedRemainingMs = rawEstimatedDuration;
+            action.estimatedRemainingUpdatedAt = now;
+            action.lastEtaRecalculationAt = now;
+            return action.estimatedRemainingMs;
+        }
+        const elapsedSinceUpdate = Math.max(
+            0,
+            now - action.estimatedRemainingUpdatedAt
+        );
+        action.estimatedRemainingMs = Math.max(
+            0,
+            action.estimatedRemainingMs - elapsedSinceUpdate
+        );
+        action.estimatedRemainingUpdatedAt = now;
+        if (now - action.lastEtaRecalculationAt >= ETA_REFRESH_INTERVAL) {
+            action.estimatedRemainingMs =
+                action.estimatedRemainingMs * (1 - ETA_SMOOTHING_ALPHA) +
+                rawEstimatedDuration * ETA_SMOOTHING_ALPHA;
+            action.lastEtaRecalculationAt = now;
+        }
+        return action.estimatedRemainingMs;
+    }
     function addActionDurationSample(duration) {
         if (!Number.isFinite(duration) || duration <= 0 ) {
             return;
@@ -3808,11 +3848,13 @@
                 `Übersprungen: ${(action.skipped || 0).toLocaleString('de-DE')}`,
                 `Fehler: ${(action.failed || 0).toLocaleString('de-DE')}`
             ].join(' · ');
+            
             const estimatedDuration = remaining === 0
                 ? '0 Sekunden'
                 : formatEstimatedDuration(
-                    remaining * getAverageActionDuration()
+                    getStableEstimatedDuration(action, remaining)
                 );
+                
             const reasonText = action.action === QMD_ACTION_UNBAN
                 ? 'Banngrund: Bei einer Entbann-Aktion nicht anwendbar.'
                 : `Banngrund: ${action.listInfo?.banReason || defaultBanReason}`;
