@@ -1645,13 +1645,15 @@
                 .magicMorningStar .svg { color: ${themeTextColor}; }
                 .magicMorningStar h6 { color: var(--color-hinted-grey-7); }
                 .magicMorningStar h6 button { height: auto; background: none; }
-                .magicMorningStar .header { display: flex; align-items: center; }
+                .magicMorningStar .header { position: relative; display: flex; align-items: center; }
 
                 .magicMorningStar .header-divider { width: 92%; height: 1px; margin: 4px auto 2px;
                     background: linear-gradient( 90deg, transparent, ${themeTextColor}, transparent ); opacity: 0.75;}
                 .magicMorningStar .footer-divider { margin: 8px auto 2px;}
 
-                .magicMorningStar .logo { min-height: 30px; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
+                .magicMorningStar .logo {position: absolute; left: 50%; transform: translateX(-50%); max-width: calc(100% - 300px); min-height: 30px; margin: 0;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 30px; font-weight: var(--font-weight-semibold); --color: var(--color-text-link); }
+
                 .magicMorningStar .info-bar { display: flex; flex-direction: column; align-items: center; width: 100%; margin: 4px 0 8px; padding: 4px 8px 6px;
                     box-sizing: border-box; text-align: center; }
 
