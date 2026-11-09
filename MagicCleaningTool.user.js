@@ -2,7 +2,7 @@
 // @name         Magic Cleaning Tool
 // @description  Ein Tool, das die Moderation auf Twitch erleichtert
 // @namespace    Magic Cleaning Tool …for a little better World
-// @version      26.11.8.6
+// @version      26.11.9.1
 // @match        *://www.twitch.tv/*
 // @run-at       document-idle
 // @author       QueerModsDACH - The original code is from victornpb - Inspired by Bann-Hammer (by RaidHammer)
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
     // ##### ALLGEMEINE ANWENDUNGSKONFIGURATION ###################################
-    const myVersion = '26.11.8.6';
+    const myVersion = '26.11.9.1';
     const LOGPREFIX = '[QMD_MCT]\u25B6 ';
     const BROWSER_STORAGE_PREFIX = '_QMD_';
     const QMD_DATABASE_NAME = 'QMD_MagicCleaningTool';
@@ -306,7 +306,6 @@
         if (shouldRender) {renderList();
         }
     }
-
     function addUserToQueue(user, listSuffix = null, shouldRender = true) {
         const normalizedUser = normalizeUser(user);
         if (!isValidUsername(normalizedUser)) {
@@ -397,6 +396,7 @@
             estimatedRemainingUpdatedAt: 0,
             lastEtaRecalculationAt: 0,
             checkpointTimer: null,
+            checkpointDueAt: null,
             isCheckpointPause: false
         };
     }
@@ -438,8 +438,11 @@
         ) {
             return;
         }
+        action.checkpointDueAt =
+            Date.now() + AUTO_CHECKPOINT_INTERVAL_MS;
         action.checkpointTimer = window.setTimeout(() => {
             action.checkpointTimer = null;
+            action.checkpointDueAt = null;
             if (activeBulkAction !== action || action.cancelled) {
                 return;
             }
@@ -448,6 +451,29 @@
                 'Automatischer Checkpoint nach 30 Minuten; Aktion pausiert'
             );
         }, AUTO_CHECKPOINT_INTERVAL_MS);
+    }
+    function getCheckpointCountdownText(action) {
+        if (
+            !isCheckpointAuto ||
+            !action ||
+            !Number.isFinite(action.checkpointDueAt) ||
+            action.isCheckpointPause
+        ) {
+            return '';
+        }
+        const remainingMs = Math.max(
+            0,
+            action.checkpointDueAt - Date.now()
+        );
+        if (remainingMs < 60 * 1000) {
+            const seconds = Math.min(
+                59,
+                Math.max(1, Math.ceil(remainingMs / 1000))
+            );
+            return `${seconds} ${seconds === 1 ? 'Sekunde' : 'Sekunden'}`;
+        }
+        const minutes = Math.ceil(remainingMs / (60 * 1000));
+        return `${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`;
     }
     function saveBulkActionCheckpoint(action) {
         if (
@@ -575,6 +601,7 @@
             window.clearTimeout(action.checkpointTimer);
             action.checkpointTimer = null;
         }
+        action.checkpointDueAt = null;
         if (activeListInfo && activeListInfo.users) {
             activeListInfo.completedUsers = new Set([
                 ...(activeListInfo.completedUsers || []),
@@ -905,7 +932,6 @@
         }
         return cloneStorageValue( qmdMemoryStore.get(key) );
     }
-
     function writeStorageValue(key, value) {
         const clonedValue = cloneStorageValue(value);
         qmdMemoryStore.set(key, clonedValue);
@@ -1819,9 +1845,7 @@
                 <button class="quickCheckAutoToggle" type="button" title="Automatische Quick Checks ein- oder ausschalten" aria-label="Automatische Quick Checks ein- oder ausschalten" style="display: inline-flex;" >
                     <span class="quickCheckAutoToggleSymbol" aria-hidden="true"></span>
                 </button>
-                <button class="checkpointAutoToggle" type="button" title="Automatische Checkpoints ein- oder ausschalten" aria-label="Automatische Checkpoints ein- oder ausschalten" style="display: inline-flex;" >
-                    <span class="checkpointAutoToggleSymbol" aria-hidden="true"></span>
-                </button>
+
                 <span style="flex-grow: 1;"></span>
                 <!-- Repository-Link und Tool-Titel -->
                 <h5 id="header" class="logo">
@@ -1875,6 +1899,9 @@
                 <div class="action-group action-group-left">
                     <button class="back" type="button" title="Zurück" aria-label="Zurück" >
                         &#8592; zurück
+                    </button>
+                    <button class="checkpointAutoToggle" type="button" title="Automatische Checkpoints ein- oder ausschalten" aria-label="Automatische Checkpoints ein- oder ausschalten" hidden>
+                        <span class="checkpointAutoToggleSymbol" aria-hidden="true"></span>
                     </button>
                 </div>
                 <!-- Mittlere Gruppe: externe Werkzeuge -->
@@ -2356,6 +2383,7 @@
                         activeBulkAction.checkpointTimer
                     );
                     activeBulkAction.checkpointTimer = null;
+                    activeBulkAction.checkpointDueAt = null;
                 }
             } else {
                 scheduleBulkActionCheckpoint(activeBulkAction);
@@ -3262,7 +3290,6 @@
             ) {
                 break;
             }
-
             action.completed++;
             if (wasBanned) {
                 action.successful++;
@@ -3270,7 +3297,6 @@
                 action.skipped++;
             }
             if (isBulkActionCancelled(action)) {
-
                 break;
             }
             await delay(DELAY_BAN_ACTION);
@@ -3367,7 +3393,6 @@
                 if (action.cancelled || isBulkActionCancelled(action) ) {
                     break;
                 }
-
                 action.completed++;
                 if (wasUnbanned) {
                     action.successful++;
@@ -3376,7 +3401,6 @@
                 }
                 updateListStatusThrottled();
                 if (isBulkActionCancelled(action)) {
-
                     break;
                 }
                 await delay(DELAY_UNBAN_ACTION);
@@ -3487,49 +3511,41 @@
         writeStorageValue(`${actionChannel}_unbanlist`, QMD_unbannedUsersStore);
         writeStorageValue(`${actionChannel}_banlist`, QMD_bannedUsersStore);
         const processedListInfo = action?.listInfo || activeListInfo;
-
-    if (action) {
-        const isUndoingBanList =
-            action.action === QMD_ACTION_UNBAN &&
-            action.listInfo.action === QMD_ACTION_BAN;
-
-        if (isUndoingBanList) {
-            action.reopenedUsers.add(normalizedUser);
-            action.processedUsers.delete(normalizedUser);
-            action.listInfo.completedUsers.delete(normalizedUser);
-            action.listInfo.skippedUsers.delete(normalizedUser);
-
-            if (
-                activeListInfo &&
-                activeListInfo.action === QMD_ACTION_BAN &&
-                activeListInfo.users.has(normalizedUser)
-            ) {
-                activeListInfo.completedUsers.delete(normalizedUser);
-                activeListInfo.skippedUsers.delete(normalizedUser);
+        if (action) {
+            const isUndoingBanList =
+                action.action === QMD_ACTION_UNBAN &&
+                action.listInfo.action === QMD_ACTION_BAN;
+            if (isUndoingBanList) {
+                action.reopenedUsers.add(normalizedUser);
+                action.processedUsers.delete(normalizedUser);
+                action.listInfo.completedUsers.delete(normalizedUser);
+                action.listInfo.skippedUsers.delete(normalizedUser);
+                if (
+                    activeListInfo &&
+                    activeListInfo.action === QMD_ACTION_BAN &&
+                    activeListInfo.users.has(normalizedUser)
+                ) {
+                    activeListInfo.completedUsers.delete(normalizedUser);
+                    activeListInfo.skippedUsers.delete(normalizedUser);
+                }
+            } else {
+                action.processedUsers.add(normalizedUser);
+                action.listInfo.completedUsers.add(normalizedUser);
+                if (
+                    activeListInfo &&
+                    activeListInfo.action === QMD_ACTION_UNBAN &&
+                    activeListInfo.users.has(normalizedUser)
+                ) {
+                    activeListInfo.completedUsers.add(normalizedUser);
+                }
             }
-        } else {
-            action.processedUsers.add(normalizedUser);
-            action.listInfo.completedUsers.add(normalizedUser);
-
-            if (
-                activeListInfo &&
-                activeListInfo.action === QMD_ACTION_UNBAN &&
-                activeListInfo.users.has(normalizedUser)
-            ) {
-                activeListInfo.completedUsers.add(normalizedUser);
-            }
-        }
-
-        action.storageChanges++;
-    } else if (
-        activeListInfo &&
-        activeListInfo.action === QMD_ACTION_UNBAN &&
-        activeListInfo.users.has(normalizedUser)
-    ) {
-        activeListInfo.completedUsers.add(normalizedUser);
-
-
-
+            action.storageChanges++;
+        } else if (
+            activeListInfo &&
+            activeListInfo.action === QMD_ACTION_UNBAN &&
+            activeListInfo.users.has(normalizedUser)
+        ) {
+            activeListInfo.completedUsers.add(normalizedUser);
         } else if (activeListInfo && activeListInfo.action === 'unban' && activeListInfo.users.has(normalizedUser) ) {
             activeListInfo.completedUsers.add(normalizedUser);
         }
@@ -3542,7 +3558,6 @@
             renderList();
         }
         return true;
-
     }
     function removeModChannel(user) {
         const normalizedUser = normalizeUser(user);
@@ -3598,7 +3613,6 @@
             } else if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
                 activeListInfo.skippedUsers.add(normalizedUser);
             }
-
             if (!action || activeBulkAction === action) {
                 queueList.delete(normalizedUser);
                 queueListSources.delete(normalizedUser);
@@ -3606,7 +3620,6 @@
                     renderList();
                 }
             }
-
             return false;
         }
         try {
@@ -3630,7 +3643,6 @@
                         addUserToListStorage(actionChannel, 'ban', listSuffix, normalizedUser, '_skipped' );
                     }
                 }
-
                 if (!action || activeBulkAction === action) {
                     queueList.delete(normalizedUser);
                     queueListSources.delete(normalizedUser);
@@ -3638,7 +3650,6 @@
                         renderList();
                     }
                 }
-
                 return false;
             }
         } catch (error) {
@@ -3691,7 +3702,6 @@
         } else if (activeListInfo && activeListInfo.action === 'ban' && activeListInfo.users.has(normalizedUser) ) {
             activeListInfo.completedUsers.add(normalizedUser);
         }
-
         if (!action || activeBulkAction === action) {
             queueList.delete(normalizedUser);
             queueListSources.delete(normalizedUser);
@@ -3699,7 +3709,6 @@
                 renderList();
             }
         }
-
         if (!QMD_bannedUsersSet.has(normalizedUser) ) {
             QMD_bannedUsersSet.add(normalizedUser);
             QMD_bannedUsersStore.push(normalizedUser);
@@ -4006,7 +4015,6 @@
             statusElement.style.display = 'block';
             return;
         }
-
         if (activeBulkAction) {
             const action = activeBulkAction;
             const actionTotal = action.total ?? action.users.length;
@@ -4016,23 +4024,28 @@
             const actionText = action.action === QMD_ACTION_UNBAN
                 ? 'Entbann-Aktion'
                 : 'Bann-Aktion';
+            const checkpointCountdown =
+                getCheckpointCountdownText(action);
+            const actionRunningText = action.isCheckpointPause
+                ? 'Checkpoint wird gespeichert; Aktion pausiert.'
+                : checkpointCountdown
+                    ? `${actionText} läuft. Nächster Checkpoint wird in ${checkpointCountdown} erstellt.`
+                    : `${actionText} läuft.`;
             const countsText = [
                 `Erfolgreich: ${(action.successful || 0).toLocaleString('de-DE')}`,
                 `Übersprungen: ${(action.skipped || 0).toLocaleString('de-DE')}`,
                 `Fehler: ${(action.failed || 0).toLocaleString('de-DE')}`
             ].join(' · ');
-
             const estimatedDuration = remaining === 0
                 ? '0 Sekunden'
                 : formatEstimatedDuration(
                     getStableEstimatedDuration(action, remaining)
                 );
-
             const reasonText = action.action === QMD_ACTION_UNBAN
                 ? 'Banngrund: Bei einer Entbann-Aktion nicht anwendbar.'
                 : `Banngrund: ${action.listInfo?.banReason || defaultBanReason}`;
             statusElement.textContent = [
-                `${actionText} läuft.`,
+                actionRunningText,
                 `Gesamtumfang der Liste: ${listTotal.toLocaleString('de-DE')} Namen.`,
                 `Bereits vor dieser Aktion verarbeitet oder übersprungen: ${(action.initiallyHandledCount || 0).toLocaleString('de-DE')}.`,
                 `Aktuelle Aktion: ${actionCompleted.toLocaleString('de-DE')} von ${actionTotal.toLocaleString('de-DE')} Einträgen bearbeitet.`,
@@ -4044,7 +4057,6 @@
             statusElement.style.display = 'block';
             return;
         }
-
         if (!activeListInfo || !activeListInfo.users || activeListInfo.users.size === 0 ) {
             statusElement.textContent = '';
             statusElement.className = 'list-status';
@@ -4148,6 +4160,10 @@
         }
         const isSelectionView = importDiv && importDiv.style.display !== 'none';
         const hasActiveList = queueList.size > 0 || Boolean(activeListInfo);
+        const checkpointButton = d.querySelector('.checkpointAutoToggle');
+        if (checkpointButton) {
+            checkpointButton.hidden = isSelectionView || !hasActiveList;
+        }
         const storageButtons = [
             '.exportDataBtn',
             '.importDataBtn'
