@@ -701,7 +701,7 @@
     const DELAY_UNBAN_ACTION = 130;
     // Ein automatischer Checkpoint pausiert die Aktion; er setzt sie nicht selbstständig fort.
     const CHECKPOINT_AUTO_STORAGE_KEY = 'checkpoint_auto';
-    const AUTO_CHECKPOINT_INTERVAL_MS = 30 * 60 * 1000;
+    const AUTO_CHECKPOINT_INTERVAL_MS = 120 * 60 * 1000;
     let isCheckpointAuto = true;
     let checkpointSettingReady = false;
     // ##### INDEXEDDB- UND STORAGE-HILFSFUNKTIONEN ###############################
